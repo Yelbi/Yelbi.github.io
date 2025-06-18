@@ -10,6 +10,7 @@ class CarouselController {
     this.autoTimer = null;
     this.progTimer = null;
     this.isTransitioning = false;
+    this.totalItems = this.items.length;
 
     this.init();
   }
@@ -17,7 +18,7 @@ class CarouselController {
   init() {
     // Asegurar que hay un elemento activo
     if (this.currentIndex === -1) {
-      this.currentIndex = Math.floor(this.items.length / 2);
+      this.currentIndex = 4; // Empezar en el centro aproximadamente
       this.activateSlide(this.currentIndex);
     }
     
@@ -25,89 +26,90 @@ class CarouselController {
     this.startProgressBar();
     this.setupItemClick();
     this.setupKeyboardNavigation();
+    this.setupHoverControls();
   }
 
   getActiveIndex() {
-    const active = document.querySelector('[data-active]');
-    return active ? [...this.items].indexOf(active) : -1;
+    const items = document.querySelectorAll('.carousel__item');
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].hasAttribute('data-active')) {
+        return i;
+      }
+    }
+    return -1;
   }
 
-  activateSlide(idx) {
-    if (idx < 0 || idx >= this.items.length || this.isTransitioning) return;
+  activateSlide(newIndex) {
+    if (this.isTransitioning) return;
     
     this.isTransitioning = true;
     
+    // Obtener todos los elementos actuales (después de posibles rotaciones)
+    const currentItems = document.querySelectorAll('.carousel__item');
+    
     // Remover data-active de todos los elementos
-    this.items.forEach(item => item.removeAttribute('data-active'));
+    currentItems.forEach(item => item.removeAttribute('data-active'));
     
     // Activar el nuevo elemento
-    const targetItem = this.items[idx];
-    if (targetItem) {
-      targetItem.setAttribute('data-active', 'true');
-      targetItem.focus();
-      this.currentIndex = idx;
+    if (currentItems[newIndex]) {
+      currentItems[newIndex].setAttribute('data-active', 'true');
+      this.currentIndex = newIndex;
     }
     
-    // Permitir transiciones después de un breve delay
+    this.resetProgress();
+    
+    // Permitir nuevas transiciones después de un delay
     setTimeout(() => {
       this.isTransitioning = false;
-    }, 100);
+    }, 300);
   }
 
   nextSlide() {
     if (this.isTransitioning) return;
     
-    // Pausar auto-slide temporalmente
-    this.pauseAutoSlide();
-    
-    // Mover el primer elemento al final
+    // Rotar físicamente: mover el primer elemento al final
     const first = this.list.firstElementChild;
     this.list.appendChild(first);
     
-    // Recalcular el índice activo después del reordenamiento
-    const newActiveIndex = this.getActiveIndex();
-    if (newActiveIndex !== -1) {
-      this.currentIndex = newActiveIndex;
-    }
-    
-    this.resetProgress();
-    
-    // Reanudar auto-slide
-    setTimeout(() => {
-      this.startAutoSlide();
-    }, 500);
+    // Mantener el mismo índice visual activo (el elemento que estaba activo sigue activo)
+    // pero ahora está en una posición diferente en el DOM
+    this.activateSlide(this.currentIndex);
   }
 
   prevSlide() {
     if (this.isTransitioning) return;
     
-    // Pausar auto-slide temporalmente
-    this.pauseAutoSlide();
-    
-    // Mover el último elemento al principio
+    // Rotar físicamente: mover el último elemento al principio
     const last = this.list.lastElementChild;
     this.list.insertBefore(last, this.list.firstElementChild);
     
-    // Recalcular el índice activo después del reordenamiento
-    const newActiveIndex = this.getActiveIndex();
-    if (newActiveIndex !== -1) {
-      this.currentIndex = newActiveIndex;
-    }
+    // Mantener el mismo índice visual activo
+    this.activateSlide(this.currentIndex);
+  }
+
+  // Método para activar un slide específico por click
+  activateSlideByClick(targetIndex) {
+    if (this.isTransitioning) return;
     
-    this.resetProgress();
+    this.pauseAutoSlide();
+    this.activateSlide(targetIndex);
     
-    // Reanudar auto-slide
+    // Reanudar auto-slide después de un delay
     setTimeout(() => {
       this.startAutoSlide();
-    }, 500);
+    }, 2000);
   }
 
   startAutoSlide() {
-    this.clearTimers();
+    this.clearAutoTimer();
     this.autoTimer = setInterval(() => this.nextSlide(), this.intervalTime);
   }
 
   pauseAutoSlide() {
+    this.clearAutoTimer();
+  }
+
+  clearAutoTimer() {
     if (this.autoTimer) {
       clearInterval(this.autoTimer);
       this.autoTimer = null;
@@ -136,30 +138,21 @@ class CarouselController {
       const clickedItem = e.target.closest('.carousel__item');
       if (!clickedItem) return;
       
-      const idx = [...this.items].indexOf(clickedItem);
+      // Obtener el índice actual del elemento clickeado
+      const currentItems = document.querySelectorAll('.carousel__item');
+      const clickedIndex = [...currentItems].indexOf(clickedItem);
       
-      // Determinar rangos visibles basado en el tamaño de pantalla
+      // Determinar si el elemento está en el rango visible y clickeable
       const isMobile = window.matchMedia("(max-width: 600px)").matches;
-      const visibleStart = isMobile ? 2 : 3;
-      const visibleEnd = isMobile ? 6 : 9;
+      const centerIndex = isMobile ? 4 : 4; // El índice central visible
+      const clickableRange = isMobile ? [3, 4, 5] : [3, 4, 5, 6, 7]; // Índices clickeables
       
-      // Solo permitir clicks en elementos visibles
-      if (idx < visibleStart || idx > visibleEnd) return;
+      if (!clickableRange.includes(clickedIndex)) return;
       
-      // Si ya está activo, no hacer nada
-      if (clickedItem.hasAttribute('data-active')) return;
-      
-      // Pausar auto-slide al hacer click manual
-      this.pauseAutoSlide();
-      
-      // Activar el slide clickeado
-      this.activateSlide(idx);
-      this.resetProgress();
-      
-      // Reanudar auto-slide después de un delay
-      setTimeout(() => {
-        this.startAutoSlide();
-      }, 1000);
+      // Si se clickea un elemento adyacente, activarlo
+      if (clickedIndex !== this.currentIndex) {
+        this.activateSlideByClick(clickedIndex);
+      }
     });
   }
 
@@ -168,36 +161,37 @@ class CarouselController {
       switch(e.key) {
         case 'ArrowLeft':
           e.preventDefault();
+          this.pauseAutoSlide();
           this.prevSlide();
+          setTimeout(() => this.startAutoSlide(), 1000);
           break;
         case 'ArrowRight':
           e.preventDefault();
+          this.pauseAutoSlide();
           this.nextSlide();
+          setTimeout(() => this.startAutoSlide(), 1000);
           break;
         case ' ': // Spacebar para pausar/reanudar
           e.preventDefault();
-          if (this.autoTimer) {
-            this.pauseAutoSlide();
-          } else {
-            this.startAutoSlide();
-          }
+          this.toggleAutoSlide();
           break;
       }
     });
   }
 
-  clearTimers() {
-    if (this.autoTimer) {
-      clearInterval(this.autoTimer);
-      this.autoTimer = null;
-    }
-    if (this.progTimer) {
-      clearInterval(this.progTimer);
-      this.progTimer = null;
+  setupHoverControls() {
+    const carouselElement = document.querySelector('.carousel');
+    if (carouselElement) {
+      carouselElement.addEventListener('mouseenter', () => {
+        this.pauseAutoSlide();
+      });
+      
+      carouselElement.addEventListener('mouseleave', () => {
+        this.startAutoSlide();
+      });
     }
   }
 
-  // Método para pausar/reanudar manualmente
   toggleAutoSlide() {
     if (this.autoTimer) {
       this.pauseAutoSlide();
@@ -206,11 +200,17 @@ class CarouselController {
     }
   }
 
-  // Método de limpieza
+  clearAllTimers() {
+    this.clearAutoTimer();
+    if (this.progTimer) {
+      clearInterval(this.progTimer);
+      this.progTimer = null;
+    }
+  }
+
   destroy() {
-    this.clearTimers();
-    this.list.removeEventListener('click', this.setupItemClick);
-    document.removeEventListener('keydown', this.setupKeyboardNavigation);
+    this.clearAllTimers();
+    // Remover event listeners si es necesario
   }
 }
 
@@ -221,25 +221,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Hacer disponible globalmente para debugging
   window.carousel = carousel;
   
-  // Pausar en hover (opcional)
-  const carouselElement = document.querySelector('.carousel');
-  if (carouselElement) {
-    carouselElement.addEventListener('mouseenter', () => {
-      carousel.pauseAutoSlide();
-    });
-    
-    carouselElement.addEventListener('mouseleave', () => {
-      carousel.startAutoSlide();
-    });
-  }
-  
   // Manejar cambios de tamaño de ventana
   let resizeTimeout;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(() => {
-      // Recalcular elementos visibles después del resize
       carousel.resetProgress();
     }, 250);
   });
+
+  // Debug: Mostrar información del slide activo
+  console.log('Carousel initialized. Current active index:', carousel.currentIndex);
 });
