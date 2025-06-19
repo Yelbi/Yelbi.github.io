@@ -1,0 +1,88 @@
+/* Reset y básicos */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: sans-serif;
+  background: #111;
+  color: #fff;
+  padding: 1rem;
+}
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.btn {
+  background: #00aaff;
+  color: #fff;
+  padding: .5rem 1rem;
+  border-radius: .5rem;
+  text-decoration: none;
+}
+
+/* Grid responsivo */
+.grid-container {
+  display: grid;
+  grid-gap: 1rem;
+  /* En pantallas grandes, 5 columnas */
+  grid-template-columns: repeat( auto-fit, minmax(180px, 1fr) );
+}
+
+/* Tarjeta */
+.card {
+  background: #ddd;
+  border-radius: 1rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Imagen */
+.card-image img {
+  width: 100%;
+  display: block;
+}
+
+/* Info */
+.card-info {
+  background: #ddd;
+  padding: .5rem;
+  margin-top: auto;
+}
+.nombre {
+  background: #000;
+  color: #fff;
+  text-align: center;
+  padding: .5rem;
+  border-radius: .5rem;
+  margin-bottom: .5rem;
+}
+.bottom-row {
+  display: flex;
+  justify-content: space-between;
+}
+.bottom-row span {
+  background: #000;
+  color: #fff;
+  padding: .3rem .6rem;
+  border-radius: .5rem;
+  flex: 1;
+  text-align: center;
+  margin: 0 .2rem;
+}
+/* Ajustes de márgenes en el primer y último span */
+.bottom-row span:first-child { margin-left: 0; }
+.bottom-row span:last-child  { margin-right: 0; }
+
+/* Puntos de ruptura */
+@media (min-width: 1200px) {
+  .grid-container { grid-template-columns: repeat(5, 1fr); }
+}
+@media (max-width: 600px) {
+  .grid-container { grid-template-columns: repeat(1, 1fr); }
+}
+@media (min-width: 601px) and (max-width: 900px) {
+  .grid-container { grid-template-columns: repeat(2, 1fr); }
+}
