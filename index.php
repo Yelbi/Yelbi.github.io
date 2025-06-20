@@ -23,7 +23,8 @@
         <section class="section section1 active" id="section1">
             <canvas id="starfield"></canvas>
             <div class="section-content">
-                <h1>Bienvenido</h1>
+                <p>Bienvenido a</p>
+                <h1>Seres</h1>
                 <p>Descubre una experiencia única con transiciones suaves y un diseño moderno que captura la atención desde el primer momento.</p>
                 <a href="#" class="btn">Explorar</a>
             </div>
