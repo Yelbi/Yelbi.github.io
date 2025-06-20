@@ -34,51 +34,20 @@ $seres = $stmt->fetchAll();
     <?php foreach ($seres as $index => $s): ?>
       <div class="card" style="animation-delay: <?= $index * 0.1 ?>s">
         
-        <!-- Imagen con tamaño estándar -->
-        <div class="card-image">
           <img src="<?= htmlspecialchars($s['imagen']) ?>"
-               alt="<?= htmlspecialchars($s['nombre']) ?>"
-               loading="lazy">
-        </div>
-        
-        <!-- Overlay con información sobre la imagen -->
-        <div class="card-overlay">
+              alt="<?= htmlspecialchars($s['nombre']) ?>"
+              loading="lazy">
           <div class="nombre"><?= htmlspecialchars($s['nombre']) ?></div>
           <div class="info-badges">
             <span class="badge tipo"><?= htmlspecialchars($s['tipo']) ?></span>
             <span class="badge region"><?= htmlspecialchars($s['region']) ?></span>
           </div>
-        </div>
         
       </div>
     <?php endforeach; ?>
   </main>
 
-  <!-- Script para efectos adicionales -->
-  <script>
-    // Efecto de hover mejorado
-    document.addEventListener('DOMContentLoaded', function() {
-      const cards = document.querySelectorAll('.card');
-      
-      cards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-          this.style.zIndex = '10';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-          this.style.zIndex = '1';
-        });
-      });
-      
-      // Lazy loading mejorado
-      const images = document.querySelectorAll('img[loading="lazy"]');
-      images.forEach(img => {
-        img.addEventListener('load', function() {
-          this.style.opacity = '1';
-        });
-      });
-    });
-  </script>
+  <script src="/Seres/JS/galeria.js"></script>
 
 </body>
 </html>
