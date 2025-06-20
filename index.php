@@ -21,13 +21,14 @@
     <div class="container" id="container">
         <!-- Sección 1 -->
         <section class="section section1 active" id="section1">
-            <div class="section-content">
-                <h1>Bienvenido</h1>
-                <p>Descubre una experiencia única con transiciones suaves y un diseño moderno que captura la atención desde el primer momento.</p>
-                <a href="#" class="btn">Explorar</a>
-            </div>
+            <canvas id="starfield">
+                <div class="section-content">
+                    <h1>Bienvenido</h1>
+                    <p>Descubre una experiencia única con transiciones suaves y un diseño moderno que captura la atención desde el primer momento.</p>
+                    <a href="#" class="btn">Explorar</a>
+                </div>
+            </canvas>
         </section>
-
         <!-- Sección 2 -->
         <section class="section section2" id="section2">
             <div class="section-content">
@@ -61,5 +62,6 @@
     </div>
 
     <script src="/Seres/JS/index.js"></script>
+    <script src="/Seres/JS/backspace.js"></script>
 </body>
 </html>
