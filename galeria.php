@@ -15,9 +15,16 @@ $seres = $stmt->fetchAll();
 </head>
 <body>
 
-  <header>
-    <h1>Galería de Seres</h1>
-  </header>
+  <!-- Header -->
+    <header class="header">
+        <a href="#" class="logo">SERES</a>
+        <nav class="nav-menu">
+            <a href="/Seres/index.php" class="nav-link">Inicio</a>
+            <a href="/Seres/galeria.php" class="nav-link">Galeria</a>
+            <a href="#" class="nav-link">Contacto</a>
+        </nav>
+        <a href="#" class="user-btn">Usuarios</a>
+    </header>
 
   <main class="grid-container">
     <?php foreach ($seres as $s): ?>

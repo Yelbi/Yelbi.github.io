@@ -1,0 +1,6 @@
+/* Que el canvas cubra toda la pantalla */
+html, body { 
+    margin:0;
+     padding:0;
+      overflow:hidden; }
+#starfield { display:block; }
