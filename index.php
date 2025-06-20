@@ -11,8 +11,8 @@
     <header class="header">
         <a href="#" class="logo">SERES</a>
         <nav class="nav-menu">
-            <a href="/Seres/index.php" class="nav-link">Inicio</a>
-            <a href="/Seres/galeria.php" class="nav-link">Galeria</a>
+            <a href="#" class="nav-link">Inicio</a>
+            <a href="#" class="nav-link">Galeria</a>
             <a href="#" class="nav-link">Contacto</a>
         </nav>
         <a href="#" class="user-btn">Usuarios</a>
@@ -21,13 +21,12 @@
     <div class="container" id="container">
         <!-- Sección 1 -->
         <section class="section section1 active" id="section1">
-            <canvas id="starfield">
-                <div class="section-content">
-                    <h1>Bienvenido</h1>
-                    <p>Descubre una experiencia única con transiciones suaves y un diseño moderno que captura la atención desde el primer momento.</p>
-                    <a href="#" class="btn">Explorar</a>
-                </div>
-            </canvas>
+            <canvas id="starfield"></canvas>
+            <div class="section-content">
+                <h1>Bienvenido</h1>
+                <p>Descubre una experiencia única con transiciones suaves y un diseño moderno que captura la atención desde el primer momento.</p>
+                <a href="#" class="btn">Explorar</a>
+            </div>
         </section>
         <!-- Sección 2 -->
         <section class="section section2" id="section2">
