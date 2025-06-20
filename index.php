@@ -9,7 +9,9 @@
 <body>
     <!-- Header -->
     <header class="header">
-        <a href="/Seres/index.php" class="logo">SERES</a>
+        <a href="/Seres/index.php" class="logo">
+            <img src="/Seres/Img/logo.png" alt="">
+        </a>
         <nav class="nav-menu">
             <a href="/Seres/index.php" class="nav-link">Inicio</a>
             <a href="/Seres/galeria.php" class="nav-link">Galeria</a>
@@ -23,9 +25,9 @@
         <section class="section section1 active" id="section1">
             <canvas id="starfield"></canvas>
             <div class="section-content">
-                <p>Bienvenido a</p>
+                <p style="margin: 0;">Bienvenido a</p>
                 <h1>Seres</h1>
-                <p>Descubre una experiencia única con transiciones suaves y un diseño moderno que captura la atención desde el primer momento.</p>
+                <p>Descubre un mundo lleno de dioses y seres mitologicos.</p>
                 <a href="#" class="btn">Explorar</a>
             </div>
         </section>
