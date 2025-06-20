@@ -28,7 +28,7 @@
             <div class="section-content">
                 <p style="margin: 0;">Bienvenido a</p>
                 <h1>Seres</h1>
-                <p>Descubre un mundo lleno de dioses y seres mitologicos.</p>
+                <p>Descubre un mundo lleno de deidades y seres mitologicos.</p>
                 <a href="#" class="btn">Explorar</a>
             </div>
         </section>
