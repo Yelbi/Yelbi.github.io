@@ -10,39 +10,75 @@ $seres = $stmt->fetchAll();
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Galería de Seres</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galería de Seres Místicos</title>
   <link rel="stylesheet" href="/Seres/styles/galeria.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
   <!-- Header -->
-    <header class="header">
-        <a href="/Seres/index.php" class="logo">SERES</a>
-        <nav class="nav-menu">
-            <a href="/Seres/index.php" class="nav-link">Inicio</a>
-            <a href="/Seres/galeria.php" class="nav-link">Galeria</a>
-            <a href="#" class="nav-link">Contacto</a>
-        </nav>
-        <a href="#" class="user-btn">Usuarios</a>
-    </header>
+  <header class="header">
+    <a href="/Seres/index.php" class="logo">SERES</a>
+    <nav class="nav-menu">
+      <a href="/Seres/index.php" class="nav-link">Inicio</a>
+      <a href="/Seres/galeria.php" class="nav-link">Galería</a>
+      <a href="#" class="nav-link">Contacto</a>
+    </nav>
+    <a href="#" class="user-btn">Usuarios</a>
+  </header>
 
   <main class="grid-container">
-    <?php foreach ($seres as $s): ?>
-      <div class="card">
+    <?php foreach ($seres as $index => $s): ?>
+      <div class="card" style="animation-delay: <?= $index * 0.1 ?>s">
+        
+        <!-- Imagen con tamaño estándar -->
         <div class="card-image">
           <img src="<?= htmlspecialchars($s['imagen']) ?>"
-               alt="<?= htmlspecialchars($s['nombre']) ?>">
+               alt="<?= htmlspecialchars($s['nombre']) ?>"
+               loading="lazy">
         </div>
-        <div class="card-info">
+        
+        <!-- Overlay con información sobre la imagen -->
+        <div class="card-overlay">
           <div class="nombre"><?= htmlspecialchars($s['nombre']) ?></div>
-          <div class="bottom-row">
-            <span class="tipo"><?= htmlspecialchars($s['tipo']) ?></span>
-            <span class="region"><?= htmlspecialchars($s['region']) ?></span>
+          <div class="info-badges">
+            <span class="badge tipo"><?= htmlspecialchars($s['tipo']) ?></span>
+            <span class="badge region"><?= htmlspecialchars($s['region']) ?></span>
           </div>
         </div>
+        
       </div>
     <?php endforeach; ?>
   </main>
+
+  <!-- Script para efectos adicionales -->
+  <script>
+    // Efecto de hover mejorado
+    document.addEventListener('DOMContentLoaded', function() {
+      const cards = document.querySelectorAll('.card');
+      
+      cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+          this.style.zIndex = '10';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+          this.style.zIndex = '1';
+        });
+      });
+      
+      // Lazy loading mejorado
+      const images = document.querySelectorAll('img[loading="lazy"]');
+      images.forEach(img => {
+        img.addEventListener('load', function() {
+          this.style.opacity = '1';
+        });
+      });
+    });
+  </script>
 
 </body>
 </html>
