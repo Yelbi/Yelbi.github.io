@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.3.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
     <link rel="stylesheet" href="/Seres/styles/index.css">
+    <link rel="stylesheet" href="/Seres/styles/header.css">
     <title>Seres</title>
 </head>
 <body>

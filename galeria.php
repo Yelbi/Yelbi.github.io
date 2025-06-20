@@ -13,22 +13,26 @@ $seres = $stmt->fetchAll();
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Galería de Seres Místicos</title>
   <link rel="stylesheet" href="/Seres/styles/galeria.css">
+  <link rel="stylesheet" href="/Seres/styles/header.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.3.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
   <!-- Header -->
-  <header class="header">
-    <a href="/Seres/index.php" class="logo">SERES</a>
-    <nav class="nav-menu">
-      <a href="/Seres/index.php" class="nav-link">Inicio</a>
-      <a href="/Seres/galeria.php" class="nav-link">Galería</a>
-      <a href="#" class="nav-link">Contacto</a>
-    </nav>
-    <a href="#" class="user-btn">Usuarios</a>
-  </header>
+    <header class="header">
+        <a href="/Seres/index.php" class="logo">
+            <img src="/Seres/Img/logo.png" alt="">
+        </a>
+        <nav class="nav-menu">
+            <a href="/Seres/index.php" class="nav-link">Inicio</a>
+            <a href="/Seres/galeria.php" class="nav-link">Galeria</a>
+            <a href="#" class="nav-link">Contacto</a>
+        </nav>
+        <a href="#" class="user-btn"><i class="fi fi-rr-user"></i></a>
+    </header>
 
   <main class="grid-container">
     <?php foreach ($seres as $index => $s): ?>
