@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.3.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
     <link rel="stylesheet" href="/Seres/styles/index.css">
     <link rel="stylesheet" href="/Seres/styles/header.css">
+    <link rel="shortcut icon" href="/Seres/Img/logo.png" />
     <title>Seres</title>
 </head>
 <body>
