@@ -1,5 +1,4 @@
-// Animación de estrellas
-        const canvas = document.getElementById('starfield');
+const canvas = document.getElementById('starfield');
         const ctx = canvas.getContext('2d');
         let stars = [];
         
@@ -119,59 +118,3 @@
         }
         
         animate();
-
-        // Funcionalidad de navegación por secciones
-        const sections = document.querySelectorAll('.section');
-        const navDots = document.querySelectorAll('.nav-dot');
-        const scrollIndicator = document.getElementById('scrollIndicator');
-        
-        // Actualizar navegación por puntos
-        function updateNavDots() {
-            const scrollPosition = window.scrollY;
-            
-            sections.forEach((section, index) => {
-                const sectionTop = section.offsetTop;
-                const sectionHeight = section.offsetHeight;
-                
-                if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
-                    navDots.forEach(dot => dot.classList.remove('active'));
-                    navDots[index].classList.add('active');
-                    
-                    // Ocultar indicador en la última sección
-                    if (index === sections.length - 1) {
-                        scrollIndicator.classList.add('hidden');
-                    } else {
-                        scrollIndicator.classList.remove('hidden');
-                    }
-                }
-            });
-        }
-        
-        // Event listeners para puntos de navegación
-        navDots.forEach(dot => {
-            dot.addEventListener('click', () => {
-                const sectionIndex = parseInt(dot.getAttribute('data-section'));
-                sections[sectionIndex].scrollIntoView({ behavior: 'smooth' });
-            });
-        });
-        
-        // Scroll snapping
-        window.addEventListener('scroll', updateNavDots);
-        updateNavDots();
-        
-        // Efecto de desplazamiento suave para enlaces internos
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                const targetId = this.getAttribute('href');
-                if (targetId === '#') return;
-                
-                const targetElement = document.querySelector(targetId);
-                if (targetElement) {
-                    targetElement.scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                }
-            });
-        });
