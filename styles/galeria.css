@@ -98,7 +98,7 @@ body {
 /* Grid responsivo mejorado */
 .grid-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 2rem;
   max-width: 1400px;
   margin: 0 auto;
@@ -106,7 +106,7 @@ body {
   justify-items: center;
 }
 
-/* Tarjeta mejorada */
+/* Tarjeta mejorada con overlay */
 .card {
   position: relative;
   border-radius: 1.2rem;
@@ -143,53 +143,106 @@ body {
   opacity: 1;
 }
 
-.card:hover .card img {
+.card:hover img {
   transform: scale(1.08);
 }
 
+/* Overlay con gradiente para mejor legibilidad */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.1) 40%,
+    rgba(0, 0, 0, 0.4) 70%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+/* Contenedor de información superpuesta */
+.card-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1.5rem 1rem;
+  z-index: 2;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.9) 0%,
+    rgba(0, 0, 0, 0.7) 70%,
+    transparent 100%
+  );
+  transform: translateY(10px);
+  opacity: 0.9;
+  transition: all 0.3s ease;
+}
+
+.card:hover .card-info {
+  transform: translateY(0);
+  opacity: 1;
+}
+
 .nombre {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.2rem;
+  font-weight: 700;
   color: #fff;
-  text-shadow: 2px 2px 6px rgba(0,0,0,0.9);
-  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.9);
+  margin-bottom: 0.8rem;
   line-height: 1.2;
   text-align: center;
+  letter-spacing: 0.5px;
 }
 
 .info-badges {
   display: flex;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .badge {
   color: #fff;
-  padding: 0.4rem 0.8rem;
-  border-radius: 1rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 1.5rem;
   font-size: 0.75rem;
   font-weight: 600;
   flex: 1;
   text-align: center;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  align-content: center;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   transition: all 0.3s ease;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .badge:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.35);
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
 .badge.tipo {
-  background: rgba(59, 130, 246, 0.3);
-  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.4);
+  border-color: rgba(59, 130, 246, 0.6);
 }
 
 .badge.region {
-  background: rgba(16, 185, 129, 0.3);
-  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.4);
+  border-color: rgba(16, 185, 129, 0.6);
 }
 
 /* Efectos de carga */
@@ -204,7 +257,6 @@ body {
   }
 }
 
-/* Las cards ya no necesitan opacity inicial 0 */
 .card:nth-child(even) {
   animation-delay: 0.1s;
 }
@@ -216,16 +268,24 @@ body {
 /* Responsive design mejorado */
 
 /* Desktop grande */
-@media (min-width: 1200px) {
+@media (min-width: 1600px) {
   .grid-container {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 2.5rem;
     padding: 3rem 2rem;
   }
   
   .card {
     max-width: 320px;
-    height: 440px;
+    height: 480px;
+  }
+  
+  .nombre {
+    font-size: 1.3rem;
+  }
+  
+  .card-info {
+    padding: 2rem 1.2rem;
   }
 }
 
@@ -251,7 +311,16 @@ body {
   
   .card {
     max-width: 260px;
-    height: 360px;
+    height: 380px;
+  }
+  
+  .card-info {
+    padding: 1.2rem 0.8rem;
+  }
+  
+  .nombre {
+    font-size: 1.1rem;
+    margin-bottom: 0.6rem;
   }
   
   .header {
@@ -286,7 +355,21 @@ body {
   
   .card {
     max-width: 240px;
-    height: 320px;
+    height: 340px;
+  }
+  
+  .card-info {
+    padding: 1rem 0.7rem;
+  }
+  
+  .nombre {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .badge {
+    font-size: 0.7rem;
+    padding: 0.4rem 0.7rem;
   }
   
   .header {
@@ -327,7 +410,21 @@ body {
   
   .card {
     max-width: 200px;
-    height: 280px;
+    height: 300px;
+  }
+  
+  .card-info {
+    padding: 0.8rem 0.6rem;
+  }
+  
+  .nombre {
+    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+  }
+  
+  .badge {
+    font-size: 0.65rem;
+    padding: 0.3rem 0.5rem;
   }
   
   .header {
@@ -353,15 +450,6 @@ body {
     padding: 4px 8px;
     font-size: 0.8rem;
   }
-  
-  .nombre {
-    font-size: 0.95rem;
-  }
-  
-  .badge {
-    font-size: 0.7rem;
-    padding: 0.3rem 0.5rem;
-  }
 }
 
 /* Móvil extra pequeño */
@@ -373,7 +461,20 @@ body {
   
   .card {
     max-width: 160px;
-    height: 240px;
+    height: 260px;
+  }
+  
+  .card-info {
+    padding: 0.6rem 0.4rem;
+  }
+  
+  .nombre {
+    font-size: 0.8rem;
+  }
+  
+  .badge {
+    font-size: 0.6rem;
+    padding: 0.2rem 0.4rem;
   }
   
   .header {
@@ -400,6 +501,10 @@ html {
   animation: pulse 2s infinite;
 }
 
+.card.loading .card-info {
+  opacity: 0.5;
+}
+
 @keyframes pulse {
   0%, 100% { 
     opacity: 1; 
@@ -412,7 +517,7 @@ html {
 }
 
 /* Animación para imágenes cargadas */
-.card-image img.loaded {
+.card img.loaded {
   opacity: 1;
   transition: opacity 0.5s ease-in-out;
 }
@@ -428,12 +533,17 @@ html {
     transform: none;
   }
   
-  .card-image img {
+  .card img {
     transition: none;
   }
   
-  .card:hover .card-image img {
+  .card:hover img {
     transform: none;
+  }
+  
+  .card-info {
+    transform: none;
+    opacity: 1;
   }
 }
 
@@ -443,9 +553,14 @@ html {
   outline-offset: 2px;
 }
 
+.card:focus-within .card-info {
+  transform: translateY(0);
+  opacity: 1;
+}
+
 /* Optimización para pantallas de alta densidad */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .card-image img {
+  .card img {
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
   }

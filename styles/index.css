@@ -34,12 +34,9 @@
             transition: all 0.3s ease;
         }
 
-        .logo {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: white;
-            text-decoration: none;
-            letter-spacing: 1px;
+        .logo img {
+            width: 60px;
+            height: 60px;
         }
 
         .nav-menu {
@@ -128,7 +125,7 @@
         }
 
         .section p {
-            font-size: 1.3rem;
+            font-size: 1.5rem;
             max-width: 600px;
             line-height: 1.6;
             margin-bottom: 2rem;

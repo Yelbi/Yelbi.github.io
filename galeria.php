@@ -33,16 +33,18 @@ $seres = $stmt->fetchAll();
   <main class="grid-container">
     <?php foreach ($seres as $index => $s): ?>
       <div class="card" style="animation-delay: <?= $index * 0.1 ?>s">
+        <img src="<?= htmlspecialchars($s['imagen']) ?>"
+             alt="<?= htmlspecialchars($s['nombre']) ?>"
+             loading="lazy">
         
-          <img src="<?= htmlspecialchars($s['imagen']) ?>"
-              alt="<?= htmlspecialchars($s['nombre']) ?>"
-              loading="lazy">
+        <!-- Información superpuesta -->
+        <div class="card-info">
           <div class="nombre"><?= htmlspecialchars($s['nombre']) ?></div>
           <div class="info-badges">
             <span class="badge tipo"><?= htmlspecialchars($s['tipo']) ?></span>
             <span class="badge region"><?= htmlspecialchars($s['region']) ?></span>
           </div>
-        
+        </div>
       </div>
     <?php endforeach; ?>
   </main>
