@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.3.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
     <link rel="stylesheet" href="/Seres/styles/index.css">
     <title>Seres</title>
 </head>
@@ -17,7 +18,7 @@
             <a href="/Seres/galeria.php" class="nav-link">Galeria</a>
             <a href="#" class="nav-link">Contacto</a>
         </nav>
-        <a href="#" class="user-btn">Usuarios</a>
+        <a href="#" class="user-btn"><i class="fi fi-rr-user"></i></a>
     </header>
 
     <div class="container" id="container">
