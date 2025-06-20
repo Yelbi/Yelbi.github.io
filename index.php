@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/styles/index.css">
+    <link rel="stylesheet" href="/Seres/styles/index.css">
     <title>Seres</title>
 </head>
 <body>
     <!-- Header -->
     <header class="header">
-        <a href="/index.php" class="logo">SERES</a>
+        <a href="/Seres/index.php" class="logo">SERES</a>
         <nav class="nav-menu">
-            <a href="/index.php" class="nav-link">Inicio</a>
-            <a href="/galeria.php" class="nav-link">Galeria</a>
+            <a href="/Seres/index.php" class="nav-link">Inicio</a>
+            <a href="/Seres/galeria.php" class="nav-link">Galeria</a>
             <a href="#" class="nav-link">Contacto</a>
         </nav>
         <a href="#" class="user-btn">Usuarios</a>
@@ -61,7 +61,7 @@
         <span class="scroll-arrow">↓</span>
     </div>
 
-    <script src="/JS/index.js"></script>
-    <script src="/JS/backspace.js"></script>
+    <script src="/Seres/JS/index.js"></script>
+    <script src="/Seres/JS/backspace.js"></script>
 </body>
 </html>
