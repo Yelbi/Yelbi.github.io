@@ -4,20 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.3.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
-    <link rel="stylesheet" href="/Seres/styles/index.css">
-    <link rel="stylesheet" href="/Seres/styles/header.css">
-    <link rel="shortcut icon" href="/Seres/Img/logo.png" />
+    <link rel="stylesheet" href="/styles/index.css">
+    <link rel="stylesheet" href="/styles/header.css">
+    <link rel="shortcut icon" href="/Img/logo.png" />
     <title>Seres</title>
 </head>
 <body>
     <!-- Header -->
     <header class="header">
-        <a href="/Seres/index.php" class="logo">
-            <img src="/Seres/Img/logo.png" alt="">
+        <a href="/index.php" class="logo">
+            <img src="/Img/logo.png" alt="">
         </a>
         <nav class="nav-menu">
-            <a href="/Seres/index.php" class="nav-link">Inicio</a>
-            <a href="/Seres/galeria.php" class="nav-link">Galeria</a>
+            <a href="/index.php" class="nav-link">Inicio</a>
+            <a href="/galeria.php" class="nav-link">Galeria</a>
             <a href="#" class="nav-link">Contacto</a>
         </nav>
         <a href="#" class="user-btn"><i class="fi fi-rr-user"></i></a>
@@ -66,7 +66,7 @@
         <span class="scroll-arrow">↓</span>
     </div>
 
-    <script src="/Seres/JS/index.js"></script>
-    <script src="/Seres/JS/backspace.js"></script>
+    <script src="/JS/index.js"></script>
+    <script src="/JS/backspace.js"></script>
 </body>
 </html>

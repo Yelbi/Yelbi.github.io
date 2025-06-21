@@ -6,7 +6,7 @@ require 'config.php';
 $slug = $_GET['ser'] ?? '';
 
 if (empty($slug)) {
-    header('Location: /Seres/galeria.php');
+    header('Location: /galeria.php');
     exit;
 }
 
@@ -17,7 +17,7 @@ try {
     $ser = $stmt->fetch();
     
     if (!$ser) {
-        header('Location: /Seres/galeria.php');
+        header('Location: /galeria.php');
         exit;
     }
     
@@ -41,11 +41,11 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($ser['nombre']) ?> - Seres Místicos</title>
-    <link rel="stylesheet" href="/Seres/styles/detalle.css">
-    <link rel="stylesheet" href="/Seres/styles/header.css">
+    <link rel="stylesheet" href="/styles/detalle.css">
+    <link rel="stylesheet" href="/styles/header.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="shortcut icon" href="/Seres/Img/logo.png" />
+    <link rel="shortcut icon" href="/Img/logo.png" />
     <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.3.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -59,12 +59,12 @@ try {
 
     <!-- Header -->
     <header class="header">
-        <a href="/Seres/index.php" class="logo">
-            <img src="/Seres/Img/logo.png" alt="">
+        <a href="/index.php" class="logo">
+            <img src="/Img/logo.png" alt="">
         </a>
         <nav class="nav-menu">
-            <a href="/Seres/index.php" class="nav-link">Inicio</a>
-            <a href="/Seres/galeria.php" class="nav-link">Galería</a>
+            <a href="/index.php" class="nav-link">Inicio</a>
+            <a href="/galeria.php" class="nav-link">Galería</a>
             <a href="#" class="nav-link">Contacto</a>
         </nav>
         <a href="#" class="user-btn"><i class="fi fi-rr-user"></i></a>
@@ -72,9 +72,9 @@ try {
 
     <!-- Breadcrumb -->
     <nav class="breadcrumb">
-    <a href="/Seres/index.php">Inicio</a>
+    <a href="/index.php">Inicio</a>
     <span class="separator">></span>
-    <a href="/Seres/galeria.php">Galería</a>
+    <a href="/galeria.php">Galería</a>
     <span class="separator">></span>
     <span class="current"><?= htmlspecialchars($ser['nombre']) ?></span>
 </nav>
@@ -151,7 +151,7 @@ try {
 
     <section class="navigation-section">
         <div class="nav-buttons">
-            <a href="/Seres/galeria.php" class="btn-back">Volver a la Galería</a>
+            <a href="/galeria.php" class="btn-back">Volver a la Galería</a>
             <?php
             $prev = $pdo->prepare("SELECT slug, nombre FROM seres WHERE id < ? ORDER BY id DESC LIMIT 1");
             $prev->execute([$ser['id']]);
@@ -162,10 +162,10 @@ try {
             ?>
             <div class="nav-arrows">
                 <?php if ($prevItem): ?>
-                <a href="/Seres/detalle.php?ser=<?= urlencode($prevItem['slug']) ?>" class="btn-nav prev">&larr; <?= htmlspecialchars($prevItem['nombre']) ?></a>
+                <a href="/detalle.php?ser=<?= urlencode($prevItem['slug']) ?>" class="btn-nav prev">&larr; <?= htmlspecialchars($prevItem['nombre']) ?></a>
                 <?php endif; ?>
                 <?php if ($nextItem): ?>
-                <a href="/Seres/detalle.php?ser=<?= urlencode($nextItem['slug']) ?>" class="btn-nav next"><?= htmlspecialchars($nextItem['nombre']) ?> &rarr;</a>
+                <a href="/detalle.php?ser=<?= urlencode($nextItem['slug']) ?>" class="btn-nav next"><?= htmlspecialchars($nextItem['nombre']) ?> &rarr;</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -181,7 +181,7 @@ try {
         </div>
     </div>
 
-    <script src="/Seres/JS/detalle.js"></script>
+    <script src="/JS/detalle.js"></script>
 
 </body>
 </html>

@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Error loading image fallback
   document.querySelectorAll('img').forEach(img => {
     img.addEventListener('error', () => {
-      img.src = '/Seres/Img/placeholder.svg';
+      img.src = '/Img/placeholder.svg';
       img.classList.add('error');
     });
   });
