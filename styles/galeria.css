@@ -29,6 +29,7 @@ body {
 
 /* Tarjeta mejorada con overlay */
 .card {
+  display: block;
   position: relative;
   border-radius: 1.2rem;
   overflow: hidden;
