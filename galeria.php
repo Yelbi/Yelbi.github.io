@@ -44,20 +44,32 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
   </header>
 
   <!-- Panel de Filtros -->
-  <section class="filter-panel">
+  <section class="filter-panel collapsed">
     <div class="filter-container">
-      <h2 class="filter-title">
-        <i class="fi fi-rr-filter"></i>
-        Filtros
-      </h2>
-      
-      <div class="filter-content">
-        <!-- Barra de búsqueda -->
-        <div class="search-wrapper">
-          <input type="text" id="searchInput" placeholder="Buscar por nombre..." class="search-input">
-          <i class="fi fi-rr-search search-icon"></i>
-        </div>
+      <!-- Header siempre visible -->
+      <div class="filter-header">
+        <h2 class="filter-title">
+          <i class="fi fi-rr-filter"></i>
+          Filtros
+        </h2>
+        
+        <div class="search-and-toggle">
+          <!-- Barra de búsqueda (siempre visible) -->
+          <div class="search-wrapper">
+            <input type="text" id="searchInput" placeholder="Buscar por nombre..." class="search-input">
+            <i class="fi fi-rr-search search-icon"></i>
+          </div>
 
+          <!-- Botón para mostrar/ocultar filtros -->
+          <button id="toggleFilters" class="btn-toggle">
+            <i class="fi fi-rr-angle-down"></i>
+            Mostrar Filtros
+          </button>
+        </div>
+      </div>
+      
+      <!-- Contenido colapsable -->
+      <div class="filter-content">
         <div class="filter-groups">
           <!-- Filtro por Tipo -->
           <div class="filter-group">
@@ -87,10 +99,6 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
           <button id="clearFilters" class="btn-clear">
             <i class="fi fi-rr-refresh"></i>
             Limpiar filtros
-          </button>
-          <button id="toggleFilters" class="btn-toggle">
-            <i class="fi fi-rr-angle-up"></i>
-            Ocultar
           </button>
         </div>
       </div>

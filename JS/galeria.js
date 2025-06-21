@@ -1,4 +1,4 @@
-// Script mejorado para galeria.php con sistema de filtros
+// Script corregido para galeria.php con sistema de filtros
 document.addEventListener('DOMContentLoaded', function() {
   const cards = document.querySelectorAll('.card');
   const images = document.querySelectorAll('img[loading="lazy"]');
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let visibleCount = 0;
     
     cards.forEach(card => {
-      const nombre = card.dataset.nombre || '';
+      const nombre = (card.dataset.nombre || '').toLowerCase();
       const tipo = card.dataset.tipo || '';
       const region = card.dataset.region || '';
       
@@ -67,14 +67,18 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   function updateResultsDisplay(count) {
-    resultsCount.textContent = count;
+    if (resultsCount) {
+      resultsCount.textContent = count;
+    }
     
-    if (count === 0) {
-      noResults.style.display = 'block';
-      galeriaGrid.style.opacity = '0.3';
-    } else {
-      noResults.style.display = 'none';
-      galeriaGrid.style.opacity = '1';
+    if (noResults && galeriaGrid) {
+      if (count === 0) {
+        noResults.style.display = 'block';
+        galeriaGrid.style.opacity = '0.3';
+      } else {
+        noResults.style.display = 'none';
+        galeriaGrid.style.opacity = '1';
+      }
     }
   }
   
@@ -85,62 +89,89 @@ document.addEventListener('DOMContentLoaded', function() {
       region: ''
     };
     
-    searchInput.value = '';
-    tipoFilter.value = '';
-    regionFilter.value = '';
+    if (searchInput) searchInput.value = '';
+    if (tipoFilter) tipoFilter.value = '';
+    if (regionFilter) regionFilter.value = '';
     
     applyFilters();
   }
   
   // === EVENT LISTENERS PARA FILTROS ===
   
-  // Búsqueda en tiempo real con debounce
-  let searchTimeout;
-  searchInput.addEventListener('input', function() {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      currentFilters.search = this.value.trim();
-      applyFilters();
-    }, 300);
-  });
+  // Verificar que los elementos existen antes de añadir listeners
+  if (searchInput) {
+    // Búsqueda en tiempo real con debounce
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        currentFilters.search = this.value.trim();
+        applyFilters();
+      }, 300);
+    });
+  }
   
   // Filtro por tipo
-  tipoFilter.addEventListener('change', function() {
-    currentFilters.tipo = this.value;
-    applyFilters();
-  });
+  if (tipoFilter) {
+    tipoFilter.addEventListener('change', function() {
+      currentFilters.tipo = this.value;
+      applyFilters();
+    });
+  }
   
   // Filtro por región
-  regionFilter.addEventListener('change', function() {
-    currentFilters.region = this.value;
-    applyFilters();
-  });
+  if (regionFilter) {
+    regionFilter.addEventListener('change', function() {
+      currentFilters.region = this.value;
+      applyFilters();
+    });
+  }
   
   // Limpiar filtros
-  clearFiltersBtn.addEventListener('click', function() {
-    clearAllFilters();
-    
-    // Animación visual del botón
-    this.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-      this.style.transform = '';
-    }, 150);
-  });
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener('click', function() {
+      clearAllFilters();
+      
+      // Animación visual del botón
+      this.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        this.style.transform = '';
+      }, 150);
+    });
+  }
+  
+  // Inicializar panel de filtros como oculto
+  if (filterPanel) {
+    filterPanel.classList.add('collapsed');
+  }
   
   // Toggle panel de filtros
-  toggleFiltersBtn.addEventListener('click', function() {
-    filterPanel.classList.toggle('collapsed');
-    const icon = this.querySelector('i');
-    const text = this.childNodes[2]; // El texto después del icono
+  if (toggleFiltersBtn && filterPanel) {
+    // Configurar estado inicial del botón
+    const icon = toggleFiltersBtn.querySelector('i');
+    const textNode = Array.from(toggleFiltersBtn.childNodes).find(node => 
+      node.nodeType === Node.TEXT_NODE && node.textContent.trim()
+    );
     
-    if (filterPanel.classList.contains('collapsed')) {
-      icon.className = 'fi fi-rr-angle-down';
-      text.textContent = ' Mostrar';
-    } else {
-      icon.className = 'fi fi-rr-angle-up';
-      text.textContent = ' Ocultar';
-    }
-  });
+    if (icon) icon.className = 'fi fi-rr-angle-down';
+    if (textNode) textNode.textContent = ' Mostrar Filtros';
+    
+    toggleFiltersBtn.addEventListener('click', function() {
+      filterPanel.classList.toggle('collapsed');
+      const icon = this.querySelector('i');
+      const textNode = Array.from(this.childNodes).find(node => 
+        node.nodeType === Node.TEXT_NODE && node.textContent.trim()
+      );
+      
+      if (filterPanel.classList.contains('collapsed')) {
+        if (icon) icon.className = 'fi fi-rr-angle-down';
+        if (textNode) textNode.textContent = ' Mostrar Filtros';
+      } else {
+        if (icon) icon.className = 'fi fi-rr-angle-up';
+        if (textNode) textNode.textContent = ' Ocultar Filtros';
+      }
+    });
+  }
   
   // === FUNCIONALIDAD ORIGINAL DE GALERÍA ===
   
@@ -192,27 +223,27 @@ document.addEventListener('DOMContentLoaded', function() {
   images.forEach(img => {
     const card = img.closest('.card');
     
-    if (!img.complete) {
+    if (!img.complete && card) {
       card.classList.add('loading');
     }
     
     img.addEventListener('load', function() {
       this.classList.add('loaded');
       this.style.opacity = '1';
-      card.classList.remove('loading');
+      if (card) card.classList.remove('loading');
     });
     
     // Si la imagen ya está cargada (cache)
     if (img.complete && img.naturalHeight !== 0) {
       img.classList.add('loaded');
       img.style.opacity = '1';
-      card.classList.remove('loading');
+      if (card) card.classList.remove('loading');
     }
     
     img.addEventListener('error', function() {
       this.style.opacity = '0.5';
       this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzMzIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiPkltYWdlbiBubyBkaXNwb25pYmxlPC90ZXh0Pgo8L3N2Zz4=';
-      card.classList.remove('loading');
+      if (card) card.classList.remove('loading');
       console.warn('Error cargando imagen:', this.alt);
     });
   });
@@ -273,14 +304,14 @@ document.addEventListener('DOMContentLoaded', function() {
   // Atajos de teclado
   document.addEventListener('keydown', function(e) {
     // Ctrl/Cmd + K para enfocar la búsqueda
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k' && searchInput) {
       e.preventDefault();
       searchInput.focus();
     }
     
     // Escape para limpiar filtros
     if (e.key === 'Escape') {
-      if (document.activeElement === searchInput) {
+      if (searchInput && document.activeElement === searchInput) {
         searchInput.blur();
       } else {
         clearAllFilters();
@@ -303,17 +334,17 @@ document.addEventListener('DOMContentLoaded', function() {
   function loadFiltersFromURL() {
     const params = new URLSearchParams(window.location.search);
     
-    if (params.has('search')) {
+    if (params.has('search') && searchInput) {
       currentFilters.search = params.get('search');
       searchInput.value = currentFilters.search;
     }
     
-    if (params.has('tipo')) {
+    if (params.has('tipo') && tipoFilter) {
       currentFilters.tipo = params.get('tipo');
       tipoFilter.value = currentFilters.tipo;
     }
     
-    if (params.has('region')) {
+    if (params.has('region') && regionFilter) {
       currentFilters.region = params.get('region');
       regionFilter.value = currentFilters.region;
     }
@@ -330,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let delay = 0;
     
     cards.forEach((card, index) => {
-      const nombre = card.dataset.nombre || '';
+      const nombre = (card.dataset.nombre || '').toLowerCase();
       const tipo = card.dataset.tipo || '';
       const region = card.dataset.region || '';
       
@@ -354,27 +385,29 @@ document.addEventListener('DOMContentLoaded', function() {
     updateURL();
   }
   
-  // Reemplazar la función applyFilters original con la animada
-  applyFilters = applyFiltersWithAnimation;
-  
   // Inicializar filtros desde URL
   loadFiltersFromURL();
   
   // Añadir placeholder dinámico a la búsqueda
-  const placeholders = [
-    'Buscar por nombre...',
-    'Ej: Odín, Zeus, Ra...',
-    'Buscar deidades...'
-  ];
+  if (searchInput) {
+    const placeholders = [
+      'Buscar por nombre...',
+      'Ej: Odín, Zeus, Ra...',
+      'Buscar deidades...'
+    ];
+    
+    let placeholderIndex = 0;
+    setInterval(() => {
+      if (searchInput !== document.activeElement) {
+        searchInput.placeholder = placeholders[placeholderIndex];
+        placeholderIndex = (placeholderIndex + 1) % placeholders.length;
+      }
+    }, 3000);
+  }
   
-  let placeholderIndex = 0;
-  setInterval(() => {
-    if (searchInput !== document.activeElement) {
-      searchInput.placeholder = placeholders[placeholderIndex];
-      placeholderIndex = (placeholderIndex + 1) % placeholders.length;
-    }
-  }, 3000);
+  // Usar la versión con animación por defecto
+  applyFilters = applyFiltersWithAnimation;
   
-    console.log(`Galería inicializada con ${cards.length} cards y sistema de filtros activo`);
+  console.log(`Galería inicializada con ${cards.length} cards y sistema de filtros activo`);
   
-  }); // <-- Cierra el event listener de DOMContentLoaded
+});
