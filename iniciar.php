@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Usuarios - Producción</title>
     <style>
+        /* Estilos anteriores se mantienen igual */
         * {
             margin: 0;
             padding: 0;
@@ -184,59 +185,6 @@
             border: 1px solid #bee5eb;
         }
 
-        .user-info {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-
-        .user-info h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 20px;
-        }
-
-        .user-info p {
-            color: #666;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .user-info strong {
-            color: #333;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .password-strength {
-            margin-top: 5px;
-            font-size: 12px;
-        }
-
-        .strength-weak { color: #dc3545; }
-        .strength-medium { color: #ffc107; }
-        .strength-strong { color: #28a745; }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #ffffff;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
         .email-verification-notice {
             background: #fff3cd;
             color: #856404;
@@ -330,86 +278,12 @@
             </form>
             <a href="#" class="link-btn" onclick="showLogin()">Volver al login</a>
         </div>
-
-        <!-- Panel de Usuario -->
-        <div id="userPanel" class="form-container">
-            <h2>Mi Perfil</h2>
-            <div id="userAlert"></div>
-            <div id="emailVerificationNotice" class="email-verification-notice" style="display: none;">
-                <strong>⚠️ Email no verificado</strong><br>
-                Por favor verifica tu email para acceder a todas las funcionalidades.
-            </div>
-            <div id="userInfo" class="user-info">
-                <h3>Información Personal</h3>
-                <p><strong>Nombre:</strong> <span id="userName"></span></p>
-                <p><strong>Email:</strong> <span id="userEmail"></span></p>
-                <p><strong>Teléfono:</strong> <span id="userPhone">No proporcionado</span></p>
-                <p><strong>Fecha de registro:</strong> <span id="userDate"></span></p>
-                <p><strong>Estado:</strong> <span id="userStatus"></span></p>
-            </div>
-            <div class="form-actions">
-                <button class="btn-secondary" onclick="showEditProfile()">Editar Perfil</button>
-                <button class="btn-secondary" onclick="showChangePassword()">Cambiar Contraseña</button>
-                <button class="btn-secondary" onclick="logout()">Cerrar Sesión</button>
-            </div>
-        </div>
-
-        <!-- Formulario de Edición de Perfil -->
-        <div id="editProfileForm" class="form-container">
-            <h2>Editar Perfil</h2>
-            <div id="editAlert"></div>
-            <form id="editProfileFormElement">
-                <div class="form-group">
-                    <label for="editName">Nombre Completo *</label>
-                    <input type="text" id="editName" required>
-                </div>
-                <div class="form-group">
-                    <label for="editEmail">Correo Electrónico *</label>
-                    <input type="email" id="editEmail" required>
-                </div>
-                <div class="form-group">
-                    <label for="editPhone">Teléfono</label>
-                    <input type="tel" id="editPhone">
-                </div>
-                <button type="submit" class="btn" id="editBtn">
-                    <span class="btn-text">Guardar Cambios</span>
-                </button>
-            </form>
-            <div class="form-actions">
-                <button class="btn-secondary" onclick="showUserPanel()">Cancelar</button>
-            </div>
-        </div>
-
-        <!-- Formulario de Cambio de Contraseña -->
-        <div id="changePasswordForm" class="form-container">
-            <h2>Cambiar Contraseña</h2>
-            <div id="changePasswordAlert"></div>
-            <form id="changePasswordFormElement">
-                <div class="form-group">
-                    <label for="newPassword">Nueva Contraseña *</label>
-                    <input type="password" id="newPassword" required>
-                    <div id="newPasswordStrength" class="password-strength"></div>
-                </div>
-                <div class="form-group">
-                    <label for="confirmNewPassword">Confirmar Nueva Contraseña *</label>
-                    <input type="password" id="confirmNewPassword" required>
-                </div>
-                <button type="submit" class="btn" id="changePasswordBtn">
-                    <span class="btn-text">Cambiar Contraseña</span>
-                </button>
-            </form>
-            <div class="form-actions">
-                <button class="btn-secondary" onclick="showUserPanel()">Cancelar</button>
-            </div>
-        </div>
     </div>
 
     <script>
         // Configuración
         const API_BASE_URL = '/api/auth.php'; // Ajusta según tu estructura
-        let currentUser = null;
-        let sessionToken = localStorage.getItem('session_token');
-
+        
         // Funciones de navegación
         function showForm(formId) {
             document.querySelectorAll('.form-container').forEach(form => {
@@ -422,16 +296,10 @@
         function showRegister() { showForm('registerForm'); }
         function showLogin() { showForm('loginForm'); }
         function showForgotPassword() { showForm('forgotPasswordForm'); }
-        function showUserPanel() { showForm('userPanel'); }
-        function showEditProfile() { 
-            showForm('editProfileForm');
-            populateEditForm();
-        }
-        function showChangePassword() { showForm('changePasswordForm'); }
 
         // Limpiar alertas
         function clearAlerts() {
-            ['registerAlert', 'loginAlert', 'forgotAlert', 'userAlert', 'editAlert', 'changePasswordAlert'].forEach(id => {
+            ['registerAlert', 'loginAlert', 'forgotAlert'].forEach(id => {
                 document.getElementById(id).innerHTML = '';
             });
         }
@@ -457,9 +325,7 @@
                 const originalTexts = {
                     'registerBtn': 'Crear Cuenta',
                     'loginBtn': 'Iniciar Sesión',
-                    'forgotBtn': 'Enviar Instrucciones',
-                    'editBtn': 'Guardar Cambios',
-                    'changePasswordBtn': 'Cambiar Contraseña'
+                    'forgotBtn': 'Enviar Instrucciones'
                 };
                 textSpan.textContent = originalTexts[buttonId] || 'Procesar';
             }
@@ -510,16 +376,9 @@
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
-                    }
+                    },
+                    body: JSON.stringify(data)
                 };
-
-                if (sessionToken && method !== 'POST') {
-                    options.headers['Authorization'] = `Bearer ${sessionToken}`;
-                }
-
-                if (method === 'POST' || method === 'PUT') {
-                    options.body = JSON.stringify(data);
-                }
 
                 const url = `${API_BASE_URL}?action=${action}`;
                 const response = await fetch(url, options);
@@ -590,4 +449,79 @@
                 return false;
             }
 
-            setButtonLoading('loginBtn',
+            setButtonLoading('loginBtn', true);
+
+            try {
+                const result = await apiRequest('login', {
+                    email: email.toLowerCase().trim(),
+                    password: password
+                });
+
+                showAlert('loginAlert', '¡Inicio de sesión exitoso!', 'success');
+                return true;
+            } catch (error) {
+                showAlert('loginAlert', error.message);
+                return false;
+            } finally {
+                setButtonLoading('loginBtn', false);
+            }
+        }
+
+        // Recuperar contraseña
+        async function forgotPassword(email) {
+            if (!email) {
+                showAlert('forgotAlert', 'Por favor ingresa tu email.');
+                return false;
+            }
+
+            setButtonLoading('forgotBtn', true);
+
+            try {
+                const result = await apiRequest('forgot-password', {
+                    email: email.toLowerCase().trim()
+                });
+
+                showAlert('forgotAlert', result.message, 'success');
+                return true;
+            } catch (error) {
+                showAlert('forgotAlert', error.message);
+                return false;
+            } finally {
+                setButtonLoading('forgotBtn', false);
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('registerFormElement').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+            const phone = document.getElementById('registerPhone').value;
+            
+            await register(name, email, password, confirmPassword, phone);
+        });
+
+        document.getElementById('loginFormElement').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            await login(email, password);
+        });
+
+        document.getElementById('forgotPasswordFormElement').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('forgotEmail').value;
+            
+            await forgotPassword(email);
+        });
+
+        // Verificación de fortaleza de contraseña en tiempo real
+        document.getElementById('registerPassword').addEventListener('input', function() {
+            checkPasswordStrength(this.value, 'passwordStrength');
+        });
+    </script>
+</body>
+</html>

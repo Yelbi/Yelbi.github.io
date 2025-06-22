@@ -34,7 +34,7 @@
                 <p style="margin: 0;">Bienvenido a</p>
                 <h1>Seres</h1>
                 <p>Descubre un mundo lleno de deidades y seres mitológicos.</p>
-                <a href="#" class="btn">Explorar</a>
+                <a href="/galeria.php" class="btn">Explorar</a>
             </div>
         </section>
         <!-- Sección 2 -->

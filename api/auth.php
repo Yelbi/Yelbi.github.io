@@ -3,7 +3,6 @@
 require_once '../config/database.php';
 require_once '../classes/User.php';
 require_once '../classes/Security.php';
-require_once '../classes/Session.php';
 require_once '../utils/helpers.php';
 
 // Configuración CORS
@@ -24,7 +23,6 @@ $db = $database->getConnection();
 
 $user = new User($db);
 $security = new Security($db);
-$session = new Session($db);
 
 $method = $_SERVER['REQUEST_METHOD'];
 $input = json_decode(file_get_contents('php://input'), true);
@@ -37,7 +35,7 @@ switch ($method) {
                 register($user, $security, $input);
                 break;
             case 'login':
-                login($user, $security, $session, $input);
+                login($user, $security, $input);
                 break;
             case 'verify-email':
                 verifyEmail($user, $input);
@@ -48,9 +46,6 @@ switch ($method) {
             case 'reset-password':
                 resetPassword($user, $input);
                 break;
-            case 'logout':
-                logout($session, $input);
-                break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
         }
@@ -58,12 +53,6 @@ switch ($method) {
         
     case 'GET':
         switch ($action) {
-            case 'profile':
-                getProfile($user, $session);
-                break;
-            case 'verify-session':
-                verifySession($session);
-                break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
         }
@@ -71,12 +60,6 @@ switch ($method) {
         
     case 'PUT':
         switch ($action) {
-            case 'profile':
-                updateProfile($user, $session, $input);
-                break;
-            case 'change-password':
-                changePassword($user, $session, $input);
-                break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
         }
@@ -154,7 +137,7 @@ function register($user, $security, $input) {
 }
 
 // Función de login
-function login($user, $security, $session, $input) {
+function login($user, $security, $input) {
     try {
         if (!isset($input['email'], $input['password'])) {
             jsonResponse(['error' => 'Email y contraseña requeridos'], 400);
@@ -179,25 +162,13 @@ function login($user, $security, $session, $input) {
                 jsonResponse(['error' => 'Debes verificar tu email antes de iniciar sesión'], 403);
             }
 
-            // Crear sesión
-            $sessionToken = $session->create(
-                $userData['id'], 
-                $ip, 
-                $_SERVER['HTTP_USER_AGENT'] ?? ''
-            );
-
-            if ($sessionToken) {
-                $security->logLoginAttempt($email, $ip, true);
-                
-                jsonResponse([
-                    'success' => true,
-                    'message' => 'Login exitoso',
-                    'user' => $userData,
-                    'session_token' => $sessionToken
-                ]);
-            } else {
-                jsonResponse(['error' => 'Error al crear sesión'], 500);
-            }
+            $security->logLoginAttempt($email, $ip, true);
+            
+            jsonResponse([
+                'success' => true,
+                'message' => 'Login exitoso',
+                'user' => $userData
+            ]);
         } else {
             $security->logLoginAttempt($email, $ip, false);
             jsonResponse(['error' => 'Credenciales incorrectas'], 401);
@@ -229,153 +200,6 @@ function verifyEmail($user, $input) {
 
     } catch (Exception $e) {
         logError('Error en verificación de email: ' . $e->getMessage());
-        jsonResponse(['error' => 'Error interno del servidor'], 500);
-    }
-}
-
-// Obtener perfil
-function getProfile($user, $session) {
-    try {
-        $token = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        $token = str_replace('Bearer ', '', $token);
-
-        if (!$token) {
-            jsonResponse(['error' => 'Token de autorización requerido'], 401);
-        }
-
-        $sessionData = $session->validate($token);
-        if (!$sessionData) {
-            jsonResponse(['error' => 'Sesión inválida o expirada'], 401);
-        }
-
-        $userData = $user->getById($sessionData['user_id']);
-        if ($userData) {
-            jsonResponse([
-                'success' => true,
-                'user' => $userData
-            ]);
-        } else {
-            jsonResponse(['error' => 'Usuario no encontrado'], 404);
-        }
-
-    } catch (Exception $e) {
-        logError('Error al obtener perfil: ' . $e->getMessage());
-        jsonResponse(['error' => 'Error interno del servidor'], 500);
-    }
-}
-
-// Verificar sesión
-function verifySession($session) {
-    try {
-        $token = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        $token = str_replace('Bearer ', '', $token);
-
-        if (!$token) {
-            jsonResponse(['valid' => false, 'error' => 'Token requerido'], 401);
-        }
-
-        $sessionData = $session->validate($token);
-        if ($sessionData) {
-            jsonResponse(['valid' => true, 'user' => $sessionData]);
-        } else {
-            jsonResponse(['valid' => false, 'error' => 'Sesión inválida'], 401);
-        }
-
-    } catch (Exception $e) {
-        logError('Error al verificar sesión: ' . $e->getMessage());
-        jsonResponse(['valid' => false, 'error' => 'Error interno del servidor'], 500);
-    }
-}
-
-// Actualizar perfil
-function updateProfile($user, $session, $input) {
-    try {
-        $token = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        $token = str_replace('Bearer ', '', $token);
-
-        if (!$token) {
-            jsonResponse(['error' => 'Token de autorización requerido'], 401);
-        }
-
-        $sessionData = $session->validate($token);
-        if (!$sessionData) {
-            jsonResponse(['error' => 'Sesión inválida o expirada'], 401);
-        }
-
-        if (!isset($input['name'], $input['email'])) {
-            jsonResponse(['error' => 'Nombre y email requeridos'], 400);
-        }
-
-        $name = Security::sanitizeInput($input['name']);
-        $email = Security::sanitizeInput($input['email']);
-        $phone = Security::sanitizeInput($input['phone'] ?? '');
-
-        // Validaciones
-        if (strlen($name) < 2) {
-            jsonResponse(['error' => 'El nombre debe tener al menos 2 caracteres'], 400);
-        }
-
-        if (!Security::validateEmail($email)) {
-            jsonResponse(['error' => 'Email no válido'], 400);
-        }
-
-        // Verificar si el email ya existe (excluyendo el usuario actual)
-        if ($user->emailExists($email, $sessionData['user_id'])) {
-            jsonResponse(['error' => 'Ya existe una cuenta con este email'], 400);
-        }
-
-        // Actualizar perfil
-        if ($user->updateProfile($sessionData['user_id'], $name, $email, $phone)) {
-            jsonResponse([
-                'success' => true,
-                'message' => 'Perfil actualizado exitosamente'
-            ]);
-        } else {
-            jsonResponse(['error' => 'Error al actualizar perfil'], 500);
-        }
-
-    } catch (Exception $e) {
-        logError('Error al actualizar perfil: ' . $e->getMessage());
-        jsonResponse(['error' => 'Error interno del servidor'], 500);
-    }
-}
-
-// Cambiar contraseña
-function changePassword($user, $session, $input) {
-    try {
-        $token = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        $token = str_replace('Bearer ', '', $token);
-
-        if (!$token) {
-            jsonResponse(['error' => 'Token de autorización requerido'], 401);
-        }
-
-        $sessionData = $session->validate($token);
-        if (!$sessionData) {
-            jsonResponse(['error' => 'Sesión inválida o expirada'], 401);
-        }
-
-        if (!isset($input['new_password'])) {
-            jsonResponse(['error' => 'Nueva contraseña requerida'], 400);
-        }
-
-        $newPassword = $input['new_password'];
-
-        if (!Security::validatePassword($newPassword)) {
-            jsonResponse(['error' => 'La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas y números'], 400);
-        }
-
-        if ($user->changePassword($sessionData['user_id'], $newPassword)) {
-            jsonResponse([
-                'success' => true,
-                'message' => 'Contraseña cambiada exitosamente'
-            ]);
-        } else {
-            jsonResponse(['error' => 'Error al cambiar contraseña'], 500);
-        }
-
-    } catch (Exception $e) {
-        logError('Error al cambiar contraseña: ' . $e->getMessage());
         jsonResponse(['error' => 'Error interno del servidor'], 500);
     }
 }
@@ -450,40 +274,13 @@ function resetPassword($user, $input) {
     }
 }
 
-// Cerrar sesión
-function logout($session, $input) {
-    try {
-        $token = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        $token = str_replace('Bearer ', '', $token);
-
-        if (!$token) {
-            jsonResponse(['error' => 'Token de autorización requerido'], 401);
-        }
-
-        if ($session->destroy($token)) {
-            jsonResponse([
-                'success' => true,
-                'message' => 'Sesión cerrada exitosamente'
-            ]);
-        } else {
-            jsonResponse(['error' => 'Error al cerrar sesión'], 500);
-        }
-
-    } catch (Exception $e) {
-        logError('Error al cerrar sesión: ' . $e->getMessage());
-        jsonResponse(['error' => 'Error interno del servidor'], 500);
-    }
-}
-
-// Limpiar logs y sesiones antiguas (ejecutar en cron job)
+// Limpiar logs antiguos (ejecutar en cron job)
 if (isset($_GET['cleanup']) && $_GET['cleanup'] === 'true') {
     try {
         $security->cleanOldAttempts();
-        $session->cleanup();
         jsonResponse(['success' => true, 'message' => 'Limpieza completada']);
     } catch (Exception $e) {
         logError('Error en limpieza: ' . $e->getMessage());
         jsonResponse(['error' => 'Error en limpieza'], 500);
     }
 }
-?>
