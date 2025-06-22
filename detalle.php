@@ -183,6 +183,7 @@ try {
     </div>
 
     <script src="/JS/detalle.js"></script>
+    <script src="/JS/header.js"></script>
 
 </body>
 </html>

@@ -30,18 +30,21 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
 </head>
 <body>
 
-  <!-- Header -->
-  <header class="header">
-    <a href="/index.php" class="logo">
-      <img src="/Img/logo.png" alt="">
-    </a>
-    <nav class="nav-menu">
-      <a href="/index.php" class="nav-link">Inicio</a>
-      <a href="/galeria.php" class="nav-link">Galeria</a>
-      <a href="#" class="nav-link">Contacto</a>
-    </nav>
-    <a href="#" class="user-btn"><i class="fi fi-rr-user"></i></a>
-  </header>
+<!-- Header -->
+    <header class="header">
+        <a href="/index.php" class="logo">
+            <img src="/Img/logo.png" alt="Logo de Seres">
+        </a>
+        <nav class="nav-menu" id="navMenu">
+            <a href="/index.php" class="nav-link">Inicio</a>
+            <a href="/galeria.php" class="nav-link">Galería</a>
+            <a href="#" class="nav-link">Contacto</a>
+        </nav>
+        <div class="menu-toggle" id="menuToggle">
+            <i class="fi fi-rr-menu-burger"></i>
+        </div>
+        <a href="#" class="user-btn"><i class="fi fi-rr-user"></i></a>
+    </header>
 
   <!-- Panel de Filtros -->
   <section class="filter-panel collapsed">
@@ -142,6 +145,7 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
   </div>
 
   <script src="/JS/galeria.js"></script>
+  <script src="/JS/header.js"></script>
 
 </body>
 </html>
