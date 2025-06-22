@@ -486,4 +486,4 @@ if (isset($_GET['cleanup']) && $_GET['cleanup'] === 'true') {
         jsonResponse(['error' => 'Error en limpieza'], 500);
     }
 }
-?><?php
+?>
