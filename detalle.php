@@ -119,6 +119,12 @@ try {
             </div>
             <?php endif; ?>
 
+            <?php if (!empty($detalle['caracteristicas'])): ?>
+            <div class="content-card characteristics-card">
+                <h2 class="section-title">Características</h2>
+                <div class="content-text"><?= nl2br(htmlspecialchars($detalle['caracteristicas'])) ?></div>
+            </div>
+
             <?php if (!empty($detalle['historia'])): ?>
             <div class="content-card history-card">
                 <h2 class="section-title">Historia</h2>
@@ -126,11 +132,6 @@ try {
             </div>
             <?php endif; ?>
 
-            <?php if (!empty($detalle['caracteristicas'])): ?>
-            <div class="content-card characteristics-card">
-                <h2 class="section-title">Características</h2>
-                <div class="content-text"><?= nl2br(htmlspecialchars($detalle['caracteristicas'])) ?></div>
-            </div>
             <?php endif; ?>
         </div>
     </section>
