@@ -70,6 +70,7 @@
     </div>
 
     <script src="/JS/index.js"></script>
+    <script src="/JS/header.js"></script>
     <script src="/JS/backspace.js"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 /* Header */
-.header {
+        .header {
             position: fixed;
             top: 0;
             left: 0;
@@ -19,12 +19,12 @@
         .logo img {
             width: 50px;
             height: 50px;
-            border-radius: 50%;
         }
 
         .nav-menu {
             display: flex;
             gap: 30px;
+            list-style: none;
         }
 
         .nav-link {
@@ -81,9 +81,12 @@
             font-size: 1.5rem;
             cursor: pointer;
             padding: 10px;
+            background: none;
+            border: none;
+            outline: none;
         }
 
-                /* Tablets */
+        /* Tablets */
         @media (max-width: 1024px) {
             .header {
                 padding: 0 30px;
@@ -100,6 +103,7 @@
 
         /* Móviles grandes */
         @media (max-width: 768px) {
+
             .header {
                 padding: 0 20px;
                 height: 60px;
@@ -123,6 +127,8 @@
                 padding-top: 50px;
                 gap: 30px;
                 transition: left 0.3s ease;
+                margin: 0;
+                list-style: none;
             }
 
             .nav-menu.active {
@@ -136,6 +142,7 @@
                 text-align: center;
                 border: 1px solid rgba(255, 255, 255, 0.2);
                 border-radius: 30px;
+                display: block;
             }
 
             .user-btn {
@@ -146,6 +153,7 @@
 
         /* Móviles pequeños */
         @media (max-width: 480px) {
+
             .header {
                 padding: 0 15px;
                 height: 55px;
@@ -159,5 +167,10 @@
             .user-btn {
                 padding: 6px 12px;
                 font-size: 0.8rem;
+            }
+
+            .nav-menu {
+                top: 55px;
+                height: calc(100vh - 55px);
             }
         }
