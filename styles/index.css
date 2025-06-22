@@ -10,91 +10,6 @@
             scroll-behavior: smooth;
         }
 
-        /* Header mejorado */
-        .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 70px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 40px;
-            z-index: 1000;
-            transition: all 0.3s ease;
-        }
-
-        .logo img {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 30px;
-        }
-
-        .nav-link {
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            padding: 10px 20px;
-            border-radius: 25px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .nav-link::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.2);
-            transition: left 0.3s ease;
-            z-index: -1;
-        }
-
-        .nav-link:hover::before {
-            left: 0;
-        }
-
-        .nav-link:hover {
-            transform: translateY(-2px);
-        }
-
-        .user-btn {
-            color: white;
-            text-decoration: none;
-            padding: 10px 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 25px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .user-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.6);
-            transform: translateY(-2px);
-        }
-
-        /* Menu hamburguesa */
-        .menu-toggle {
-            display: none;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 10px;
-        }
-
         /* Contenedor principal */
         .container {
             height: 100vh;
@@ -298,65 +213,8 @@
             animation: fadeInUp 0.8s ease 0.6s both;
         }
 
-        /* Tablets */
-        @media (max-width: 1024px) {
-            .header {
-                padding: 0 30px;
-            }
-            
-            .nav-menu {
-                gap: 20px;
-            }
-            
-            .nav-link {
-                padding: 8px 16px;
-            }
-        }
-
         /* Móviles grandes */
         @media (max-width: 768px) {
-            .header {
-                padding: 0 20px;
-                height: 60px;
-            }
-
-            .menu-toggle {
-                display: block;
-            }
-
-            .nav-menu {
-                position: fixed;
-                top: 60px;
-                left: -100%;
-                width: 100%;
-                height: calc(100vh - 60px);
-                background: rgba(0, 0, 0, 0.95);
-                backdrop-filter: blur(20px);
-                flex-direction: column;
-                justify-content: flex-start;
-                align-items: center;
-                padding-top: 50px;
-                gap: 30px;
-                transition: left 0.3s ease;
-            }
-
-            .nav-menu.active {
-                left: 0;
-            }
-
-            .nav-link {
-                padding: 15px 30px;
-                font-size: 1.2rem;
-                width: 80%;
-                text-align: center;
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                border-radius: 30px;
-            }
-
-            .user-btn {
-                padding: 8px 15px;
-                font-size: 0.9rem;
-            }
 
             .section-content {
                 margin-top: 60px;
@@ -385,15 +243,6 @@
 
         /* Móviles pequeños */
         @media (max-width: 480px) {
-            .header {
-                padding: 0 15px;
-                height: 55px;
-            }
-
-            .logo img {
-                width: 40px;
-                height: 40px;
-            }
 
             .section-content {
                 margin-top: 55px;
@@ -412,11 +261,6 @@
 
             .btn {
                 padding: 10px 25px;
-            }
-
-            .user-btn {
-                padding: 6px 12px;
-                font-size: 0.8rem;
             }
         }
 
