@@ -1,6 +1,6 @@
 <?php
 // galeria.php - Con sistema de filtros
-require 'config/database.php';
+require 'config/connection.php';
 
 // Obtener todos los seres
 $stmt = $pdo->query("SELECT * FROM seres ORDER BY nombre ASC");
