@@ -2,9 +2,9 @@
 // config/database.php
 class Database {
     private $host = 'localhost';
-    private $db_name = 'tu_base_de_datos';
-    private $username = 'tu_usuario';
-    private $password = 'tu_contraseña';
+    private $db_name = 'seres_db';
+    private $username = 'root';
+    private $password = '';
     private $conn;
 
     public function getConnection() {
