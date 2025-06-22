@@ -13,13 +13,16 @@
     <!-- Header -->
     <header class="header">
         <a href="/index.php" class="logo">
-            <img src="/Img/logo.png" alt="">
+            <img src="/Img/logo.png" alt="Logo de Seres">
         </a>
-        <nav class="nav-menu">
+        <nav class="nav-menu" id="navMenu">
             <a href="/index.php" class="nav-link">Inicio</a>
-            <a href="/galeria.php" class="nav-link">Galeria</a>
+            <a href="/galeria.php" class="nav-link">Galería</a>
             <a href="#" class="nav-link">Contacto</a>
         </nav>
+        <div class="menu-toggle" id="menuToggle">
+            <i class="fi fi-rr-menu-burger"></i>
+        </div>
         <a href="#" class="user-btn"><i class="fi fi-rr-user"></i></a>
     </header>
 
@@ -30,7 +33,7 @@
             <div class="section-content">
                 <p style="margin: 0;">Bienvenido a</p>
                 <h1>Seres</h1>
-                <p>Descubre un mundo lleno de deidades y seres mitologicos.</p>
+                <p>Descubre un mundo lleno de deidades y seres mitológicos.</p>
                 <a href="#" class="btn">Explorar</a>
             </div>
         </section>

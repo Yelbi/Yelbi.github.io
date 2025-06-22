@@ -3,7 +3,21 @@ let currentSection = 0;
         const navDots = document.querySelectorAll('.nav-dot');
         const container = document.getElementById('container');
         const scrollIndicator = document.getElementById('scrollIndicator');
+        const menuToggle = document.getElementById('menuToggle');
+        const navMenu = document.getElementById('navMenu');
         let isScrolling = false;
+
+        // Menu hamburguesa
+        menuToggle.addEventListener('click', () => {
+            navMenu.classList.toggle('active');
+        });
+
+        // Cerrar menú al hacer clic en un enlace
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                navMenu.classList.remove('active');
+            });
+        });
 
         function goToSection(index) {
             if (index < 0 || index >= sections.length || isScrolling) return;
@@ -102,13 +116,15 @@ let currentSection = 0;
             }
         }, 5000);
 
-        // Código de la animación de estrellas
+        // Animación de estrellas optimizada para móviles
         const canvas = document.getElementById('starfield');
         const ctx = canvas.getContext('2d');
         let stars = [];
         
+        // Ajustar parámetros según el dispositivo
+        const isMobile = window.innerWidth <= 768;
         const params = {
-            starCount: 1000,
+            starCount: isMobile ? 500 : 1000,
             speed: 2.0,
             twinkle: 0.2,
             size: 1.0
@@ -117,7 +133,9 @@ let currentSection = 0;
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            createStars(params.starCount);
         }
+        
         window.addEventListener('resize', resize);
         resize();
         
@@ -164,8 +182,6 @@ let currentSection = 0;
                 });
             }
         }
-        
-        createStars(params.starCount);
         
         function animate() {
             ctx.fillStyle = '#000';
