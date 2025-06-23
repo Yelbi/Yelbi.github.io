@@ -25,12 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit();
 }
 
-// Clave secreta para JWT - ¡CAMBIA ESTO POR UNA CLAVE SEGURA EN PRODUCCIÓN!
+// Clave secreta para JWT
 define('JWT_SECRET', '123456789Grandiel$');
 define('JWT_ALGORITHM', 'HS256');
 
 $database = new Database();
 $db = $database->getConnection();
+$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 $user = new User($db);
 $security = new Security($db);
@@ -60,6 +61,9 @@ switch ($method) {
             case 'logout':
                 logout();
                 break;
+            case 'submit-complaint': // MOVIDO ANTES DE DEFAULT
+                submitComplaint($input);
+                break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
         }
@@ -72,6 +76,9 @@ switch ($method) {
                 break;
             case 'verify-session':
                 verifySession();
+                break;
+            case 'get-complaints': // MOVIDO ANTES DE DEFAULT
+                getComplaints();
                 break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
@@ -106,7 +113,6 @@ function register($user, $security, $input) {
         $name = Security::sanitizeInput($input['name']);
         $email = Security::sanitizeInput($input['email']);
         $password = $input['password'];
-        $phone = Security::sanitizeInput($input['phone'] ?? '');
 
         // Validaciones
         if (strlen($name) < 2) {
@@ -130,7 +136,6 @@ function register($user, $security, $input) {
         $user->name = $name;
         $user->email = $email;
         $user->password = $password;
-        $user->phone = $phone;
 
         $verification_token = $user->create();
 
@@ -187,7 +192,7 @@ function login($user, $security, $input) {
                 jsonResponse(['error' => 'Debes verificar tu email antes de iniciar sesión'], 403);
             }
 
-            // Generar token JWT - VERSIÓN CORREGIDA
+            // Generar token JWT
             $issuedAt = time();
             $expirationTime = $issuedAt + 3600;
             
@@ -195,7 +200,8 @@ function login($user, $security, $input) {
                 'iat' => $issuedAt,
                 'exp' => $expirationTime,
                 'sub' => $userData['id'],
-                'email' => $userData['email']
+                'email' => $userData['email'],
+                'is_admin' => ($userData['role'] === 'admin')
             ];
 
             // Generar token
@@ -210,13 +216,13 @@ function login($user, $security, $input) {
                 'token' => $jwt
             ]);
         } else {
-            // ... código existente ...
+            $security->logLoginAttempt($email, $ip, false);
+            jsonResponse(['error' => 'Email o contraseña incorrectos'], 401);
         }
 
     } catch (Exception $e) {
-        // Registrar el error real
         error_log('Error en login: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-        jsonResponse(['error' => 'Error interno del servidor: ' . $e->getMessage()], 500);
+        jsonResponse(['error' => 'Error interno del servidor'], 500);
     }
 }
 
@@ -259,7 +265,6 @@ function forgotPassword($user, $input) {
 
         $userData = $user->getByEmail($email);
         if (!$userData) {
-            // Por seguridad, no revelamos si el email existe o no
             jsonResponse([
                 'success' => true,
                 'message' => 'Si el email existe, recibirás instrucciones para restablecer tu contraseña'
@@ -322,6 +327,9 @@ function getProfile($user) {
         
         $userData = $user->getById($userId);
         if ($userData) {
+            // Convertir role a is_admin para compatibilidad
+            $userData['is_admin'] = ($userData['role'] === 'admin');
+            
             jsonResponse([
                 'success' => true,
                 'user' => $userData
@@ -357,7 +365,6 @@ function updateProfile($user, $input) {
 
         $name = Security::sanitizeInput($input['name']);
         $email = Security::sanitizeInput($input['email']);
-        $phone = Security::sanitizeInput($input['phone'] ?? '');
 
         // Validaciones
         if (strlen($name) < 2) {
@@ -374,7 +381,7 @@ function updateProfile($user, $input) {
         }
 
         // Actualizar perfil
-        if ($user->updateProfile($userId, $name, $email, $phone)) {
+        if ($user->updateProfile($userId, $name, $email)) {
             jsonResponse([
                 'success' => true,
                 'message' => 'Perfil actualizado exitosamente'
@@ -455,5 +462,60 @@ if (isset($_GET['cleanup']) && $_GET['cleanup'] === 'true') {
     } catch (Exception $e) {
         logError('Error en limpieza: ' . $e->getMessage());
         jsonResponse(['error' => 'Error en limpieza'], 500);
+    }
+}
+
+// Enviar queja/sugerencia
+function submitComplaint($input) {
+    global $db; // AÑADIDO: Acceso a la conexión de base de datos
+    
+    try {
+        $authData = authenticateJWT();
+        $userId = $authData['sub'];
+        
+        if (!isset($input['subject'], $input['description'])) {
+            jsonResponse(['error' => 'Asunto y descripción requeridos'], 400);
+        }
+        
+        $subject = Security::sanitizeInput($input['subject']);
+        $description = Security::sanitizeInput($input['description']);
+        
+        // Guardar en base de datos
+        $stmt = $db->prepare("INSERT INTO complaints (user_id, subject, description) VALUES (?, ?, ?)");
+        $stmt->execute([$userId, $subject, $description]);
+        
+        jsonResponse(['success' => true, 'message' => 'Mensaje enviado']);
+        
+    } catch (Exception $e) {
+        jsonResponse(['error' => $e->getMessage()], 500);
+    }
+}
+
+// Obtener quejas para administrador
+function getComplaints() {
+    global $db, $user;
+    
+    try {
+        $authData = authenticateJWT();
+        
+        // Verificar si es administrador usando role
+        $userData = $user->getById($authData['sub']);
+        if (!$userData || $userData['role'] !== 'admin') {
+            jsonResponse(['error' => 'No autorizado'], 403);
+        }
+        
+        // Obtener quejas
+        $stmt = $db->query("
+            SELECT c.*, u.email AS user_email 
+            FROM complaints c
+            JOIN users u ON c.user_id = u.id
+            ORDER BY c.created_at DESC
+        ");
+        $complaints = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        jsonResponse(['success' => true, 'complaints' => $complaints]);
+        
+    } catch (Exception $e) {
+        jsonResponse(['error' => $e->getMessage()], 500);
     }
 }

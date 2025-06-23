@@ -232,3 +232,33 @@
             border-radius: 8px;
             font-size: 13px;
         }
+
+        .password-container {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #667eea;
+}
+
+.message-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border-left: 4px solid #667eea;
+}
+
+.message-item h4 {
+    margin-top: 0;
+    color: #333;
+}
+
+.message-item p {
+    margin: 10px 0;
+}
