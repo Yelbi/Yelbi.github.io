@@ -67,7 +67,7 @@ try {
             <a href="/galeria.php" class="nav-link">Galería</a>
             <a href="#" class="nav-link">Contacto</a>
         </nav>
-        <a href="#" class="user-btn"><i class="fi fi-rr-user"></i></a>
+        <a href="/iniciar.php" class="user-btn"><i class="fi fi-rr-user"></i></a>
     </header>
 
     <!-- Breadcrumb -->

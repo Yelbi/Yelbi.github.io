@@ -1,0 +1,147 @@
+/* styles/admin.css */
+.admin-container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+}
+
+.feedback-list {
+    margin-top: 30px;
+}
+
+.feedback-item {
+    border: 1px solid #e1e5e9;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: #f8f9fa;
+}
+
+.feedback-header {
+    border-bottom: 1px solid #e1e5e9;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.feedback-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #666;
+}
+
+.feedback-type, .feedback-status {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.feedback-type.suggestion {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.feedback-type.complaint {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.feedback-status.new {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.feedback-status.in_progress {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.feedback-status.resolved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.feedback-subject {
+    font-size: 20px;
+    margin: 10px 0;
+    color: #333;
+}
+
+.feedback-user {
+    font-weight: 500;
+    margin: 5px 0;
+    color: #555;
+}
+
+.feedback-email {
+    color: #667eea;
+    margin: 5px 0;
+}
+
+.feedback-body {
+    margin: 20px 0;
+    line-height: 1.6;
+    color: #444;
+}
+
+.feedback-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.status-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.status-form select {
+    padding: 8px 15px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    background: white;
+    font-size: 14px;
+}
+
+.btn-small {
+    padding: 8px 16px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s;
+}
+
+.btn-small:hover {
+    background: #5667d5;
+}
+
+.reply-btn {
+    background: #28a745;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.reply-btn:hover {
+    background: #218838;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-size: 18px;
+    border: 2px dashed #e1e5e9;
+    border-radius: 15px;
+    margin-top: 20px;
+}

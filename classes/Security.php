@@ -61,6 +61,27 @@ class Security {
                preg_match('/[0-9]/', $password);
     }
 
+    // Verificar si el usuario actual es administrador
+    public function isAdmin() {
+        session_start();
+        if (!isset($_SESSION['user_id'])) {
+            return false;
+        }
+        
+        $userId = $_SESSION['user_id'];
+        $query = "SELECT role FROM users WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":id", $userId);
+        $stmt->execute();
+        
+        if ($stmt->rowCount() > 0) {
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row['role'] === 'admin';
+        }
+        
+        return false;
+    }
+
     // Sanitizar entrada
     public static function sanitizeInput($input) {
         return htmlspecialchars(strip_tags(trim($input)));

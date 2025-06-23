@@ -2,7 +2,7 @@
 // config/connection.php - Solo para la conexión PDO
 try {
     $pdo = new PDO(
-        "mysql:host=localhost;dbname=seres_db;charset=utf8",
+        "mysql:host=localhost;dbname=u186781529_seres_db;charset=utf8", // ← CORREGIDO: nombre completo de la DB
         "u186781529_Yelbi",
         "123456789Grandiel$",
         [

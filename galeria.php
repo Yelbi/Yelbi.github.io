@@ -43,7 +43,7 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
         <div class="menu-toggle" id="menuToggle">
             <i class="fi fi-rr-menu-burger"></i>
         </div>
-        <a href="#" class="user-btn"><i class="fi fi-rr-user"></i></a>
+        <a href="/iniciar.php" class="user-btn"><i class="fi fi-rr-user"></i></a>
     </header>
 
   <!-- Panel de Filtros -->

@@ -23,7 +23,7 @@ class User {
 
     // Crear usuario
     public function create() {
-        $query = "INSERT INTO " . $this->table_name . " 
+        $query = "INSERT INTO users 
                  SET name=:name, email=:email, password=:password, 
                      email_verification_token=:token, phone=:phone";
 
@@ -41,7 +41,7 @@ class User {
         // Bind valores
         $stmt->bindParam(":name", $this->name);
         $stmt->bindParam(":email", $this->email);
-        $stmt->bindParam(":password", $password_hash);
+        $stmt->bindParam(":id", $password_hash); 
         $stmt->bindParam(":token", $verification_token);
         $stmt->bindParam(":phone", $this->phone);
 
@@ -54,9 +54,9 @@ class User {
 
     // Verificar email
     public function verifyEmail($token) {
-        $query = "UPDATE " . $this->table_name . " 
-                 SET email_verified=1, email_verification_token=NULL 
-                 WHERE email_verification_token=:token";
+        $query = "INSERT INTO " . $this->table_name . " 
+            SET name=:name, email=:email, password=:password, 
+            email_verification_token=:token, phone=:phone";
 
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":token", $token);
@@ -66,9 +66,10 @@ class User {
 
     // Login
     public function login($email, $password) {
-        $query = "SELECT id, name, email, password, email_verified, status, role, avatar, phone 
-                 FROM " . $this->table_name . " 
-                 WHERE email = :email AND status = 'active'";
+        // Consulta simplificada - solo campos esenciales
+        $query = "SELECT id, name, email, password, email_verified 
+                FROM users 
+                WHERE email = :email";
 
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":email", $email);
@@ -78,10 +79,10 @@ class User {
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if(password_verify($password, $row['password'])) {
-                // Actualizar último login
+                // Guardar ID de usuario en sesión
+                $_SESSION['user_id'] = $row['id'];
+        
                 $this->updateLastLogin($row['id']);
-                
-                // Devolver datos del usuario (sin password)
                 unset($row['password']);
                 return $row;
             }
@@ -156,7 +157,8 @@ class User {
         $stmt = $this->conn->prepare($query);
         $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
 
-        $stmt->bindParam(":id", $password_hash);
+        // CORRECCIÓN: Vincular el ID correctamente
+        $stmt->bindParam(":id", $id);
         $stmt->bindParam(":password", $password_hash);
 
         return $stmt->execute();

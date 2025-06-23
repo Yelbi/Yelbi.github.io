@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 // api/auth.php
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../config/database.php';
@@ -172,24 +175,21 @@ function login($user, $security, $input) {
         $password = $input['password'];
         $ip = getClientIP();
 
-        // Verificar si está bloqueado
         if ($security->isBlocked($email, $ip)) {
             jsonResponse(['error' => 'Demasiados intentos fallidos. Intenta en 15 minutos.'], 429);
         }
 
-        // Intentar login
         $userData = $user->login($email, $password);
 
         if ($userData) {
-            // Verificar si el email está verificado
             if (!$userData['email_verified']) {
                 $security->logLoginAttempt($email, $ip, false);
                 jsonResponse(['error' => 'Debes verificar tu email antes de iniciar sesión'], 403);
             }
 
-            // Generar token JWT
+            // Generar token JWT - VERSIÓN CORREGIDA
             $issuedAt = time();
-            $expirationTime = $issuedAt + 3600; // 1 hora de validez
+            $expirationTime = $issuedAt + 3600;
             
             $payload = [
                 'iat' => $issuedAt,
@@ -198,6 +198,7 @@ function login($user, $security, $input) {
                 'email' => $userData['email']
             ];
 
+            // Generar token
             $jwt = JWT::encode($payload, JWT_SECRET, JWT_ALGORITHM);
             
             $security->logLoginAttempt($email, $ip, true);
@@ -209,13 +210,13 @@ function login($user, $security, $input) {
                 'token' => $jwt
             ]);
         } else {
-            $security->logLoginAttempt($email, $ip, false);
-            jsonResponse(['error' => 'Credenciales incorrectas'], 401);
+            // ... código existente ...
         }
 
     } catch (Exception $e) {
-        logError('Error en login: ' . $e->getMessage());
-        jsonResponse(['error' => 'Error interno del servidor'], 500);
+        // Registrar el error real
+        error_log('Error en login: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+        jsonResponse(['error' => 'Error interno del servidor: ' . $e->getMessage()], 500);
     }
 }
 
