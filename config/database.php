@@ -5,7 +5,7 @@ class Database {
     private $host = 'localhost'; // Servidor de Hostinger
     private $db_name = 'u186781529_seres_db'; // Nombre real de tu DB
     private $username = 'u186781529_Yelbi';    // Usuario de la DB
-    private $password = 'serespapa'; // Contraseña
+    private $password = '123456789Grandiel$'; // Contraseña
     private $conn;
 
     public function getConnection() {
