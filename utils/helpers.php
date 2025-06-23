@@ -2,8 +2,8 @@
 // utils/helpers.php
 function sendEmail($to, $subject, $message, $headers = '') {
     // Configurar según tu servidor de correo
-    $default_headers = "From: noreply@tudominio.com\r\n";
-    $default_headers .= "Reply-To: noreply@tudominio.com\r\n";
+    $default_headers = "From: bgrandiel@seres.blog\r\n";
+    $default_headers .= "Reply-To: bgrandiel@seres.blog\r\n";
     $default_headers .= "MIME-Version: 1.0\r\n";
     $default_headers .= "Content-Type: text/html; charset=UTF-8\r\n";
     

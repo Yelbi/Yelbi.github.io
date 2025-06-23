@@ -101,7 +101,7 @@
             <a href="#" class="link-btn" onclick="showLogin()">Volver al login</a>
         </div>
 
-        <!-- Panel de Perfil (corregido: debe estar dentro del contenedor) -->
+        <!-- Panel de Perfil -->
         <div id="profilePanel" class="form-container">
             <h2>Mi Perfil</h2>
             <div id="profileAlert"></div>
@@ -117,7 +117,60 @@
         // Configuración
         const API_BASE_URL = 'https://seres.blog/api/auth.php';
         
-        // Función mejorada para validar contraseña
+        // Funciones para cambiar entre formularios
+        function showForm(formId) {
+            // Ocultar todos los formularios
+            document.querySelectorAll('.form-container').forEach(form => {
+                form.classList.remove('active');
+            });
+            // Mostrar el formulario deseado
+            document.getElementById(formId).classList.add('active');
+        }
+        
+        function showLogin() {
+            showForm('loginForm');
+        }
+        
+        function showRegister() {
+            showForm('registerForm');
+        }
+        
+        function showForgotPassword() {
+            showForm('forgotPasswordForm');
+        }
+        
+        function showProfile() {
+            showForm('profilePanel');
+        }
+        
+        // Función para mostrar alertas
+        function showAlert(elementId, message, type = 'error') {
+            const alertDiv = document.getElementById(elementId);
+            alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            
+            // Limpiar alerta después de 5 segundos (excepto para info)
+            if (type !== 'info') {
+                setTimeout(() => {
+                    alertDiv.innerHTML = '';
+                }, 5000);
+            }
+        }
+        
+        // Función para mostrar spinner de carga en botones
+        function setButtonLoading(buttonId, isLoading) {
+            const button = document.getElementById(buttonId);
+            if (isLoading) {
+                button.disabled = true;
+                button.innerHTML = '<span class="loading-spinner"></span>';
+            } else {
+                button.disabled = false;
+                button.querySelector('.btn-text') 
+                    ? button.innerHTML = '<span class="btn-text">' + button.querySelector('.btn-text').textContent + '</span>'
+                    : button.innerHTML = button.textContent;
+            }
+        }
+        
+        // Función para validar contraseña
         function validatePassword(password) {
             const hasUpperCase = /[A-Z]/.test(password);
             const hasLowerCase = /[a-z]/.test(password);
@@ -150,7 +203,7 @@
             strengthDiv.innerHTML = html;
         }
 
-        // Registro actualizado
+        // Registro
         async function register(name, email, password, confirmPassword, phone = '') {
             if (!name || !email || !password || !confirmPassword) {
                 showAlert('registerAlert', 'Por favor, completa todos los campos obligatorios.');
@@ -211,7 +264,7 @@
             }
         }
 
-        // API Request mejorado para manejar errores
+        // API Request
         async function apiRequest(action, data = {}, method = 'POST') {
             try {
                 const headers = {
@@ -249,59 +302,6 @@
             } catch (error) {
                 console.error('API Error:', error);
                 throw new Error(error.message || 'Error en la conexión');
-            }
-        }
-
-        // Verificación de contraseña en tiempo real (actualizada)
-        document.getElementById('registerPassword').addEventListener('input', function() {
-            const strengthDiv = document.getElementById('passwordStrength');
-            showPasswordRequirements(strengthDiv, this.value);
-        });
-
-        // Registro
-        async function register(name, email, password, confirmPassword, phone = '') {
-            if (!name || !email || !password || !confirmPassword) {
-                showAlert('registerAlert', 'Por favor, completa todos los campos obligatorios.');
-                return false;
-            }
-
-            if (password !== confirmPassword) {
-                showAlert('registerAlert', 'Las contraseñas no coinciden.');
-                return false;
-            }
-
-            if (password.length < 8) {
-                showAlert('registerAlert', 'La contraseña debe tener al menos 8 caracteres.');
-                return false;
-            }
-
-            setButtonLoading('registerBtn', true);
-
-            try {
-                const result = await apiRequest('register', {
-                    name: name.trim(),
-                    email: email.toLowerCase().trim(),
-                    password: password,
-                    phone: phone.trim()
-                });
-
-                showAlert('registerAlert', result.message, 'success');
-                
-                // Limpiar formulario
-                document.getElementById('registerFormElement').reset();
-                document.getElementById('passwordStrength').textContent = '';
-
-                setTimeout(() => {
-                    showAlert('loginAlert', 'Cuenta creada. Revisa tu email para verificar tu cuenta antes de iniciar sesión.', 'info');
-                    showLogin();
-                }, 3000);
-
-                return true;
-            } catch (error) {
-                showAlert('registerAlert', error.message);
-                return false;
-            } finally {
-                setButtonLoading('registerBtn', false);
             }
         }
 
@@ -427,9 +427,10 @@
             await forgotPassword(email);
         });
 
-        // Verificación de fortaleza de contraseña en tiempo real
+        // Verificación de contraseña en tiempo real
         document.getElementById('registerPassword').addEventListener('input', function() {
-            checkPasswordStrength(this.value, 'passwordStrength');
+            const strengthDiv = document.getElementById('passwordStrength');
+            showPasswordRequirements(strengthDiv, this.value);
         });
     </script>
 </body>
