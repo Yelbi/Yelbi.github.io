@@ -305,27 +305,113 @@ async function loadProfile() {
     }
 
     // Cargar mensajes para admin
-    async function loadAdminMessages() {
-        try {
-            const result = await apiRequest('get-complaints', {}, 'GET');
-            const container = document.getElementById('messagesContainer');
-            container.innerHTML = '';
-            
-            result.complaints.forEach(complaint => {
-                container.innerHTML += `
-                    <div class="message-item">
-                        <h4>${complaint.subject}</h4>
-                        <p><strong>De:</strong> ${complaint.user_email}</p>
-                        <p>${complaint.description}</p>
-                        <small>${new Date(complaint.created_at).toLocaleString()}</small>
-                        <hr>
-                    </div>
-                `;
-            });
-        } catch (error) {
-            console.error('Error loading messages:', error);
+async function loadAdminMessages() {
+    try {
+        const container = document.getElementById('messagesContainer');
+        const stats = document.getElementById('mailboxStats');
+        
+        // Mostrar estado de carga
+        container.innerHTML = '<div class="empty-mailbox">Cargando mensajes...</div>';
+        
+        const result = await apiRequest('get-complaints', {}, 'GET');
+        
+        // Actualizar estadísticas
+        stats.innerHTML = `<span>${result.complaints.length} mensajes</span>`;
+        
+        if (result.complaints.length === 0) {
+            container.innerHTML = '<div class="empty-mailbox">No hay mensajes</div>';
+            return;
         }
+        
+        container.innerHTML = '';
+        
+        result.complaints.forEach(complaint => {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message-item';
+            messageElement.dataset.id = complaint.id;
+            messageElement.innerHTML = `
+                <div class="message-header">
+                    <div class="sender-info" onclick="window.toggleMessageDetail(${complaint.id})">
+                        <span class="sender-avatar">${complaint.user_email.charAt(0).toUpperCase()}</span>
+                        <div>
+                            <div class="sender-name">${complaint.user_email}</div>
+                            <div class="message-subject">${complaint.subject}</div>
+                        </div>
+                    </div>
+                    <div class="message-meta">
+                        <span class="message-date">${new Date(complaint.created_at).toLocaleDateString()}</span>
+                        <button class="btn-delete" onclick="window.deleteMessage(event, ${complaint.id})">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="message-body" id="messageBody-${complaint.id}" style="display:none;">
+                    <p>${complaint.description}</p>
+                    <div class="message-footer">
+                        <small>Enviado el: ${new Date(complaint.created_at).toLocaleString()}</small>
+                    </div>
+                </div>
+            `;
+            container.appendChild(messageElement);
+        });
+    } catch (error) {
+        console.error('Error loading messages:', error);
+        showAlert('profileAlert', 'Error cargando mensajes', 'error');
+        container.innerHTML = '<div class="empty-mailbox error">Error al cargar mensajes</div>';
     }
+}
+
+// Alternar vista detallada del mensaje (corregido)
+window.toggleMessageDetail = function(messageId) {
+    const messageBody = document.getElementById(`messageBody-${messageId}`);
+    if (messageBody) {
+        messageBody.style.display = messageBody.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// Eliminar mensaje (versión mejorada)
+window.deleteMessage = async function(event, messageId) {
+    event.stopPropagation();
+    
+    if (!confirm('¿Estás seguro de eliminar este mensaje?')) {
+        return;
+    }
+    
+    try {
+        const deleteBtn = event.target.closest('.btn-delete');
+        const originalHTML = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<span class="loading-spinner small"></span>';
+        
+        // Agregar efecto visual de eliminación
+        const messageElement = deleteBtn.closest('[data-id]');
+        messageElement.style.opacity = '0.5';
+        messageElement.style.pointerEvents = 'none';
+        
+        await apiRequest('delete-complaint', { id: messageId });
+        
+        // Eliminar visualmente el mensaje con animación
+        messageElement.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+        messageElement.style.transform = 'translateX(-100%)';
+        messageElement.style.opacity = '0';
+        
+        setTimeout(() => {
+            messageElement.remove();
+            
+            // Actualizar contador
+            const messages = document.querySelectorAll('.message-item');
+            const stats = document.getElementById('mailboxStats');
+            stats.innerHTML = `<span>${messages.length} mensajes</span>`;
+        }, 300);
+    } catch (error) {
+        showAlert('profileAlert', error.message || 'Error al eliminar el mensaje', 'error');
+        // Restaurar botón si hay error
+        if (deleteBtn) deleteBtn.innerHTML = originalHTML;
+    }
+}
 
     // Al cargar la página, verificar si hay token
     document.addEventListener('DOMContentLoaded', () => {
@@ -376,3 +462,10 @@ async function loadProfile() {
         const strengthDiv = document.getElementById('passwordStrength');
         showPasswordRequirements(strengthDiv, this.value);
     });
+
+    document.body.addEventListener('click', function(e) {
+    if (e.target.closest('.btn-delete')) {
+        const messageId = e.target.closest('.message-item').dataset.id;
+        window.deleteMessage(e, messageId);
+    }
+});

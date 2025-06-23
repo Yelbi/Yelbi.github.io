@@ -262,3 +262,161 @@
 .message-item p {
     margin: 10px 0;
 }
+
+/* Estilos para el buzón de mensajes */
+.mailbox-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.mailbox-stats {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+.btn-refresh {
+    background: #f1f5f9;
+    color: #4f46e5;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-refresh:hover {
+    background: #e0e7ff;
+}
+
+.mailbox-container {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #e1e5e9;
+    border-radius: 10px;
+    background: white;
+}
+
+.empty-mailbox {
+    text-align: center;
+    padding: 30px;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.message-item {
+    padding: 16px;
+    border-bottom: 1px solid #f1f1f1;
+    transition: all 0.3s;
+    cursor: default;
+}
+
+.message-item:last-child {
+    border-bottom: none;
+}
+
+.message-item:hover {
+    background-color: #f8fafc;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sender-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.sender-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.sender-name {
+    font-weight: 600;
+    color: #334155;
+    font-size: 14px;
+}
+
+.message-subject {
+    font-weight: 500;
+    color: #64748b;
+    margin-top: 4px;
+    font-size: 14px;
+}
+
+.message-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.message-date {
+    color: #94a3b8;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.btn-delete {
+    background: #fee2e2 !important;
+    padding: 8px !important;
+    border-radius: 50% !important;
+}
+
+.btn-delete:hover {
+    background: #fecaca !important;
+}
+
+.message-body {
+    padding: 16px 0 0 52px;
+    border-top: 1px dashed #e2e8f0;
+    margin-top: 16px;
+    color: #475569;
+    line-height: 1.6;
+    font-size: 14px;
+}
+
+.message-footer {
+    margin-top: 16px;
+    color: #94a3b8;
+    font-size: 12px;
+    font-style: italic;
+}
+
+/* Spinner pequeño */
+.loading-spinner.small {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: currentColor;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
