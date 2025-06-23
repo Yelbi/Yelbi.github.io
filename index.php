@@ -40,8 +40,8 @@
         <!-- Sección 2 -->
         <section class="section section2" id="section2">
             <div class="section-content">
-                <h1>Innovación</h1>
-                <p>Transformamos ideas en realidades digitales extraordinarias, combinando creatividad y tecnología de vanguardia para crear experiencias memorables.</p>
+                <h1>Proximamente</h1>
+                <p>Espera a por mas</p>
                 <a href="#" class="btn">Descubrir</a>
             </div>
         </section>
@@ -49,9 +49,9 @@
         <!-- Sección 3 -->
         <section class="section section3" id="section3">
             <div class="section-content">
-                <h1>Conectar</h1>
+                <h1>Contactar</h1>
                 <p>Únete a nuestra comunidad y forma parte de algo más grande. Juntos construimos el futuro digital con pasión y dedicación.</p>
-                <a href="#" class="btn">Comenzar</a>
+                <a href="" class="btn">Aqui</a>
             </div>
         </section>
     </div>

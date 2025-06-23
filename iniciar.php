@@ -3,206 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="/Img/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="/styles/iniciar.css">
+    <link rel="stylesheet" href="/styles/header.css">
     <title>Sistema de Usuarios - Producción</title>
-    <style>
-        /* Estilos anteriores se mantienen igual */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 450px;
-            padding: 40px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-        }
-
-        .form-container {
-            display: none;
-        }
-
-        .form-container.active {
-            display: block;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 28px;
-            font-weight: 600;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-            position: relative;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        input[type="text"],
-        input[type="email"],
-        input[type="password"],
-        input[type="tel"],
-        textarea {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 12px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            background: #f8f9fa;
-        }
-
-        input:focus,
-        textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            margin: 5px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-            transform: translateY(-1px);
-        }
-
-        .link-btn {
-            display: block;
-            text-align: center;
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-
-        .link-btn:hover {
-            color: #764ba2;
-            text-decoration: underline;
-        }
-
-        .alert {
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .alert-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-
-        .email-verification-notice {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                margin: 20px;
-                padding: 30px 20px;
-            }
-        }
-    </style>
 </head>
 <body>
+<!-- Header -->
+    <header class="header">
+        <a href="/index.php" class="logo">
+            <img src="/Img/logo.png" alt="Logo de Seres">
+        </a>
+        <nav class="nav-menu" id="navMenu">
+            <a href="/index.php" class="nav-link">Inicio</a>
+            <a href="/galeria.php" class="nav-link">Galería</a>
+            <a href="#" class="nav-link">Contacto</a>
+        </nav>
+        <div class="menu-toggle" id="menuToggle">
+            <i class="fi fi-rr-menu-burger"></i>
+        </div>
+        <a href="#" class="user-btn"><i class="fi fi-rr-user"></i></a>
+    </header>
+
     <div class="container">
         <!-- Formulario de Registro -->
         <div id="registerForm" class="form-container active">
@@ -278,6 +100,17 @@
             </form>
             <a href="#" class="link-btn" onclick="showLogin()">Volver al login</a>
         </div>
+
+        <!-- Panel de Perfil (corregido: debe estar dentro del contenedor) -->
+        <div id="profilePanel" class="form-container">
+            <h2>Mi Perfil</h2>
+            <div id="profileAlert"></div>
+            <div class="user-info">
+                <p><strong>Nombre:</strong> <span id="profileName"></span></p>
+                <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+                <button class="btn" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -296,10 +129,11 @@
         function showRegister() { showForm('registerForm'); }
         function showLogin() { showForm('loginForm'); }
         function showForgotPassword() { showForm('forgotPasswordForm'); }
+        function showProfile() { showForm('profilePanel'); }
 
         // Limpiar alertas
         function clearAlerts() {
-            ['registerAlert', 'loginAlert', 'forgotAlert'].forEach(id => {
+            ['registerAlert', 'loginAlert', 'forgotAlert', 'profileAlert'].forEach(id => {
                 document.getElementById(id).innerHTML = '';
             });
         }
@@ -372,23 +206,38 @@
         // Realizar petición API
         async function apiRequest(action, data = {}, method = 'POST') {
             try {
+                // 1. Crear headers primero
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                // 2. Añadir token si está disponible
+                const token = localStorage.getItem('jwt_token');
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                // 3. Configurar opciones
                 const options = {
                     method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
+                    headers: headers
                 };
+
+                // Solo agregar body para métodos que lo requieran
+                if (method === 'POST' || method === 'PUT') {
+                    options.body = JSON.stringify(data);
+                }
 
                 const url = `${API_BASE_URL}?action=${action}`;
                 const response = await fetch(url, options);
-                const result = await response.json();
-
+                
+                // 4. Manejar errores HTTP
                 if (!response.ok) {
-                    throw new Error(result.error || 'Error en la petición');
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
                 }
 
-                return result;
+                return await response.json();
             } catch (error) {
                 console.error('API Error:', error);
                 throw error;
@@ -457,13 +306,42 @@
                     password: password
                 });
 
+                // Verificar si se recibió token
+                if (!result.token) {
+                    throw new Error('No se recibió token de autenticación');
+                }
+
+                // Guardar token en localStorage
+                localStorage.setItem('jwt_token', result.token);
+
                 showAlert('loginAlert', '¡Inicio de sesión exitoso!', 'success');
+                
+                // Cargar y mostrar perfil
+                await loadProfile();
+                
                 return true;
             } catch (error) {
-                showAlert('loginAlert', error.message);
+                showAlert('loginAlert', error.message || 'Error en el inicio de sesión');
                 return false;
             } finally {
                 setButtonLoading('loginBtn', false);
+            }
+        }
+
+        // Cargar perfil
+        async function loadProfile() {
+            try {
+                const result = await apiRequest('profile', {}, 'GET');
+                if (result.user) {
+                    document.getElementById('profileName').textContent = result.user.name;
+                    document.getElementById('profileEmail').textContent = result.user.email;
+                    showProfile();
+                } else {
+                    throw new Error('No se pudo cargar el perfil');
+                }
+            } catch (error) {
+                showAlert('profileAlert', error.message, 'error');
+                showLogin();
             }
         }
 
@@ -490,6 +368,23 @@
                 setButtonLoading('forgotBtn', false);
             }
         }
+
+        // Cerrar sesión
+        function logout() {
+            localStorage.removeItem('jwt_token');
+            showLogin();
+            showAlert('loginAlert', 'Sesión cerrada correctamente', 'success');
+        }
+
+        // Al cargar la página, verificar si hay token
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('jwt_token');
+            if (token) {
+                loadProfile();
+            } else {
+                showLogin();
+            }
+        });
 
         // Event Listeners
         document.getElementById('registerFormElement').addEventListener('submit', async (e) => {

@@ -1,14 +1,18 @@
 <?php
 // api/auth.php
-require_once '../config/database.php';
-require_once '../classes/User.php';
-require_once '../classes/Security.php';
-require_once '../utils/helpers.php';
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../classes/User.php';
+require_once __DIR__ . '/../classes/Security.php';
+require_once __DIR__ . '/../utils/helpers.php';
+
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 
 // Configuración CORS
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST, GET, PUT, DELETE");
+header("Access-Control-Allow-Methods: POST, GET, PUT, DELETE, OPTIONS");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
@@ -17,6 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     http_response_code(200);
     exit();
 }
+
+// Clave secreta para JWT - ¡CAMBIA ESTO POR UNA CLAVE SEGURA EN PRODUCCIÓN!
+define('JWT_SECRET', '123456789Grandiel$');
+define('JWT_ALGORITHM', 'HS256');
 
 $database = new Database();
 $db = $database->getConnection();
@@ -46,6 +54,9 @@ switch ($method) {
             case 'reset-password':
                 resetPassword($user, $input);
                 break;
+            case 'logout':
+                logout();
+                break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
         }
@@ -53,6 +64,12 @@ switch ($method) {
         
     case 'GET':
         switch ($action) {
+            case 'profile':
+                getProfile($user);
+                break;
+            case 'verify-session':
+                verifySession();
+                break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
         }
@@ -60,6 +77,12 @@ switch ($method) {
         
     case 'PUT':
         switch ($action) {
+            case 'profile':
+                updateProfile($user, $input);
+                break;
+            case 'change-password':
+                changePassword($user, $input);
+                break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
         }
@@ -162,12 +185,26 @@ function login($user, $security, $input) {
                 jsonResponse(['error' => 'Debes verificar tu email antes de iniciar sesión'], 403);
             }
 
+            // Generar token JWT
+            $issuedAt = time();
+            $expirationTime = $issuedAt + 3600; // 1 hora de validez
+            
+            $payload = [
+                'iat' => $issuedAt,
+                'exp' => $expirationTime,
+                'sub' => $userData['id'],
+                'email' => $userData['email']
+            ];
+
+            $jwt = JWT::encode($payload, JWT_SECRET, JWT_ALGORITHM);
+            
             $security->logLoginAttempt($email, $ip, true);
             
             jsonResponse([
                 'success' => true,
                 'message' => 'Login exitoso',
-                'user' => $userData
+                'user' => $userData,
+                'token' => $jwt
             ]);
         } else {
             $security->logLoginAttempt($email, $ip, false);
@@ -274,7 +311,140 @@ function resetPassword($user, $input) {
     }
 }
 
-// Limpiar logs antiguos (ejecutar en cron job)
+// Obtener perfil
+function getProfile($user) {
+    try {
+        $authData = authenticateJWT();
+        $userId = $authData['sub'];
+        
+        $userData = $user->getById($userId);
+        if ($userData) {
+            jsonResponse([
+                'success' => true,
+                'user' => $userData
+            ]);
+        } else {
+            jsonResponse(['error' => 'Usuario no encontrado'], 404);
+        }
+
+    } catch (Exception $e) {
+        jsonResponse(['error' => $e->getMessage()], 401);
+    }
+}
+
+// Verificar sesión (token JWT)
+function verifySession() {
+    try {
+        $authData = authenticateJWT();
+        jsonResponse(['valid' => true, 'user' => $authData]);
+    } catch (Exception $e) {
+        jsonResponse(['valid' => false, 'error' => $e->getMessage()], 401);
+    }
+}
+
+// Actualizar perfil
+function updateProfile($user, $input) {
+    try {
+        $authData = authenticateJWT();
+        $userId = $authData['sub'];
+
+        if (!isset($input['name'], $input['email'])) {
+            jsonResponse(['error' => 'Nombre y email requeridos'], 400);
+        }
+
+        $name = Security::sanitizeInput($input['name']);
+        $email = Security::sanitizeInput($input['email']);
+        $phone = Security::sanitizeInput($input['phone'] ?? '');
+
+        // Validaciones
+        if (strlen($name) < 2) {
+            jsonResponse(['error' => 'El nombre debe tener al menos 2 caracteres'], 400);
+        }
+
+        if (!Security::validateEmail($email)) {
+            jsonResponse(['error' => 'Email no válido'], 400);
+        }
+
+        // Verificar si el email ya existe (excluyendo el usuario actual)
+        if ($user->emailExists($email, $userId)) {
+            jsonResponse(['error' => 'Ya existe una cuenta con este email'], 400);
+        }
+
+        // Actualizar perfil
+        if ($user->updateProfile($userId, $name, $email, $phone)) {
+            jsonResponse([
+                'success' => true,
+                'message' => 'Perfil actualizado exitosamente'
+            ]);
+        } else {
+            jsonResponse(['error' => 'Error al actualizar perfil'], 500);
+        }
+
+    } catch (Exception $e) {
+        logError('Error al actualizar perfil: ' . $e->getMessage());
+        jsonResponse(['error' => 'Error interno del servidor'], 500);
+    }
+}
+
+// Cambiar contraseña
+function changePassword($user, $input) {
+    try {
+        $authData = authenticateJWT();
+        $userId = $authData['sub'];
+
+        if (!isset($input['new_password'])) {
+            jsonResponse(['error' => 'Nueva contraseña requerida'], 400);
+        }
+
+        $newPassword = $input['new_password'];
+
+        if (!Security::validatePassword($newPassword)) {
+            jsonResponse(['error' => 'La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas y números'], 400);
+        }
+
+        if ($user->changePassword($userId, $newPassword)) {
+            jsonResponse([
+                'success' => true,
+                'message' => 'Contraseña cambiada exitosamente'
+            ]);
+        } else {
+            jsonResponse(['error' => 'Error al cambiar contraseña'], 500);
+        }
+
+    } catch (Exception $e) {
+        logError('Error al cambiar contraseña: ' . $e->getMessage());
+        jsonResponse(['error' => 'Error interno del servidor'], 500);
+    }
+}
+
+// Cerrar sesión (solo para el frontend)
+function logout() {
+    jsonResponse([
+        'success' => true,
+        'message' => 'Sesión cerrada exitosamente'
+    ]);
+}
+
+// Middleware de autenticación JWT
+function authenticateJWT() {
+    $headers = getallheaders();
+    $authHeader = $headers['Authorization'] ?? '';
+
+    if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+        $token = $matches[1];
+        
+        try {
+            $decoded = JWT::decode($token, new Key(JWT_SECRET, JWT_ALGORITHM));
+            return (array) $decoded;
+        } catch (Exception $e) {
+            throw new Exception('Token inválido: ' . $e->getMessage());
+        }
+    }
+
+    throw new Exception('Token no proporcionado');
+}
+
+// Limpiar logs de intentos fallidos (ejecutar en cron job)
 if (isset($_GET['cleanup']) && $_GET['cleanup'] === 'true') {
     try {
         $security->cleanOldAttempts();
