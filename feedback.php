@@ -1,5 +1,5 @@
 <?php
-// feedback.php - Versión Mejorada
+// feedback.php - Versión Completa Mejorada
 session_start();
 require_once 'config/database.php';
 require_once 'classes/User.php';
@@ -48,18 +48,24 @@ function validateFeedbackData($data) {
         $errors['name'] = 'El nombre es obligatorio';
     } elseif (strlen(trim($data['name'])) < 2) {
         $errors['name'] = 'El nombre debe tener al menos 2 caracteres';
+    } elseif (strlen(trim($data['name'])) > 100) {
+        $errors['name'] = 'El nombre no puede exceder los 100 caracteres';
     }
     
     if (empty(trim($data['email']))) {
         $errors['email'] = 'El email es obligatorio';
     } elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
         $errors['email'] = 'El formato del email no es válido';
+    } elseif (strlen($data['email']) > 255) {
+        $errors['email'] = 'El email no puede exceder los 255 caracteres';
     }
     
     if (empty(trim($data['subject']))) {
         $errors['subject'] = 'El asunto es obligatorio';
     } elseif (strlen(trim($data['subject'])) < 5) {
         $errors['subject'] = 'El asunto debe tener al menos 5 caracteres';
+    } elseif (strlen(trim($data['subject'])) > 200) {
+        $errors['subject'] = 'El asunto no puede exceder los 200 caracteres';
     }
     
     if (empty(trim($data['message']))) {
@@ -84,6 +90,25 @@ function sanitizeData($data) {
     }, $data);
 }
 
+// Función para detectar spam básico
+function isSpamContent($data) {
+    $spamKeywords = ['viagra', 'casino', 'loan', 'bitcoin', 'cryptocurrency', 'make money'];
+    $content = strtolower($data['message'] . ' ' . $data['subject']);
+    
+    foreach ($spamKeywords as $keyword) {
+        if (strpos($content, $keyword) !== false) {
+            return true;
+        }
+    }
+    
+    // Verificar si el mensaje tiene demasiados enlaces
+    if (preg_match_all('/https?:\/\//', $data['message']) > 3) {
+        return true;
+    }
+    
+    return false;
+}
+
 // Procesar envío de formulario
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_feedback'])) {
     // Verificar token CSRF
@@ -101,7 +126,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_feedback'])) {
         // Validar datos
         $validationErrors = validateFeedbackData($formData);
         
-        if (empty($validationErrors)) {
+        // Verificar spam
+        if (empty($validationErrors) && isSpamContent($formData)) {
+            $error = "Tu mensaje parece contener spam. Por favor, revisa el contenido e inténtalo de nuevo.";
+        }
+        
+        if (empty($validationErrors) && empty($error)) {
             // Limpiar datos
             $formData = sanitizeData($formData);
             
@@ -114,19 +144,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_feedback'])) {
                 'email' => $formData['email'],
                 'type' => $formData['type'],
                 'subject' => $formData['subject'],
-                'message' => $formData['message']
+                'message' => $formData['message'],
+                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown'
             ];
             
             if ($feedback->create($feedbackData)) {
                 $messageType = $formData['type'] === 'complaint' ? 'queja' : 'sugerencia';
                 $success = "¡Gracias por tu mensaje! Hemos recibido tu $messageType correctamente. Te responderemos pronto.";
+                
                 // Limpiar formulario después del éxito
                 $formData = ['name' => '', 'email' => '', 'type' => 'suggestion', 'subject' => '', 'message' => ''];
+                
+                // Envío de email de notificación (opcional)
+                try {
+                    sendNotificationEmail($feedbackData);
+                } catch (Exception $e) {
+                    error_log("Error enviando notificación: " . $e->getMessage());
+                }
             } else {
                 $error = "Hubo un error al enviar tu mensaje. Por favor, inténtalo de nuevo en unos minutos.";
             }
         }
     }
+}
+
+// Función para enviar email de notificación
+function sendNotificationEmail($data) {
+    $to = 'admin@tusitio.com'; // Cambiar por tu email
+    $subject = 'Nuevo mensaje de contacto: ' . $data['subject'];
+    $message = "
+    Nuevo mensaje recibido:
+    
+    Nombre: {$data['name']}
+    Email: {$data['email']}
+    Tipo: " . ($data['type'] === 'complaint' ? 'Queja' : 'Sugerencia') . "
+    Asunto: {$data['subject']}
+    
+    Mensaje:
+    {$data['message']}
+    
+    IP: {$data['ip_address']}
+    Navegador: {$data['user_agent']}
+    Fecha: " . date('Y-m-d H:i:s') . "
+    ";
+    
+    $headers = [
+        'From: noreply@tusitio.com',
+        'Reply-To: ' . $data['email'],
+        'Content-Type: text/plain; charset=UTF-8'
+    ];
+    
+    return mail($to, $subject, $message, implode("\r\n", $headers));
 }
 
 // Generar token CSRF
@@ -152,6 +221,12 @@ if (!isset($formData)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buzón de Quejas y Sugerencias - Seres</title>
     <meta name="description" content="Comparte tus opiniones, quejas y sugerencias con nosotros. Tu feedback es importante para mejorar nuestros servicios.">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Buzón de Quejas y Sugerencias - Seres">
+    <meta property="og:description" content="Tu opinión es importante. Comparte tus comentarios y sugerencias.">
+    <meta property="og:type" content="website">
     
     <!-- Preload critical CSS -->
     <link rel="preload" href="/styles/header.css" as="style">
@@ -166,6 +241,17 @@ if (!isset($formData)) {
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/Img/favicon.ico">
+    
+    <!-- JSON-LD Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "ContactPage",
+        "name": "Buzón de Quejas y Sugerencias",
+        "description": "Formulario de contacto para quejas y sugerencias",
+        "url": "<?= $_SERVER['REQUEST_URI'] ?>"
+    }
+    </script>
 </head>
 <body>
     <header class="header">
@@ -180,7 +266,7 @@ if (!isset($formData)) {
         <div class="menu-toggle" id="menuToggle" aria-label="Abrir menú" role="button" tabindex="0">
             <i class="fi fi-rr-menu-burger"></i>
         </div>
-        <a href="/iniciar.php" class="user-btn" aria-label="Iniciar sesión">
+        <a href="/iniciar.php" class="user-btn" aria-label="<?= $loggedIn ? 'Mi perfil' : 'Iniciar sesión' ?>">
             <i class="fi fi-rr-user"></i>
         </a>
     </header>
@@ -190,13 +276,13 @@ if (!isset($formData)) {
         <p>Tu opinión es muy importante para nosotros. Comparte tus comentarios, sugerencias o quejas para ayudarnos a mejorar nuestros servicios.</p>
         
         <?php if ($success): ?>
-            <div class="alert alert-success" role="alert">
+            <div class="alert alert-success" role="alert" aria-live="polite">
                 <strong>¡Éxito!</strong> <?= $success ?>
             </div>
         <?php endif; ?>
         
         <?php if ($error): ?>
-            <div class="alert alert-error" role="alert">
+            <div class="alert alert-error" role="alert" aria-live="assertive">
                 <strong>Error:</strong> <?= $error ?>
             </div>
         <?php endif; ?>
@@ -214,9 +300,10 @@ if (!isset($formData)) {
                            required 
                            maxlength="100"
                            autocomplete="name"
-                           aria-describedby="<?= isset($validationErrors['name']) ? 'name-error' : '' ?>">
+                           aria-describedby="<?= isset($validationErrors['name']) ? 'name-error' : '' ?>"
+                           <?= $loggedIn && $userData ? 'readonly' : '' ?>>
                     <?php if (isset($validationErrors['name'])): ?>
-                        <div class="error-message" id="name-error"><?= $validationErrors['name'] ?></div>
+                        <div class="error-message" id="name-error" role="alert"><?= $validationErrors['name'] ?></div>
                     <?php endif; ?>
                 </div>
                 
@@ -229,9 +316,10 @@ if (!isset($formData)) {
                            required 
                            maxlength="255"
                            autocomplete="email"
-                           aria-describedby="<?= isset($validationErrors['email']) ? 'email-error' : '' ?>">
+                           aria-describedby="<?= isset($validationErrors['email']) ? 'email-error' : '' ?>"
+                           <?= $loggedIn && $userData ? 'readonly' : '' ?>>
                     <?php if (isset($validationErrors['email'])): ?>
-                        <div class="error-message" id="email-error"><?= $validationErrors['email'] ?></div>
+                        <div class="error-message" id="email-error" role="alert"><?= $validationErrors['email'] ?></div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -251,7 +339,7 @@ if (!isset($formData)) {
                         </option>
                     </select>
                     <?php if (isset($validationErrors['type'])): ?>
-                        <div class="error-message" id="type-error"><?= $validationErrors['type'] ?></div>
+                        <div class="error-message" id="type-error" role="alert"><?= $validationErrors['type'] ?></div>
                     <?php endif; ?>
                 </div>
                 
@@ -263,9 +351,10 @@ if (!isset($formData)) {
                            value="<?= htmlspecialchars($formData['subject']) ?>" 
                            required 
                            maxlength="200"
+                           placeholder="Breve descripción del tema"
                            aria-describedby="<?= isset($validationErrors['subject']) ? 'subject-error' : '' ?>">
                     <?php if (isset($validationErrors['subject'])): ?>
-                        <div class="error-message" id="subject-error"><?= $validationErrors['subject'] ?></div>
+                        <div class="error-message" id="subject-error" role="alert"><?= $validationErrors['subject'] ?></div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -280,23 +369,50 @@ if (!isset($formData)) {
                               maxlength="5000"
                               placeholder="Describe tu sugerencia o queja de manera detallada..."
                               aria-describedby="message-counter <?= isset($validationErrors['message']) ? 'message-error' : '' ?>"><?= htmlspecialchars($formData['message']) ?></textarea>
-                    <div class="char-counter" id="message-counter">
+                    <div class="char-counter" id="message-counter" aria-live="polite">
                         <span id="char-count">0</span>/5000 caracteres
                     </div>
                     <?php if (isset($validationErrors['message'])): ?>
-                        <div class="error-message" id="message-error"><?= $validationErrors['message'] ?></div>
+                        <div class="error-message" id="message-error" role="alert"><?= $validationErrors['message'] ?></div>
                     <?php endif; ?>
                 </div>
             </div>
             
             <button type="submit" name="submit_feedback" class="btn" id="submitBtn">
                 <span class="btn-text">Enviar Sugerencia</span>
+                <span class="btn-loader" aria-hidden="true"></span>
             </button>
         </form>
+        
+        <div class="contact-info">
+            <h3>Información de Contacto</h3>
+            <div class="contact-methods">
+                <div class="contact-method">
+                    <i class="fi fi-rr-envelope"></i>
+                    <span>contacto@seres.com</span>
+                </div>
+                <div class="contact-method">
+                    <i class="fi fi-rr-phone-call"></i>
+                    <span>+1 (809) 555-0123</span>
+                </div>
+                <div class="contact-method">
+                    <i class="fi fi-rr-clock"></i>
+                    <span>Lun - Vie: 9:00 AM - 6:00 PM</span>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script>
-        // Funciones utilitarias
+        // Configuración y constantes
+        const CONFIG = {
+            DEBOUNCE_DELAY: 300,
+            CHAR_COUNTER_UPDATE_DELAY: 100,
+            MAX_MESSAGE_LENGTH: 5000,
+            VALIDATION_DELAY: 500
+        };
+
+        // Utilidades
         const debounce = (func, wait) => {
             let timeout;
             return function executedFunction(...args) {
@@ -309,54 +425,139 @@ if (!isset($formData)) {
             };
         };
 
-        // Referencias DOM
-        const form = document.getElementById('feedbackForm');
-        const typeSelect = document.getElementById('type');
-        const submitBtn = document.getElementById('submitBtn');
-        const btnText = submitBtn.querySelector('.btn-text');
-        const messageTextarea = document.getElementById('message');
-        const charCount = document.getElementById('char-count');
-        const charCounter = document.getElementById('message-counter');
+        const throttle = (func, limit) => {
+            let inThrottle;
+            return function() {
+                const args = arguments;
+                const context = this;
+                if (!inThrottle) {
+                    func.apply(context, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            }
+        };
 
-        // Cambiar texto del botón según el tipo de mensaje
+        // Referencias DOM con verificación de existencia
+        const elements = {
+            form: document.getElementById('feedbackForm'),
+            typeSelect: document.getElementById('type'),
+            submitBtn: document.getElementById('submitBtn'),
+            btnText: document.querySelector('.btn-text'),
+            btnLoader: document.querySelector('.btn-loader'),
+            messageTextarea: document.getElementById('message'),
+            charCount: document.getElementById('char-count'),
+            charCounter: document.getElementById('message-counter'),
+            nameField: document.getElementById('name'),
+            emailField: document.getElementById('email'),
+            subjectField: document.getElementById('subject')
+        };
+
+        // Verificar que los elementos existen
+        const missingElements = Object.entries(elements).filter(([key, element]) => !element);
+        if (missingElements.length > 0) {
+            console.error('Elementos DOM faltantes:', missingElements.map(([key]) => key));
+        }
+
+        // Gestión del estado del formulario
+        class FormState {
+            constructor() {
+                this.isSubmitting = false;
+                this.isValid = false;
+                this.validationErrors = new Map();
+            }
+
+            setSubmitting(status) {
+                this.isSubmitting = status;
+                this.updateSubmitButton();
+            }
+
+            setValidationError(field, error) {
+                if (error) {
+                    this.validationErrors.set(field, error);
+                } else {
+                    this.validationErrors.delete(field);
+                }
+                this.updateFormValidity();
+            }
+
+            updateFormValidity() {
+                this.isValid = this.validationErrors.size === 0;
+                this.updateSubmitButton();
+            }
+
+            updateSubmitButton() {
+                if (!elements.submitBtn) return;
+
+                elements.submitBtn.disabled = this.isSubmitting || !this.isValid;
+                
+                if (this.isSubmitting) {
+                    elements.submitBtn.classList.add('loading');
+                    if (elements.btnText) elements.btnText.style.opacity = '0';
+                    if (elements.btnLoader) elements.btnLoader.style.display = 'block';
+                } else {
+                    elements.submitBtn.classList.remove('loading');
+                    if (elements.btnText) elements.btnText.style.opacity = '1';
+                    if (elements.btnLoader) elements.btnLoader.style.display = 'none';
+                }
+            }
+        }
+
+        const formState = new FormState();
+
+        // Gestión del texto del botón según el tipo
         function updateSubmitButton() {
-            const type = typeSelect.value;
+            if (!elements.typeSelect || !elements.btnText) return;
+            
+            const type = elements.typeSelect.value;
             const buttonTexts = {
                 'suggestion': 'Enviar Sugerencia',
                 'complaint': 'Enviar Queja'
             };
-            btnText.textContent = buttonTexts[type] || 'Enviar Mensaje';
+            elements.btnText.textContent = buttonTexts[type] || 'Enviar Mensaje';
         }
 
-        // Contador de caracteres
+        // Contador de caracteres mejorado
         function updateCharCounter() {
-            const length = messageTextarea.value.length;
-            const maxLength = 5000;
+            if (!elements.messageTextarea || !elements.charCount || !elements.charCounter) return;
             
-            charCount.textContent = length;
+            const length = elements.messageTextarea.value.length;
+            const maxLength = CONFIG.MAX_MESSAGE_LENGTH;
+            
+            elements.charCount.textContent = length;
             
             // Actualizar clases del contador
-            charCounter.classList.remove('warning', 'error');
+            elements.charCounter.classList.remove('warning', 'error');
             if (length > maxLength * 0.9) {
-                charCounter.classList.add('warning');
+                elements.charCounter.classList.add('warning');
             }
             if (length >= maxLength) {
-                charCounter.classList.add('error');
+                elements.charCounter.classList.add('error');
+            }
+
+            // Anunciar para lectores de pantalla
+            if (length === maxLength) {
+                elements.charCounter.setAttribute('aria-live', 'assertive');
+                setTimeout(() => elements.charCounter.setAttribute('aria-live', 'polite'), 1000);
             }
         }
 
-        // Validación en tiempo real
+        // Validación mejorada de campos
         function validateField(field) {
+            if (!field) return true;
+            
             const value = field.value.trim();
             const fieldName = field.name;
             const formGroup = field.closest('.form-group');
             
+            if (!formGroup) return true;
+
             // Remover estados previos
             formGroup.classList.remove('error', 'success');
             
-            // Remover mensajes de error previos
-            const existingError = formGroup.querySelector('.error-message');
-            if (existingError && !existingError.id.includes('-error')) {
+            // Remover mensajes de error dinámicos previos
+            const existingError = formGroup.querySelector('.error-message:not([id$="-error"])');
+            if (existingError) {
                 existingError.remove();
             }
             
@@ -372,6 +573,9 @@ if (!isset($formData)) {
                     } else if (value.length < 2) {
                         errorMessage = 'El nombre debe tener al menos 2 caracteres';
                         isValid = false;
+                    } else if (value.length > 100) {
+                        errorMessage = 'El nombre no puede exceder los 100 caracteres';
+                        isValid = false;
                     }
                     break;
                     
@@ -383,6 +587,9 @@ if (!isset($formData)) {
                     } else if (!emailRegex.test(value)) {
                         errorMessage = 'El formato del email no es válido';
                         isValid = false;
+                    } else if (value.length > 255) {
+                        errorMessage = 'El email no puede exceder los 255 caracteres';
+                        isValid = false;
                     }
                     break;
                     
@@ -392,6 +599,9 @@ if (!isset($formData)) {
                         isValid = false;
                     } else if (value.length < 5) {
                         errorMessage = 'El asunto debe tener al menos 5 caracteres';
+                        isValid = false;
+                    } else if (value.length > 200) {
+                        errorMessage = 'El asunto no puede exceder los 200 caracteres';
                         isValid = false;
                     }
                     break;
@@ -403,6 +613,9 @@ if (!isset($formData)) {
                     } else if (value.length < 10) {
                         errorMessage = 'El mensaje debe tener al menos 10 caracteres';
                         isValid = false;
+                    } else if (value.length > CONFIG.MAX_MESSAGE_LENGTH) {
+                        errorMessage = 'El mensaje no puede exceder los 5000 caracteres';
+                        isValid = false;
                     }
                     break;
             }
@@ -410,51 +623,119 @@ if (!isset($formData)) {
             // Aplicar estilos de validación
             if (isValid && value) {
                 formGroup.classList.add('success');
+                formState.setValidationError(fieldName, null);
             } else if (!isValid) {
                 formGroup.classList.add('error');
+                formState.setValidationError(fieldName, errorMessage);
                 
                 // Mostrar mensaje de error si no existe uno con ID específico
-                if (!existingError) {
+                const existingServerError = formGroup.querySelector('[id$="-error"]');
+                if (!existingServerError) {
                     const errorDiv = document.createElement('div');
                     errorDiv.className = 'error-message';
                     errorDiv.textContent = errorMessage;
+                    errorDiv.setAttribute('role', 'alert');
                     field.parentNode.appendChild(errorDiv);
                 }
+            } else {
+                formState.setValidationError(fieldName, null);
             }
             
             return isValid;
         }
 
-        // Event Listeners
-        typeSelect.addEventListener('change', updateSubmitButton);
-        messageTextarea.addEventListener('input', debounce(updateCharCounter, 100));
-
-        // Validación en tiempo real para todos los campos
-        const fields = form.querySelectorAll('input[required], select[required], textarea[required]');
-        fields.forEach(field => {
-            field.addEventListener('blur', () => validateField(field));
-            field.addEventListener('input', debounce(() => {
-                if (field.classList.contains('error') || field.value.trim()) {
-                    validateField(field);
-                }
-            }, 300));
-        });
-
-        // Prevenir envío de formulario inválido
-        form.addEventListener('submit', function(e) {
+        // Validación completa del formulario
+        function validateForm() {
+            if (!elements.form) return false;
+            
+            const fields = elements.form.querySelectorAll('input[required], select[required], textarea[required]');
             let isFormValid = true;
             
-            // Validar todos los campos
             fields.forEach(field => {
                 if (!validateField(field)) {
                     isFormValid = false;
                 }
             });
             
-            if (!isFormValid) {
+            return isFormValid;
+        }
+
+        // Manejo de eventos
+        function setupEventListeners() {
+            // Cambio de tipo de mensaje
+            if (elements.typeSelect) {
+                elements.typeSelect.addEventListener('change', updateSubmitButton);
+            }
+
+            // Contador de caracteres
+            if (elements.messageTextarea) {
+                elements.messageTextarea.addEventListener('input', 
+                    throttle(updateCharCounter, CONFIG.CHAR_COUNTER_UPDATE_DELAY)
+                );
+            }
+
+            // Validación en tiempo real para todos los campos requeridos
+            const fields = elements.form?.querySelectorAll('input[required], select[required], textarea[required]') || [];
+            fields.forEach(field => {
+                // Validación al salir del campo
+                field.addEventListener('blur', () => validateField(field));
+                
+                // Validación durante la escritura (con debounce)
+                field.addEventListener('input', debounce(() => {
+                    if (field.classList.contains('error') || field.value.trim()) {
+                        validateField(field);
+                    }
+                }, CONFIG.VALIDATION_DELAY));
+            });
+
+            // Envío del formulario
+            if (elements.form) {
+                elements.form.addEventListener('submit', handleFormSubmit);
+            }
+
+            // Navegación por teclado mejorada
+            document.addEventListener('keydown', handleKeyboardNavigation);
+        }
+
+        // Manejo del envío del formulario
+        function handleFormSubmit(e) {
+            if (!validateForm()) {
                 e.preventDefault();
                 
-                // Scroll al primer error
-                const firstError = form.querySelector('.form-group.error');
+                // Scroll al primer error con animación suave
+                const firstError = elements.form.querySelector('.form-group.error');
                 if (firstError) {
-                    firstError.scrollInto
+                    firstError.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                    
+                    // Focus en el campo con error
+                    const errorField = firstError.querySelector('input, select, textarea');
+                    if (errorField) {
+                        setTimeout(() => errorField.focus(), 500);
+                    }
+                }
+                
+                return false;
+            }
+
+            // Mostrar estado de carga
+            formState.setSubmitting(true);
+        }
+
+        // Navegación por teclado
+        function handleKeyboardNavigation(e) {
+            // Envío con Ctrl+Enter en el textarea
+            if (e.ctrlKey && e.key === 'Enter' && document.activeElement === elements.messageTextarea) {
+                if (validateForm()) {
+                    elements.form.submit();
+                }
+            }
+        }
+
+        // Inicialización
+        function init() {
+            try {
+                // Configurar event listeners
+                setupEventListeners();
