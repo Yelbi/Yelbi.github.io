@@ -51,7 +51,7 @@
             <div class="section-content">
                 <h1>Contactar</h1>
                 <p>Únete a nuestra comunidad y forma parte de algo más grande. Juntos construimos el futuro digital con pasión y dedicación.</p>
-                <a href="" class="btn">Aqui</a>
+                <a href="/feedback.php" class="btn">Aqui</a>
             </div>
         </section>
     </div>
