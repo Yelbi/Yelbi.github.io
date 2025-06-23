@@ -115,134 +115,148 @@
 
     <script>
         // Configuración
-        const API_BASE_URL = '/api/auth.php'; // Ajusta según tu estructura
+        const API_BASE_URL = 'https://seres.blog/api/auth.php';
         
-        // Funciones de navegación
-        function showForm(formId) {
-            document.querySelectorAll('.form-container').forEach(form => {
-                form.classList.remove('active');
-            });
-            document.getElementById(formId).classList.add('active');
-            clearAlerts();
-        }
-
-        function showRegister() { showForm('registerForm'); }
-        function showLogin() { showForm('loginForm'); }
-        function showForgotPassword() { showForm('forgotPasswordForm'); }
-        function showProfile() { showForm('profilePanel'); }
-
-        // Limpiar alertas
-        function clearAlerts() {
-            ['registerAlert', 'loginAlert', 'forgotAlert', 'profileAlert'].forEach(id => {
-                document.getElementById(id).innerHTML = '';
-            });
-        }
-
-        // Mostrar alerta
-        function showAlert(containerId, message, type = 'error') {
-            const container = document.getElementById(containerId);
-            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
-            setTimeout(() => container.innerHTML = '', 8000);
-        }
-
-        // Mostrar loading en botón
-        function setButtonLoading(buttonId, loading = true) {
-            const button = document.getElementById(buttonId);
-            const textSpan = button.querySelector('.btn-text');
+        // Función mejorada para validar contraseña
+        function validatePassword(password) {
+            const hasUpperCase = /[A-Z]/.test(password);
+            const hasLowerCase = /[a-z]/.test(password);
+            const hasNumber = /[0-9]/.test(password);
+            const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
             
-            if (loading) {
-                button.disabled = true;
-                textSpan.innerHTML = '<span class="loading-spinner"></span> Procesando...';
-            } else {
-                button.disabled = false;
-                // Restaurar texto original basado en el botón
-                const originalTexts = {
-                    'registerBtn': 'Crear Cuenta',
-                    'loginBtn': 'Iniciar Sesión',
-                    'forgotBtn': 'Enviar Instrucciones'
-                };
-                textSpan.textContent = originalTexts[buttonId] || 'Procesar';
+            return {
+                valid: password.length >= 8 && hasUpperCase && hasLowerCase && hasNumber,
+                requirements: {
+                    length: password.length >= 8,
+                    upper: hasUpperCase,
+                    lower: hasLowerCase,
+                    number: hasNumber,
+                    special: hasSpecialChar
+                }
+            };
+        }
+
+        // Mostrar requisitos de contraseña
+        function showPasswordRequirements(strengthDiv, password) {
+            const validation = validatePassword(password);
+            let html = '<div class="password-requirements">';
+            
+            html += `<div class="requirement ${validation.requirements.length ? 'valid' : 'invalid'}">Mínimo 8 caracteres</div>`;
+            html += `<div class="requirement ${validation.requirements.upper ? 'valid' : 'invalid'}">Al menos una mayúscula (A-Z)</div>`;
+            html += `<div class="requirement ${validation.requirements.lower ? 'valid' : 'invalid'}">Al menos una minúscula (a-z)</div>`;
+            html += `<div class="requirement ${validation.requirements.number ? 'valid' : 'invalid'}">Al menos un número (0-9)</div>`;
+            html += '</div>';
+            
+            strengthDiv.innerHTML = html;
+        }
+
+        // Registro actualizado
+        async function register(name, email, password, confirmPassword, phone = '') {
+            if (!name || !email || !password || !confirmPassword) {
+                showAlert('registerAlert', 'Por favor, completa todos los campos obligatorios.');
+                return false;
+            }
+
+            if (password !== confirmPassword) {
+                showAlert('registerAlert', 'Las contraseñas no coinciden.');
+                return false;
+            }
+
+            // Validación mejorada de contraseña
+            const passwordValidation = validatePassword(password);
+            if (!passwordValidation.valid) {
+                showAlert('registerAlert', 
+                    'La contraseña debe tener al menos 8 caracteres, incluyendo mayúsculas, minúsculas y números'
+                );
+                return false;
+            }
+
+            setButtonLoading('registerBtn', true);
+
+            try {
+                const result = await apiRequest('register', {
+                    name: name.trim(),
+                    email: email.toLowerCase().trim(),
+                    password: password,
+                    phone: phone.trim()
+                });
+
+                showAlert('registerAlert', result.message, 'success');
+                
+                // Limpiar formulario
+                document.getElementById('registerFormElement').reset();
+                document.getElementById('passwordStrength').textContent = '';
+
+                setTimeout(() => {
+                    if (result.verification_token) {
+                        showAlert('loginAlert', 
+                            `Cuenta creada. Para desarrollo, usa este token: ${result.verification_token}`, 
+                            'info'
+                        );
+                    } else {
+                        showAlert('loginAlert', 
+                            'Cuenta creada. Revisa tu email para verificar tu cuenta.', 
+                            'info'
+                        );
+                    }
+                    showLogin();
+                }, 3000);
+
+                return true;
+            } catch (error) {
+                showAlert('registerAlert', error.message);
+                return false;
+            } finally {
+                setButtonLoading('registerBtn', false);
             }
         }
 
-        // Verificar fortaleza de contraseña
-        function checkPasswordStrength(password, targetId) {
-            const strengthDiv = document.getElementById(targetId);
-            if (!strengthDiv) return;
-
-            let strength = 0;
-            let feedback = [];
-
-            if (password.length >= 8) strength++;
-            else feedback.push('mínimo 8 caracteres');
-
-            if (/[A-Z]/.test(password)) strength++;
-            else feedback.push('una mayúscula');
-
-            if (/[a-z]/.test(password)) strength++;
-            else feedback.push('una minúscula');
-
-            if (/[0-9]/.test(password)) strength++;
-            else feedback.push('un número');
-
-            if (/[^A-Za-z0-9]/.test(password)) {
-                strength++;
-            } else {
-                feedback.push('un carácter especial');
-            }
-
-            if (strength < 3) {
-                strengthDiv.textContent = `Débil - Falta: ${feedback.join(', ')}`;
-                strengthDiv.className = 'password-strength strength-weak';
-            } else if (strength < 4) {
-                strengthDiv.textContent = 'Media - Agregar más caracteres especiales';
-                strengthDiv.className = 'password-strength strength-medium';
-            } else {
-                strengthDiv.textContent = '¡Fuerte!';
-                strengthDiv.className = 'password-strength strength-strong';
-            }
-        }
-
-        // Realizar petición API
+        // API Request mejorado para manejar errores
         async function apiRequest(action, data = {}, method = 'POST') {
             try {
-                // 1. Crear headers primero
                 const headers = {
                     'Content-Type': 'application/json'
                 };
                 
-                // 2. Añadir token si está disponible
                 const token = localStorage.getItem('jwt_token');
                 if (token) {
                     headers['Authorization'] = `Bearer ${token}`;
                 }
 
-                // 3. Configurar opciones
                 const options = {
                     method: method,
-                    headers: headers
+                    headers: headers,
+                    body: method !== 'GET' ? JSON.stringify(data) : null
                 };
-
-                // Solo agregar body para métodos que lo requieran
-                if (method === 'POST' || method === 'PUT') {
-                    options.body = JSON.stringify(data);
-                }
 
                 const url = `${API_BASE_URL}?action=${action}`;
                 const response = await fetch(url, options);
                 
-                // 4. Manejar errores HTTP
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+                // Manejar respuestas no JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`Respuesta inválida: ${text.slice(0, 100)}`);
                 }
 
-                return await response.json();
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || `Error ${response.status}`);
+                }
+
+                return result;
             } catch (error) {
                 console.error('API Error:', error);
-                throw error;
+                throw new Error(error.message || 'Error en la conexión');
             }
         }
+
+        // Verificación de contraseña en tiempo real (actualizada)
+        document.getElementById('registerPassword').addEventListener('input', function() {
+            const strengthDiv = document.getElementById('passwordStrength');
+            showPasswordRequirements(strengthDiv, this.value);
+        });
 
         // Registro
         async function register(name, email, password, confirmPassword, phone = '') {

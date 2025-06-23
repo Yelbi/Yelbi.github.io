@@ -10,7 +10,7 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
 // Configuración CORS
-header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Origin: https://seres.blog");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, GET, PUT, DELETE, OPTIONS");
 header("Access-Control-Max-Age: 3600");
@@ -133,25 +133,27 @@ function register($user, $security, $input) {
 
         if ($verification_token) {
             // Enviar email de verificación
-            $verification_link = "https://tudominio.com/verify.php?token=" . $verification_token;
+            $verification_link = "https://seres.blog/verify.php?token=" . $verification_token;
             $email_body = generateEmailVerificationTemplate($name, $verification_link);
             
-            if (sendEmail($email, "Verifica tu cuenta", $email_body)) {
-                jsonResponse([
-                    'success' => true,
-                    'message' => 'Cuenta creada. Revisa tu email para verificar tu cuenta.',
-                    'user_id' => $user->id
-                ]);
-            } else {
-                jsonResponse([
-                    'success' => true,
-                    'message' => 'Cuenta creada, pero no se pudo enviar el email de verificación.',
-                    'user_id' => $user->id
-                ]);
+            $email_sent = sendEmail($email, "Verifica tu cuenta", $email_body);
+            
+            // Para debug, incluir el token en desarrollo
+            $response = [
+                'success' => true,
+                'message' => 'Cuenta creada. Revisa tu email para verificar tu cuenta.',
+                'user_id' => $user->id
+            ];
+            
+            if (!$email_sent) {
+                logError("Fallo al enviar email de verificación a: $email");
+                $response['verification_token'] = $verification_token; // Solo para debug
+                $response['message'] = 'Cuenta creada, pero no se pudo enviar el email. Usa este token para verificación: ' . $verification_token;
             }
-        } else {
-            jsonResponse(['error' => 'Error al crear la cuenta'], 500);
+
+            jsonResponse($response);
         }
+        jsonResponse(['error' => 'Error al crear la cuenta'], 500);
 
     } catch (Exception $e) {
         logError('Error en registro: ' . $e->getMessage());
@@ -265,7 +267,7 @@ function forgotPassword($user, $input) {
 
         $resetToken = $user->generatePasswordResetToken($email);
         if ($resetToken) {
-            $resetLink = "https://tudominio.com/reset-password.php?token=" . $resetToken;
+            $resetLink = "https://seres.blog/reset-password.php?token=" . $resetToken;
             $emailBody = generatePasswordResetTemplate($userData['name'], $resetLink);
             
             sendEmail($email, "Restablecer contraseña", $emailBody);

@@ -3,8 +3,8 @@
 try {
     $pdo = new PDO(
         "mysql:host=localhost;dbname=seres_db;charset=utf8",
-        "root",
-        "",
+        "u186781529_Yelbi",
+        "serespapa",
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,

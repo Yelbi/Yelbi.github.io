@@ -1,10 +1,11 @@
 <?php
 // config/database.php
 class Database {
-    private $host = 'localhost';
-    private $db_name = 'seres_db';
-    private $username = 'root';
-    private $password = '';
+    // Configuración REAL para Hostinger (¡ACTUALIZAR ESTOS VALORES!)
+    private $host = 'localhost'; // Servidor de Hostinger
+    private $db_name = 'u186781529_seres_db'; // Nombre real de tu DB
+    private $username = 'u186781529_Yelbi';    // Usuario de la DB
+    private $password = 'serespapa'; // Contraseña
     private $conn;
 
     public function getConnection() {
@@ -22,7 +23,8 @@ class Database {
             );
         } catch(PDOException $exception) {
             error_log("Connection error: " . $exception->getMessage());
-            die("Error de conexión a la base de datos");
+            // Mensaje amigable en producción
+            die("Error de conexión a la base de datos. Por favor, inténtalo más tarde.");
         }
         return $this->conn;
     }

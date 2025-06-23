@@ -177,33 +177,18 @@
             border: 1px solid #bee5eb;
         }
 
-        .email-verification-notice {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
         @media (max-width: 480px) {
             .container {
                 margin: 20px;
                 padding: 30px 20px;
             }
         }
-        
+
         .form-container {
             display: none;
         }
         .form-container.active {
             display: block;
-        }
-        .user-info {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
         }
         .alert {
             padding: 12px;
@@ -238,4 +223,12 @@
         }
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        .password-requirements {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 13px;
         }
