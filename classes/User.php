@@ -144,67 +144,99 @@ class User {
     }
 
 public function generatePasswordResetToken($email) {
-    // Obtener usuario por email
-    $user = $this->getByEmail($email);
-    if (!$user) {
-        error_log("Usuario no encontrado para email: $email");
+    try {
+        // Obtener usuario por email
+        $user = $this->getByEmail($email);
+        if (!$user) {
+            error_log("Usuario no encontrado para email: $email");
+            return false;
+        }
+
+        // Generar token único
+        $token = bin2hex(random_bytes(32));
+        $expiry = date('Y-m-d H:i:s', time() + 3600); // 1 hora de validez
+
+        error_log("Generando token para usuario ID: " . $user['id']);
+        error_log("Token: $token");
+        error_log("Expiry: $expiry");
+
+        // Limpiar tokens anteriores antes de crear uno nuevo
+        $cleanQuery = "UPDATE users SET reset_token = NULL, reset_expiry = NULL WHERE id = :id";
+        $cleanStmt = $this->conn->prepare($cleanQuery);
+        $cleanStmt->bindParam(':id', $user['id']);
+        $cleanStmt->execute();
+
+        // Actualizar usuario con nuevo token
+        $query = "UPDATE users SET reset_token = :token, reset_expiry = :expiry WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':token', $token);
+        $stmt->bindParam(':expiry', $expiry);
+        $stmt->bindParam(':id', $user['id']);
+        
+        if ($stmt->execute()) {
+            error_log("Token guardado exitosamente");
+            
+            // Verificar que se guardó correctamente
+            $verifyQuery = "SELECT reset_token, reset_expiry FROM users WHERE id = :id";
+            $verifyStmt = $this->conn->prepare($verifyQuery);
+            $verifyStmt->bindParam(':id', $user['id']);
+            $verifyStmt->execute();
+            $result = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+            
+            error_log("Token verificado en BD: " . $result['reset_token']);
+            error_log("Expiry verificado en BD: " . $result['reset_expiry']);
+            
+            return $token;
+        }
+        
+        error_log("Error al guardar token en BD");
+        return false;
+        
+    } catch (Exception $e) {
+        error_log("Error en generatePasswordResetToken: " . $e->getMessage());
         return false;
     }
-
-    // Generar token único
-    $token = bin2hex(random_bytes(32));
-    $expiry = date('Y-m-d H:i:s', time() + 3600); // 1 hora de validez
-
-    error_log("Generando token para usuario ID: " . $user['id']);
-    error_log("Token: $token");
-    error_log("Expiry: $expiry");
-
-    // Actualizar usuario con token
-    $query = "UPDATE users SET reset_token = :token, reset_expiry = :expiry WHERE id = :id";
-    $stmt = $this->conn->prepare($query);
-    $stmt->bindParam(':token', $token);
-    $stmt->bindParam(':expiry', $expiry);
-    $stmt->bindParam(':id', $user['id']);
-    
-    if ($stmt->execute()) {
-        error_log("Token guardado exitosamente");
-        
-        // Verificar que se guardó correctamente
-        $verifyQuery = "SELECT reset_token, reset_expiry FROM users WHERE id = :id";
-        $verifyStmt = $this->conn->prepare($verifyQuery);
-        $verifyStmt->bindParam(':id', $user['id']);
-        $verifyStmt->execute();
-        $result = $verifyStmt->fetch(PDO::FETCH_ASSOC);
-        
-        error_log("Token verificado en BD: " . $result['reset_token']);
-        error_log("Expiry verificado en BD: " . $result['reset_expiry']);
-        
-        return $token;
-    }
-    
-    error_log("Error al guardar token en BD");
-    return false;
 }
 
-
+// Función corregida para resetear password
 public function resetPassword($token, $newPassword) {
     try {
+        // Log para debug
+        error_log("Intentando resetear password con token: $token");
+        
         // 1. Buscar usuario por token válido (no expirado)
         $query = "SELECT * FROM users 
                   WHERE reset_token = :token 
-                  AND reset_expiry > NOW()";
+                  AND reset_expiry > NOW()
+                  AND reset_token IS NOT NULL";
         
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':token', $token);
         $stmt->execute();
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        error_log("Usuarios encontrados con el token: " . $stmt->rowCount());
+        
         if (!$user) {
-            // Token inválido o expirado
+            // Verificar si el token existe pero está expirado
+            $expiredQuery = "SELECT * FROM users WHERE reset_token = :token";
+            $expiredStmt = $this->conn->prepare($expiredQuery);
+            $expiredStmt->bindParam(':token', $token);
+            $expiredStmt->execute();
+            $expiredUser = $expiredStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($expiredUser) {
+                error_log("Token encontrado pero expirado. Expiry: " . $expiredUser['reset_expiry']);
+            } else {
+                error_log("Token no encontrado en la base de datos");
+            }
+            
             return false;
         }
 
-        // Validación básica de contraseña
+        error_log("Usuario encontrado: " . $user['email']);
+
+        // 2. Validación básica de contraseña
         if (strlen($newPassword) < 8) {
             throw new Exception('La contraseña debe tener al menos 8 caracteres');
         }
@@ -214,7 +246,7 @@ public function resetPassword($token, $newPassword) {
             throw new Exception('La contraseña debe incluir mayúsculas, minúsculas y números');
         }
 
-        // 3. Hashear nueva contraseña - usar PASSWORD_DEFAULT en lugar de PASSWORD_BCRYPT
+        // 3. Hashear nueva contraseña
         $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
 
         // 4. Actualizar contraseña y limpiar token
@@ -231,6 +263,7 @@ public function resetPassword($token, $newPassword) {
         
         // 5. Ejecutar y retornar resultado
         if ($updateStmt->execute()) {
+            error_log("Contraseña actualizada exitosamente para usuario: " . $user['email']);
             return true;
         } else {
             error_log("Error al ejecutar UPDATE en resetPassword");
@@ -240,6 +273,33 @@ public function resetPassword($token, $newPassword) {
     } catch (Exception $e) {
         error_log("Error resetPassword: " . $e->getMessage());
         return false;
+    }
+}
+
+// Función adicional para verificar token (útil para debug)
+public function verifyResetToken($token) {
+    try {
+        $query = "SELECT id, email, reset_expiry FROM users 
+                  WHERE reset_token = :token";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':token', $token);
+        $stmt->execute();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$user) {
+            return ['valid' => false, 'reason' => 'Token no encontrado'];
+        }
+        
+        if (strtotime($user['reset_expiry']) <= time()) {
+            return ['valid' => false, 'reason' => 'Token expirado', 'expiry' => $user['reset_expiry']];
+        }
+        
+        return ['valid' => true, 'user' => $user];
+        
+    } catch (Exception $e) {
+        error_log("Error en verifyResetToken: " . $e->getMessage());
+        return ['valid' => false, 'reason' => 'Error interno'];
     }
 }
 }

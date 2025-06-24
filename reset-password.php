@@ -5,12 +5,40 @@ session_start();
 $token = $_GET['token'] ?? '';
 $error = '';
 $success = false;
+$debug_info = '';
+
+// Para debugging - verifica el token al cargar la página
+if (!empty($token)) {
+    $verifyData = ['token' => $token];
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, 'https://seres.blog/api/auth.php?action=verify-reset-token');
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($verifyData));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    
+    $verifyResponse = curl_exec($ch);
+    $verifyHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($verifyResponse !== false) {
+        $verifyResult = json_decode($verifyResponse, true);
+        if (!$verifyResult['valid']) {
+            $debug_info = 'Token verificación: ' . $verifyResult['reason'];
+        }
+    }
+}
 
 // Verificar si se envió el formulario
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['token'] ?? '';
     $newPassword = $_POST['new_password'] ?? '';
     $confirmPassword = $_POST['confirm_password'] ?? '';
+    
+    error_log('POST recibido - Token: ' . $token);
+    error_log('POST recibido - Password length: ' . strlen($newPassword));
     
     // Validar contraseñas
     if ($newPassword !== $confirmPassword) {
@@ -24,6 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'password' => $newPassword
         ];
         
+        error_log('Enviando datos a API: ' . json_encode($data));
+        
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, 'https://seres.blog/api/auth.php?action=reset-password');
         curl_setopt($ch, CURLOPT_POST, true);
@@ -32,21 +62,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json',
         ]);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Solo para desarrollo
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Aumentar timeout
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
         
+        error_log('Respuesta API - HTTP Code: ' . $httpCode);
+        error_log('Respuesta API - Response: ' . $response);
+        error_log('Respuesta API - cURL Error: ' . $curlError);
+        
         if ($response === false) {
-            $error = 'Error de conexión con el servidor';
+            $error = 'Error de conexión con el servidor: ' . $curlError;
         } else {
             $result = json_decode($response, true);
             
             if ($httpCode === 200 && isset($result['success']) && $result['success']) {
                 $success = true;
             } else {
-                $error = $result['error'] ?? 'Error desconocido';
+                $error = $result['error'] ?? 'Error desconocido (HTTP: ' . $httpCode . ')';
+                error_log('Error final: ' . $error);
             }
         }
     }
@@ -193,6 +230,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border: 1px solid #f5c6cb;
         }
         
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
         .link-btn {
             display: block;
             text-align: center;
@@ -266,6 +309,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             100% { transform: rotate(360deg); }
         }
         
+        .debug-info {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
         @media (max-width: 480px) {
             .container {
                 padding: 25px;
@@ -296,6 +349,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a href="iniciar.php" class="btn">Iniciar Sesión</a>
             <?php else: ?>
                 <h2>Restablecer Contraseña</h2>
+                
+                <?php if ($debug_info): ?>
+                    <div class="debug-info">Debug: <?= htmlspecialchars($debug_info) ?></div>
+                <?php endif; ?>
                 
                 <?php if ($error): ?>
                     <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
