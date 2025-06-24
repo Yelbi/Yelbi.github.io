@@ -1,20 +1,10 @@
 <?php
 // reset-password.php
 session_start();
-require_once __DIR__ . '/utils/helpers.php';
-require_once __DIR__ . '/config/database.php';
-require_once __DIR__ . '/classes/User.php';
-
-// Establecer conexión con la base de datos
-$database = new Database();
-$db = $database->getConnection();
-$user = new User($db);
 
 $token = $_GET['token'] ?? '';
 $error = '';
 $success = false;
-$newPassword = '';
-$confirmPassword = '';
 
 // Verificar si se envió el formulario
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -25,14 +15,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validar contraseñas
     if ($newPassword !== $confirmPassword) {
         $error = 'Las contraseñas no coinciden';
-    } elseif (!Security::validatePassword($newPassword)) {
+    } elseif (strlen($newPassword) < 8 || !preg_match('/[a-z]/', $newPassword) || !preg_match('/[A-Z]/', $newPassword) || !preg_match('/[0-9]/', $newPassword)) {
         $error = 'La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas y números';
     } else {
-        // Intentar restablecer la contraseña
-        if ($user->resetPassword($token, $newPassword)) {
-            $success = true;
+        // Llamar a la API para restablecer la contraseña
+        $data = [
+            'token' => $token,
+            'password' => $newPassword
+        ];
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'https://seres.blog/api/auth.php?action=reset-password');
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+        ]);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Solo para desarrollo
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($response === false) {
+            $error = 'Error de conexión con el servidor';
         } else {
-            $error = 'Token inválido o expirado';
+            $result = json_decode($response, true);
+            
+            if ($httpCode === 200 && isset($result['success']) && $result['success']) {
+                $success = true;
+            } else {
+                $error = $result['error'] ?? 'Error desconocido';
+            }
         }
     }
 }
@@ -152,6 +167,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transform: translateY(0);
         }
         
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
         .alert {
             padding: 15px;
             margin-bottom: 20px;
@@ -224,6 +245,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             line-height: 1.6;
         }
         
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1a2a6c;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
         @media (max-width: 480px) {
             .container {
                 padding: 25px;
@@ -261,13 +303,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 <?php if (empty($token)): ?>
                     <div class="alert alert-error">Token no proporcionado o inválido</div>
+                    <a href="iniciar.php" class="link-btn">Volver a Iniciar Sesión</a>
                 <?php else: ?>
-                    <form method="POST">
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p>Procesando...</p>
+                    </div>
+                    
+                    <form method="POST" action="" id="resetForm">
                         <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
                         
                         <div class="form-group">
                             <label for="new_password">Nueva Contraseña</label>
-                            <input type="password" id="new_password" name="new_password" required value="<?= htmlspecialchars($newPassword) ?>">
+                            <input type="password" id="new_password" name="new_password" required>
                             <div class="password-strength">
                                 <div class="password-strength-meter" id="passwordStrengthMeter"></div>
                             </div>
@@ -278,15 +326,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         <div class="form-group">
                             <label for="confirm_password">Confirmar Nueva Contraseña</label>
-                            <input type="password" id="confirm_password" name="confirm_password" required value="<?= htmlspecialchars($confirmPassword) ?>">
+                            <input type="password" id="confirm_password" name="confirm_password" required>
                         </div>
                         
-                        <button type="submit" class="btn">Restablecer Contraseña</button>
+                        <button type="submit" class="btn" id="submitBtn">Restablecer Contraseña</button>
                     </form>
                 <?php endif; ?>
             <?php endif; ?>
             
-            <a href="iniciar.php" class="link-btn">Volver a Iniciar Sesión</a>
+            <?php if (!$success): ?>
+                <a href="iniciar.php" class="link-btn">Volver a Iniciar Sesión</a>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -321,10 +371,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         });
         
-        // Validar que las contraseñas coincidan
-        document.querySelector('form').addEventListener('submit', function(e) {
+        // Validar formulario
+        document.getElementById('resetForm').addEventListener('submit', function(e) {
             const password = document.getElementById('new_password').value;
             const confirmPassword = document.getElementById('confirm_password').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const form = document.getElementById('resetForm');
             
             if (password !== confirmPassword) {
                 e.preventDefault();
@@ -344,6 +397,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 alert('La contraseña debe incluir mayúsculas, minúsculas y números');
                 return false;
             }
+            
+            // Mostrar loading
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Procesando...';
+            loading.style.display = 'block';
+            form.style.opacity = '0.6';
             
             return true;
         });

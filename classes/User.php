@@ -147,12 +147,17 @@ public function generatePasswordResetToken($email) {
     // Obtener usuario por email
     $user = $this->getByEmail($email);
     if (!$user) {
+        error_log("Usuario no encontrado para email: $email");
         return false;
     }
 
     // Generar token único
     $token = bin2hex(random_bytes(32));
     $expiry = date('Y-m-d H:i:s', time() + 3600); // 1 hora de validez
+
+    error_log("Generando token para usuario ID: " . $user['id']);
+    error_log("Token: $token");
+    error_log("Expiry: $expiry");
 
     // Actualizar usuario con token
     $query = "UPDATE users SET reset_token = :token, reset_expiry = :expiry WHERE id = :id";
@@ -162,11 +167,25 @@ public function generatePasswordResetToken($email) {
     $stmt->bindParam(':id', $user['id']);
     
     if ($stmt->execute()) {
+        error_log("Token guardado exitosamente");
+        
+        // Verificar que se guardó correctamente
+        $verifyQuery = "SELECT reset_token, reset_expiry FROM users WHERE id = :id";
+        $verifyStmt = $this->conn->prepare($verifyQuery);
+        $verifyStmt->bindParam(':id', $user['id']);
+        $verifyStmt->execute();
+        $result = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+        
+        error_log("Token verificado en BD: " . $result['reset_token']);
+        error_log("Expiry verificado en BD: " . $result['reset_expiry']);
+        
         return $token;
     }
     
+    error_log("Error al guardar token en BD");
     return false;
 }
+
 
 public function resetPassword($token, $newPassword) {
     try {
@@ -185,19 +204,25 @@ public function resetPassword($token, $newPassword) {
             return false;
         }
 
-        // 2. Validar nueva contraseña
-        if (!Security::validatePassword($newPassword)) {
-            throw new Exception('La contraseña no cumple los requisitos de seguridad');
+        // Validación básica de contraseña
+        if (strlen($newPassword) < 8) {
+            throw new Exception('La contraseña debe tener al menos 8 caracteres');
+        }
+        if (!preg_match('/[a-z]/', $newPassword) || 
+            !preg_match('/[A-Z]/', $newPassword) || 
+            !preg_match('/[0-9]/', $newPassword)) {
+            throw new Exception('La contraseña debe incluir mayúsculas, minúsculas y números');
         }
 
-        // 3. Hashear nueva contraseña
-        $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+        // 3. Hashear nueva contraseña - usar PASSWORD_DEFAULT en lugar de PASSWORD_BCRYPT
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
 
         // 4. Actualizar contraseña y limpiar token
         $updateQuery = "UPDATE users 
                         SET password = :password,
                             reset_token = NULL,
-                            reset_expiry = NULL
+                            reset_expiry = NULL,
+                            updated_at = NOW()
                         WHERE id = :id";
         
         $updateStmt = $this->conn->prepare($updateQuery);
@@ -205,7 +230,12 @@ public function resetPassword($token, $newPassword) {
         $updateStmt->bindParam(':id', $user['id']);
         
         // 5. Ejecutar y retornar resultado
-        return $updateStmt->execute();
+        if ($updateStmt->execute()) {
+            return true;
+        } else {
+            error_log("Error al ejecutar UPDATE en resetPassword");
+            return false;
+        }
         
     } catch (Exception $e) {
         error_log("Error resetPassword: " . $e->getMessage());
