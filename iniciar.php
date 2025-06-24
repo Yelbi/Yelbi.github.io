@@ -3,11 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="/Img/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.3.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="/styles/iniciar.css">
+    <link rel="stylesheet" href="/styles/header.css">
     <title>Sistema de Usuarios</title>
 </head>
 <body>
+<!-- Header -->
+    <header class="header">
+        <a href="/index.php" class="logo">
+            <img src="/Img/logo.png" alt="Logo de Seres">
+        </a>
+        <nav class="nav-menu" id="navMenu">
+            <a href="/index.php" class="nav-link">Inicio</a>
+            <a href="/galeria.php" class="nav-link">Galería</a>
+            <a href="#" class="nav-link">Contacto</a>
+        </nav>
+        <div class="menu-toggle" id="menuToggle">
+            <i class="fi fi-rr-menu-burger"></i>
+        </div>
+        <a href="/iniciar.php" class="user-btn"><i class="fi fi-rr-user"></i></a>
+    </header>
 <div class="container">
+        <!-- Formulario de Inicio de Sesión -->
+        <div id="loginForm" class="form-container">
+            <h2>Iniciar Sesión</h2>
+            <div id="loginAlert"></div>
+            <form id="loginFormElement">
+                <div class="form-group">
+                    <label for="loginEmail">Correo Electrónico</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Contraseña</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn" id="loginBtn">Iniciar Sesión</button>
+            </form>
+            <a href="#" class="link-btn" onclick="showRegister()">¿No tienes cuenta? Regístrate</a>
+            <a href="#" class="link-btn" onclick="showForgotPassword()">¿Olvidaste tu contraseña?</a>
+        </div>
+
         <!-- Formulario de Registro -->
         <div id="registerForm" class="form-container active">
             <h2>Crear Cuenta</h2>
@@ -33,25 +71,6 @@
                 <button type="submit" class="btn" id="registerBtn">Crear Cuenta</button>
             </form>
             <a href="#" class="link-btn" onclick="showLogin()">¿Ya tienes cuenta? Inicia sesión</a>
-        </div>
-
-        <!-- Formulario de Inicio de Sesión -->
-        <div id="loginForm" class="form-container">
-            <h2>Iniciar Sesión</h2>
-            <div id="loginAlert"></div>
-            <form id="loginFormElement">
-                <div class="form-group">
-                    <label for="loginEmail">Correo Electrónico</label>
-                    <input type="email" id="loginEmail" required>
-                </div>
-                <div class="form-group">
-                    <label for="loginPassword">Contraseña</label>
-                    <input type="password" id="loginPassword" required>
-                </div>
-                <button type="submit" class="btn" id="loginBtn">Iniciar Sesión</button>
-            </form>
-            <a href="#" class="link-btn" onclick="showRegister()">¿No tienes cuenta? Regístrate</a>
-            <a href="#" class="link-btn" onclick="showForgotPassword()">¿Olvidaste tu contraseña?</a>
         </div>
 
         <!-- Formulario Recuperación -->
@@ -150,5 +169,6 @@
         </div>
     </div>
     <script src="/JS/iniciar.js"></script>
+    <script src="/JS/header.js"></script>
 </body>
 </html>
