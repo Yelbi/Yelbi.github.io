@@ -191,7 +191,7 @@ public function resetPassword($token, $newPassword) {
         }
 
         // 3. Hashear nueva contraseña
-        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+        $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
 
         // 4. Actualizar contraseña y limpiar token
         $updateQuery = "UPDATE users 
