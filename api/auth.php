@@ -52,24 +52,14 @@ switch ($method) {
             case 'verify-email':
                 verifyEmail($user, $input);
                 break;
-            case 'forgot-password':
-                forgotPassword($user, $input);
-                break;
-            case 'reset-password':
-                resetPassword($user, $input);
-                break;
             case 'logout':
                 logout();
                 break;
-            case 'submit-complaint': // MOVIDO ANTES DE DEFAULT
+            case 'submit-complaint':
                 submitComplaint($input);
                 break;
-                // Agrega este nuevo caso para eliminar quejas
             case 'delete-complaint':
                 deleteComplaint($input);
-                break;
-            case 'verify-reset-token':
-                verifyResetToken($user, $input);
                 break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
@@ -84,7 +74,7 @@ switch ($method) {
             case 'verify-session':
                 verifySession();
                 break;
-            case 'get-complaints': // MOVIDO ANTES DE DEFAULT
+            case 'get-complaints':
                 getComplaints();
                 break;
             default:
@@ -257,115 +247,6 @@ function verifyEmail($user, $input) {
     }
 }
 
-// Recuperar contraseña
-function forgotPassword($user, $input) {
-    try {
-        if (!isset($input['email'])) {
-            jsonResponse(['error' => 'Email requerido'], 400);
-        }
-
-        $email = Security::sanitizeInput($input['email']);
-
-        if (!Security::validateEmail($email)) {
-            jsonResponse(['error' => 'Email no válido'], 400);
-        }
-
-        $userData = $user->getByEmail($email);
-        if (!$userData) {
-            // Devuelve éxito incluso si el email no existe por seguridad
-            jsonResponse([
-                'success' => true,
-                'message' => 'Si el email existe, recibirás instrucciones para restablecer tu contraseña'
-            ]);
-        }
-
-        $resetToken = $user->generatePasswordResetToken($email);
-        if ($resetToken) {
-            $resetLink = "https://seres.blog/reset-password.php?token=" . $resetToken;
-            $emailBody = generatePasswordResetTemplate($userData['name'], $resetLink);
-            
-            // Intenta enviar el correo
-            $emailSent = sendEmail($email, "Restablecer contraseña", $emailBody);
-            
-            if (!$emailSent) {
-                error_log('Error al enviar email de reset a: ' . $email);
-                // En desarrollo, podrías incluir el token para testing
-                // jsonResponse(['error' => 'Error al enviar email', 'debug_token' => $resetToken], 500);
-            }
-        }
-
-        jsonResponse([
-            'success' => true,
-            'message' => 'Si el email existe, recibirás instrucciones para restablecer tu contraseña'
-        ]);
-
-    } catch (Exception $e) {
-        error_log('Error en recuperar contraseña: ' . $e->getMessage());
-        jsonResponse(['error' => 'Error interno del servidor'], 500);
-    }
-}
-
-// Función corregida para reset password
-function resetPassword($user, $input) {
-    try {
-        error_log('Iniciando resetPassword con datos: ' . json_encode($input));
-        
-        if (!isset($input['token'], $input['password'])) {
-            jsonResponse(['error' => 'Token y contraseña requeridos'], 400);
-        }
-
-        $token = Security::sanitizeInput($input['token']);
-        $password = $input['password'];
-
-        error_log('Token recibido: ' . $token);
-        error_log('Password length: ' . strlen($password));
-
-        // Verificar token antes de procesar
-        $tokenVerification = $user->verifyResetToken($token);
-        if (!$tokenVerification['valid']) {
-            error_log('Token inválido: ' . $tokenVerification['reason']);
-            jsonResponse(['error' => 'Token inválido o expirado'], 400);
-        }
-
-        if (!Security::validatePassword($password)) {
-            jsonResponse(['error' => 'La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas y números'], 400);
-        }
-
-        if ($user->resetPassword($token, $password)) {
-            error_log('Reset password exitoso');
-            jsonResponse([
-                'success' => true,
-                'message' => 'Contraseña restablecida exitosamente'
-            ]);
-        } else {
-            error_log('Fallo en resetPassword del usuario');
-            jsonResponse(['error' => 'Token inválido o expirado'], 400);
-        }
-
-    } catch (Exception $e) {
-        error_log('Error al restablecer contraseña: ' . $e->getMessage());
-        jsonResponse(['error' => 'Error interno del servidor'], 500);
-    }
-}
-
-// Función adicional para verificar token (útil para debug)
-function verifyResetToken($user, $input) {
-    try {
-        if (!isset($input['token'])) {
-            jsonResponse(['error' => 'Token requerido'], 400);
-        }
-
-        $token = Security::sanitizeInput($input['token']);
-        $verification = $user->verifyResetToken($token);
-        
-        jsonResponse($verification);
-
-    } catch (Exception $e) {
-        error_log('Error al verificar token: ' . $e->getMessage());
-        jsonResponse(['error' => 'Error interno del servidor'], 500);
-    }
-}
-
 // Obtener perfil
 function getProfile($user) {
     try {
@@ -514,7 +395,7 @@ if (isset($_GET['cleanup']) && $_GET['cleanup'] === 'true') {
 
 // Enviar queja/sugerencia
 function submitComplaint($input) {
-    global $db; // AÑADIDO: Acceso a la conexión de base de datos
+    global $db;
     
     try {
         $authData = authenticateJWT();
@@ -599,23 +480,3 @@ function deleteComplaint($input) {
         jsonResponse(['error' => $e->getMessage()], 500);
     }
 }
-
-// Función para verificar token de reset (endpoint)
-function verifyResetTokenEndpoint($user, $input) {
-    try {
-        if (!isset($input['token'])) {
-            jsonResponse(['error' => 'Token requerido'], 400);
-        }
-
-        $token = Security::sanitizeInput($input['token']);
-        $verification = $user->verifyResetToken($token);
-        
-        jsonResponse($verification);
-
-    } catch (Exception $e) {
-        error_log('Error al verificar token: ' . $e->getMessage());
-        jsonResponse(['error' => 'Error interno del servidor'], 500);
-    }
-}
-?>
-

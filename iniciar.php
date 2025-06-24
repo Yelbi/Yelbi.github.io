@@ -50,27 +50,7 @@
                 </div>
                 <button type="submit" class="btn" id="loginBtn">Iniciar Sesión</button>
             </form>
-            <div style="text-align: center; margin: 15px 0;">
-                <a href="#" class="link-btn" onclick="showForgotPassword()">¿Olvidaste tu contraseña?</a>
-            </div>
             <a href="#" class="link-btn" onclick="showRegister()">¿No tienes cuenta? Regístrate</a>
-        </div>
-
-        <!-- Formulario de Recuperar Contraseña -->
-        <div id="forgotPasswordForm" class="form-container">
-            <h2>Recuperar Contraseña</h2>
-            <div id="forgotAlert"></div>
-            <p style="text-align: center; margin-bottom: 20px;">
-                Ingresa tu email y te enviaremos instrucciones para restablecer tu contraseña.
-            </p>
-            <form id="forgotPasswordFormElement">
-                <div class="form-group">
-                    <label for="forgotEmail">Correo Electrónico</label>
-                    <input type="email" id="forgotEmail" required>
-                </div>
-                <button type="submit" class="btn" id="forgotBtn">Enviar Instrucciones</button>
-            </form>
-            <a href="#" class="link-btn" onclick="showLogin()">Volver al login</a>
         </div>
 
         <!-- Panel de Perfil -->
@@ -99,21 +79,20 @@
                 
                 <!-- Sección para administradores -->
                 <div id="adminSection" style="display: none;">
-    <h3>Buzón de Mensajes</h3>
-    <div class="mailbox-header">
-        <!-- Eliminado mailboxStats -->
-        <button class="btn-refresh" onclick="loadAdminMessages()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M23 4v6h-6M1 20v-6h6"></path>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-            </svg>
-            Actualizar
-        </button>
-    </div>
-    <div id="messagesContainer" class="mailbox-container">
-        <!-- Mensajes se cargarán aquí -->
-    </div>
-</div>
+                    <h3>Buzón de Mensajes</h3>
+                    <div class="mailbox-header">
+                        <button class="btn-refresh" onclick="loadAdminMessages()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 4v6h-6M1 20v-6h6"></path>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                            Actualizar
+                        </button>
+                    </div>
+                    <div id="messagesContainer" class="mailbox-container">
+                        <!-- Mensajes se cargarán aquí -->
+                    </div>
+                </div>
                 
                 <button class="btn" onclick="logout()">Cerrar Sesión</button>
             </div>

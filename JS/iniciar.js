@@ -23,10 +23,6 @@ function showRegister() {
     showForm('registerForm');
 }
 
-function showForgotPassword() {
-    showForm('forgotPasswordForm');
-}
-
 function showProfile() {
     showForm('profilePanel');
 }
@@ -91,12 +87,6 @@ function showPasswordRequirements(strengthDiv, password) {
     html += '</div>';
     
     strengthDiv.innerHTML = html;
-}
-
-// Alternar visibilidad de contraseña
-function togglePasswordVisibility(inputId) {
-    const input = document.getElementById(inputId);
-    input.type = input.type === 'password' ? 'text' : 'password';
 }
 
 // Registro
@@ -263,30 +253,6 @@ async function loadProfile() {
     } catch (error) {
         showAlert('profileAlert', error.message, 'error');
         showLogin();
-    }
-}
-
-// Recuperar contraseña
-async function forgotPassword(email) {
-    if (!email) {
-        showAlert('forgotAlert', 'Por favor ingresa tu email.');
-        return false;
-    }
-
-    setButtonLoading('forgotBtn', true);
-
-    try {
-        const result = await apiRequest('forgot-password', {
-            email: email.toLowerCase().trim()
-        });
-
-        showAlert('forgotAlert', result.message, 'success');
-        return true;
-    } catch (error) {
-        showAlert('forgotAlert', error.message);
-        return false;
-    } finally {
-        setButtonLoading('forgotBtn', false);
     }
 }
 
@@ -532,13 +498,6 @@ document.getElementById('loginFormElement').addEventListener('submit', async (e)
     const password = document.getElementById('loginPassword').value;
     
     await login(email, password);
-});
-
-document.getElementById('forgotPasswordFormElement').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('forgotEmail').value;
-    
-    await forgotPassword(email);
 });
 
 // Evento para enviar queja/sugerencia
