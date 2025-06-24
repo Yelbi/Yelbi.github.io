@@ -154,7 +154,7 @@ public function generatePasswordResetToken($email) {
 
         // Generar token único
         $token = bin2hex(random_bytes(32));
-        $expiry = date('Y-m-d H:i:s', time() + 7200); // 1 hora de validez
+        $expiry = date('Y-m-d H:i:s', time() + 3600); // 1 hora de validez (cambiado de 7200 a 3600)
 
         error_log("Generando token para usuario ID: " . $user['id']);
         error_log("Token: $token");
@@ -272,15 +272,11 @@ public function verifyResetToken($token) {
         error_log("=== VERIFY RESET TOKEN DEBUG ===");
         error_log("Token a verificar: $token");
         
-        // Buscar el token en la base de datos
-        $query = "SELECT id, email, reset_token, reset_expiry, 
-                         NOW() as current_time,
-                         CASE 
-                            WHEN reset_expiry > NOW() THEN 'valid'
-                            ELSE 'expired'
-                         END as status
+        // Buscar el token en la base de datos con verificación de expiración
+        $query = "SELECT id, email, reset_token, reset_expiry
                   FROM users 
-                  WHERE reset_token = :token";
+                  WHERE reset_token = :token 
+                  AND reset_expiry > NOW()";
         
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':token', $token);
@@ -290,9 +286,23 @@ public function verifyResetToken($token) {
         error_log("Registros encontrados: " . $stmt->rowCount());
         
         if (!$user) {
+            // Verificar si el token existe pero está expirado
+            $expiredQuery = "SELECT id, email, reset_expiry 
+                            FROM users 
+                            WHERE reset_token = :token";
+            $expiredStmt = $this->conn->prepare($expiredQuery);
+            $expiredStmt->bindParam(':token', $token);
+            $expiredStmt->execute();
+            $expiredUser = $expiredStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($expiredUser) {
+                error_log("Token encontrado pero expirado. Expiry: " . $expiredUser['reset_expiry']);
+                return ['valid' => false, 'reason' => 'Token expirado'];
+            }
+            
             error_log("Token no encontrado en la base de datos");
             
-            // Verificar si existen tokens en la tabla (para debug)
+            // Debug info - ver cuántos tokens hay
             $debugQuery = "SELECT COUNT(*) as total, 
                                  COUNT(CASE WHEN reset_token IS NOT NULL THEN 1 END) as with_token
                           FROM users";
@@ -307,15 +317,8 @@ public function verifyResetToken($token) {
         error_log("Usuario encontrado: " . $user['email']);
         error_log("Token en BD: " . $user['reset_token']);
         error_log("Expiry en BD: " . $user['reset_expiry']);
-        error_log("Tiempo actual: " . $user['current_time']);
-        error_log("Status: " . $user['status']);
-        
-        if ($user['status'] === 'expired') {
-            error_log("Token expirado");
-            return ['valid' => false, 'reason' => 'Token expirado', 'expiry' => $user['reset_expiry']];
-        }
-        
         error_log("Token válido");
+        
         return ['valid' => true, 'user' => $user];
         
     } catch (Exception $e) {
