@@ -64,6 +64,10 @@ switch ($method) {
             case 'submit-complaint': // MOVIDO ANTES DE DEFAULT
                 submitComplaint($input);
                 break;
+                // Agrega este nuevo caso para eliminar quejas
+            case 'delete-complaint':
+                deleteComplaint($input);
+                break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
         }
@@ -265,6 +269,7 @@ function forgotPassword($user, $input) {
 
         $userData = $user->getByEmail($email);
         if (!$userData) {
+            // Devuelve éxito incluso si el email no existe por seguridad
             jsonResponse([
                 'success' => true,
                 'message' => 'Si el email existe, recibirás instrucciones para restablecer tu contraseña'
@@ -276,7 +281,10 @@ function forgotPassword($user, $input) {
             $resetLink = "https://seres.blog/reset-password.php?token=" . $resetToken;
             $emailBody = generatePasswordResetTemplate($userData['name'], $resetLink);
             
-            sendEmail($email, "Restablecer contraseña", $emailBody);
+            // Intenta enviar el correo
+            if (!sendEmail($email, "Restablecer contraseña", $emailBody)) {
+                throw new Exception('Error al enviar el correo de recuperación');
+            }
         }
 
         jsonResponse([
@@ -285,8 +293,9 @@ function forgotPassword($user, $input) {
         ]);
 
     } catch (Exception $e) {
-        logError('Error en recuperar contraseña: ' . $e->getMessage());
-        jsonResponse(['error' => 'Error interno del servidor'], 500);
+        // Registrar el error y devolver respuesta JSON
+        error_log('Error en recuperar contraseña: ' . $e->getMessage());
+        jsonResponse(['error' => $e->getMessage()], 500);
     }
 }
 
@@ -519,3 +528,37 @@ function getComplaints() {
         jsonResponse(['error' => $e->getMessage()], 500);
     }
 }
+
+function deleteComplaint($input) {
+    global $db, $user;
+    
+    try {
+        $authData = authenticateJWT();
+        
+        // Verificar si es administrador
+        $userData = $user->getById($authData['sub']);
+        if (!$userData || $userData['role'] !== 'admin') {
+            jsonResponse(['error' => 'No autorizado'], 403);
+        }
+        
+        if (!isset($input['id'])) {
+            jsonResponse(['error' => 'ID de mensaje requerido'], 400);
+        }
+        
+        $id = (int)$input['id'];
+        
+        // Eliminar la queja
+        $stmt = $db->prepare("DELETE FROM complaints WHERE id = ?");
+        $stmt->execute([$id]);
+        
+        if ($stmt->rowCount() > 0) {
+            jsonResponse(['success' => true, 'message' => 'Mensaje eliminado']);
+        } else {
+            jsonResponse(['error' => 'Mensaje no encontrado'], 404);
+        }
+        
+    } catch (Exception $e) {
+        jsonResponse(['error' => $e->getMessage()], 500);
+    }
+}
+

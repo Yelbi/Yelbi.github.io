@@ -1,13 +1,33 @@
 <?php
 // utils/helpers.php
+
 function sendEmail($to, $subject, $message, $headers = '') {
-    // Configurar según tu servidor de correo
-    $default_headers = "From: bgrandiel@seres.blog\r\n";
-    $default_headers .= "Reply-To: bgrandiel@seres.blog\r\n";
-    $default_headers .= "MIME-Version: 1.0\r\n";
-    $default_headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+    // Configurar headers para correo HTML
+    $defaultHeaders = [
+        'MIME-Version: 1.0',
+        'Content-type: text/html; charset=UTF-8',
+        'From: notificaciones@seres.blog',
+        'Reply-To: notificaciones@seres.blog',
+        'X-Mailer: PHP/' . phpversion()
+    ];
     
-    return mail($to, $subject, $message, $default_headers . $headers);
+    // Si no se proporcionan headers, usar los predeterminados
+    if (empty($headers)) {
+        $headers = implode("\r\n", $defaultHeaders);
+    }
+    
+    // Intentar enviar el correo
+    $success = mail($to, $subject, $message, $headers);
+    
+    if (!$success) {
+        // Registrar el error (PHP no da detalles específicos)
+        $error = error_get_last();
+        $errorMsg = $error ? $error['message'] : 'Error desconocido al enviar email';
+        error_log("Error al enviar email: $errorMsg");
+        return false;
+    }
+    
+    return true;
 }
 
 function logError($message, $file = 'error.log') {
@@ -32,17 +52,23 @@ function generateEmailVerificationTemplate($name, $verification_link) {
     </html>";
 }
 
-function generatePasswordResetTemplate($name, $reset_link) {
+function generatePasswordResetTemplate($name, $reset_token) {
+    $reset_link = "https://seres.blog/reset-password.php?token=" . $reset_token;
+    
     return "
     <html>
     <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
         <div style='background: #f8f9fa; padding: 20px; border-radius: 10px;'>
             <h2 style='color: #333;'>Restablecer Contraseña</h2>
             <p>Hola $name,</p>
-            <p>Has solicitado restablecer tu contraseña. Haz clic en el enlace para crear una nueva:</p>
+            <p>Has solicitado restablecer tu contraseña en SERES. Haz clic en el enlace para crear una nueva:</p>
             <a href='$reset_link' style='display: inline-block; padding: 12px 24px; background: #dc3545; color: white; text-decoration: none; border-radius: 5px; margin: 10px 0;'>Restablecer Contraseña</a>
             <p>Si no solicitaste este cambio, ignora este mensaje.</p>
             <p><small>Este enlace expirará en 1 hora.</small></p>
+            <p style='margin-top: 20px; color: #6c757d; font-size: 0.9em;'>
+                Si tienes problemas con el botón, copia y pega esta URL en tu navegador:<br>
+                $reset_link
+            </p>
         </div>
     </body>
     </html>";

@@ -7,8 +7,12 @@ function showForm(formId) {
     document.querySelectorAll('.form-container').forEach(form => {
         form.classList.remove('active');
     });
+    
     // Mostrar el formulario deseado
-    document.getElementById(formId).classList.add('active');
+    const activeForm = document.getElementById(formId);
+    if (activeForm) {
+        activeForm.classList.add('active');
+    }
 }
 
 function showLogin() {
@@ -43,13 +47,15 @@ function showAlert(elementId, message, type = 'error') {
 // Función para mostrar spinner de carga en botones
 function setButtonLoading(buttonId, isLoading) {
     const button = document.getElementById(buttonId);
+    if (!button) return;
+    
     if (isLoading) {
         button.disabled = true;
+        button.dataset.originalText = button.textContent;  // Guardar texto original
         button.innerHTML = '<span class="loading-spinner"></span>';
     } else {
         button.disabled = false;
-        const btnText = button.dataset.originalText || 'Botón';
-        button.innerHTML = `<span class="btn-text">${btnText}</span>`;
+        button.textContent = button.dataset.originalText;  // Restaurar texto
     }
 }
 
@@ -74,6 +80,7 @@ function validatePassword(password) {
 
 // Mostrar requisitos de contraseña
 function showPasswordRequirements(strengthDiv, password) {
+    if (!strengthDiv) return;
     const validation = validatePassword(password);
     let html = '<div class="password-requirements">';
     
@@ -126,7 +133,8 @@ async function register(name, email, password, confirmPassword) {
         
         // Limpiar formulario
         document.getElementById('registerFormElement').reset();
-        document.getElementById('passwordStrength').textContent = '';
+        const strengthEl = document.getElementById('passwordStrength');
+        if (strengthEl) strengthEl.textContent = '';
 
         setTimeout(() => {
             if (result.verification_token) {
@@ -172,21 +180,21 @@ async function apiRequest(action, data = {}, method = 'POST') {
 
         const url = `${API_BASE_URL}?action=${action}`;
         const response = await fetch(url, options);
+        const textResponse = await response.text(); // Leer como texto primero
         
-        // Manejar respuestas no JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            const text = await response.text();
-            throw new Error(`Respuesta inválida: ${text.slice(0, 100)}`);
+        try {
+            // Intentar parsear como JSON
+            const result = JSON.parse(textResponse);
+            if (!response.ok) {
+                throw new Error(result.error || `Error ${response.status}`);
+            }
+            return result;
+        } catch (e) {
+            // Si falla el parseo, mostrar la respuesta completa
+            console.error('Respuesta no JSON:', textResponse);
+            throw new Error(`Respuesta inválida: ${textResponse.slice(0, 200)}`);
         }
-
-        const result = await response.json();
         
-        if (!response.ok) {
-            throw new Error(result.error || `Error ${response.status}`);
-        }
-
-        return result;
     } catch (error) {
         console.error('API Error:', error);
         throw new Error(error.message || 'Error en la conexión');
@@ -307,16 +315,14 @@ async function submitComplaint(subject, description) {
 async function loadAdminMessages() {
     try {
         const container = document.getElementById('messagesContainer');
-        const stats = document.getElementById('mailboxStats');
         
         // Mostrar estado de carga
         container.innerHTML = '<div class="loading-container"><div class="loading-spinner"></div><span>Cargando mensajes...</span></div>';
         
         const result = await apiRequest('get-complaints', {}, 'GET');
         
-        // Actualizar estadísticas
+        // Eliminada la parte de estadísticas que causaba el error
         const totalMessages = result.complaints ? result.complaints.length : 0;
-        stats.innerHTML = `<div class="stats-item"><span class="stats-number">${totalMessages}</span><span class="stats-label">mensajes</span></div>`;
         
         if (totalMessages === 0) {
             container.innerHTML = `
@@ -345,34 +351,34 @@ async function loadAdminMessages() {
             });
             
             messageElement.innerHTML = `
-                <div class="message-header">
-                    <div class="sender-info" onclick="toggleMessageDetail(${complaint.id})">
-                        <div class="sender-avatar">${complaint.user_email.charAt(0).toUpperCase()}</div>
-                        <div class="sender-details">
-                            <div class="sender-name">${complaint.user_email}</div>
-                            <div class="message-subject">${complaint.subject}</div>
-                        </div>
-                    </div>
-                    <div class="message-meta">
-                        <span class="message-date">${formattedDate}</span>
-                        <button class="btn-delete" onclick="deleteMessage(event, ${complaint.id})" title="Eliminar mensaje">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                <line x1="10" y1="11" x2="10" y2="17"></line>
-                                <line x1="14" y1="11" x2="14" y2="17"></line>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="message-body" id="messageBody-${complaint.id}" style="display:none;">
-                    <div class="message-content">
-                        <p>${complaint.description}</p>
-                    </div>
-                    <div class="message-footer">
-                        <small>📅 Enviado el: ${new Date(complaint.created_at).toLocaleString('es-ES')}</small>
-                    </div>
-                </div>
-            `;
+    <div class="message-header">
+        <div class="sender-info" onclick="toggleMessageDetail(${complaint.id})">
+            <div class="sender-avatar">${complaint.user_email.charAt(0).toUpperCase()}</div>
+            <div class="sender-details">
+                <div class="sender-name">${complaint.user_email}</div>
+                <div class="message-subject">${complaint.subject}</div>
+            </div>
+        </div>
+        <div class="message-meta">
+            <span class="message-date">${formattedDate}</span>
+            <button class="btn-delete" onclick="deleteMessage(event, ${complaint.id})" title="Eliminar mensaje">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+    <div class="message-body" id="messageBody-${complaint.id}" style="display:none;">
+        <div class="message-content">
+            <p>${complaint.description}</p>
+        </div>
+        <div class="message-footer">
+            <small>📅 Enviado el: ${new Date(complaint.created_at).toLocaleString('es-ES')}</small>
+        </div>
+    </div>
+`;
             container.appendChild(messageElement);
         });
     } catch (error) {
@@ -396,18 +402,15 @@ function toggleMessageDetail(messageId) {
     const messageItem = document.querySelector(`[data-id="${messageId}"]`);
     
     if (messageBody && messageItem) {
-        const isVisible = messageBody.style.display !== 'none';
-        messageBody.style.display = isVisible ? 'none' : 'block';
-        messageItem.classList.toggle('expanded', !isVisible);
+        const isVisible = messageBody.style.display === 'block';
         
-        // Animación suave
-        if (!isVisible) {
-            messageBody.style.maxHeight = '0';
-            messageBody.style.opacity = '0';
-            setTimeout(() => {
-                messageBody.style.maxHeight = '500px';
-                messageBody.style.opacity = '1';
-            }, 10);
+        // Alternar visibilidad con animación
+        if (isVisible) {
+            messageBody.style.display = 'none';
+            messageItem.classList.remove('expanded');
+        } else {
+            messageBody.style.display = 'block';
+            messageItem.classList.add('expanded');
         }
     }
 }
@@ -438,8 +441,10 @@ async function deleteMessage(event, messageId) {
         messageElement.style.opacity = '0.5';
         messageElement.style.pointerEvents = 'none';
         
-        // Realizar petición de eliminación
-        await apiRequest('delete-complaint', { id: messageId });
+        // CORRECCIÓN: Enviar parámetro correcto y método DELETE
+        await apiRequest('delete-complaint', { 
+            id: messageId  
+        }, 'POST'); 
         
         // Animación de eliminación exitosa
         messageElement.style.transition = 'all 0.4s ease';
@@ -452,9 +457,6 @@ async function deleteMessage(event, messageId) {
         // Eliminar elemento del DOM después de la animación
         setTimeout(() => {
             messageElement.remove();
-            
-            // Actualizar contador
-            updateMessageStats();
             
             // Verificar si ya no hay mensajes
             const remainingMessages = document.querySelectorAll('.message-item');
@@ -504,14 +506,7 @@ window.loadAdminMessages = loadAdminMessages;
 
 // Al cargar la página, verificar si hay token
 document.addEventListener('DOMContentLoaded', () => {
-    // Guardar textos originales de botones
-    document.querySelectorAll('.btn').forEach(btn => {
-        const textSpan = btn.querySelector('.btn-text');
-        if (textSpan) {
-            btn.dataset.originalText = textSpan.textContent;
-        }
-    });
-    
+    // Eliminamos la parte que buscaba .btn-text
     const token = localStorage.getItem('jwt_token');
     if (token) {
         loadProfile();
@@ -555,7 +550,9 @@ document.getElementById('complaintForm').addEventListener('submit', async (e) =>
 });
 
 // Verificación de contraseña en tiempo real
-document.getElementById('registerPassword').addEventListener('input', function() {
+document.getElementById('registerPassword')?.addEventListener('input', function() {
     const strengthDiv = document.getElementById('passwordStrength');
-    showPasswordRequirements(strengthDiv, this.value);
+    if (strengthDiv) {
+        showPasswordRequirements(strengthDiv, this.value);
+    }
 });

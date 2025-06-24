@@ -3,9 +3,9 @@
 class Database {
     // Configuración REAL para Hostinger (¡ACTUALIZAR ESTOS VALORES!)
     private $host = 'localhost'; // Servidor de Hostinger
-    private $db_name = 'u186781529_seres_db'; // Nombre real de tu DB
-    private $username = 'u186781529_Yelbi';    // Usuario de la DB
-    private $password = '123456789Grandiel$'; // Contraseña
+    private $db_name = 'seres_db'; // Nombre real de tu DB
+    private $username = 'root';    // Usuario de la DB
+    private $password = ''; // Contraseña
     private $conn;
 
     public function getConnection() {

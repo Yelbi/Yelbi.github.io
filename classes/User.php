@@ -142,4 +142,74 @@ class User {
 
         return $stmt->rowCount() > 0;
     }
+
+public function generatePasswordResetToken($email) {
+    // Obtener usuario por email
+    $user = $this->getByEmail($email);
+    if (!$user) {
+        return false;
+    }
+
+    // Generar token único
+    $token = bin2hex(random_bytes(32));
+    $expiry = date('Y-m-d H:i:s', time() + 3600); // 1 hora de validez
+
+    // Actualizar usuario con token
+    $query = "UPDATE users SET reset_token = :token, reset_expiry = :expiry WHERE id = :id";
+    $stmt = $this->conn->prepare($query);
+    $stmt->bindParam(':token', $token);
+    $stmt->bindParam(':expiry', $expiry);
+    $stmt->bindParam(':id', $user['id']);
+    
+    if ($stmt->execute()) {
+        return $token;
+    }
+    
+    return false;
+}
+
+public function resetPassword($token, $newPassword) {
+    try {
+        // 1. Buscar usuario por token válido (no expirado)
+        $query = "SELECT * FROM users 
+                  WHERE reset_token = :token 
+                  AND reset_expiry > NOW()";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':token', $token);
+        $stmt->execute();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            // Token inválido o expirado
+            return false;
+        }
+
+        // 2. Validar nueva contraseña
+        if (!Security::validatePassword($newPassword)) {
+            throw new Exception('La contraseña no cumple los requisitos de seguridad');
+        }
+
+        // 3. Hashear nueva contraseña
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+
+        // 4. Actualizar contraseña y limpiar token
+        $updateQuery = "UPDATE users 
+                        SET password = :password,
+                            reset_token = NULL,
+                            reset_expiry = NULL
+                        WHERE id = :id";
+        
+        $updateStmt = $this->conn->prepare($updateQuery);
+        $updateStmt->bindParam(':password', $hashedPassword);
+        $updateStmt->bindParam(':id', $user['id']);
+        
+        // 5. Ejecutar y retornar resultado
+        return $updateStmt->execute();
+        
+    } catch (Exception $e) {
+        error_log("Error resetPassword: " . $e->getMessage());
+        return false;
+    }
+}
 }
