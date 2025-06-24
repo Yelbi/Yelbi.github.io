@@ -68,6 +68,9 @@ switch ($method) {
             case 'delete-complaint':
                 deleteComplaint($input);
                 break;
+            case 'verify-reset-token':
+                verifyResetToken($user, $input);
+                break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
         }
@@ -596,4 +599,23 @@ function deleteComplaint($input) {
         jsonResponse(['error' => $e->getMessage()], 500);
     }
 }
+
+// Función para verificar token de reset (endpoint)
+function verifyResetTokenEndpoint($user, $input) {
+    try {
+        if (!isset($input['token'])) {
+            jsonResponse(['error' => 'Token requerido'], 400);
+        }
+
+        $token = Security::sanitizeInput($input['token']);
+        $verification = $user->verifyResetToken($token);
+        
+        jsonResponse($verification);
+
+    } catch (Exception $e) {
+        error_log('Error al verificar token: ' . $e->getMessage());
+        jsonResponse(['error' => 'Error interno del servidor'], 500);
+    }
+}
+?>
 
