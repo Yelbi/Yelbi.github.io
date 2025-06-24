@@ -61,6 +61,48 @@ switch ($method) {
             case 'delete-complaint':
                 deleteComplaint($input);
                 break;
+            case 'request-password-reset':
+                try {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    
+                    if (!isset($data['email'])) {
+                        throw new Exception('Email requerido');
+                    }
+                    
+                    // Usar $db en lugar de $pdo
+                    createPasswordResetTable($db);
+                    cleanExpiredTokens($db);
+                    $result = requestPasswordReset($data['email'], $db);
+                    
+                    http_response_code(200);
+                    echo json_encode($result);
+                    
+                } catch (Exception $e) {
+                    http_response_code(400);
+                    echo json_encode(['error' => $e->getMessage()]);
+                }
+                break;
+                
+            case 'reset-password':
+                try {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    
+                    if (!isset($data['token']) || !isset($data['new_password'])) {
+                        throw new Exception('Token y nueva contraseña requeridos');
+                    }
+                    
+                    // CORRECCIÓN: Usar $db en lugar de $pdo
+                    $result = resetPassword($data['token'], $data['new_password'], $db);
+                    
+                    http_response_code(200);
+                    echo json_encode($result);
+                    
+                } catch (Exception $e) {
+                    http_response_code(400);
+                    echo json_encode(['error' => $e->getMessage()]);
+                }
+                break;
+                
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
         }
@@ -479,4 +521,141 @@ function deleteComplaint($input) {
     } catch (Exception $e) {
         jsonResponse(['error' => $e->getMessage()], 500);
     }
+}
+
+function requestPasswordReset($email, $pdo) {
+    try {
+        // Validar email
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception('Email inválido');
+        }
+        
+        // Verificar si el email existe y está verificado
+        $stmt = $pdo->prepare("SELECT id, name, email FROM users WHERE email = ? AND email_verified = 1");
+        $stmt->execute([$email]);
+        $userData = $stmt->fetch();
+        
+        if (!$userData) {
+            // Por seguridad, no revelar si el email existe
+            return [
+                'success' => true,
+                'message' => 'Si el correo existe, recibirás un enlace de recuperación en breve.'
+            ];
+        }
+        
+        // Generar token de recuperación
+        $resetToken = bin2hex(random_bytes(32));
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+        
+        // Eliminar tokens anteriores
+        $stmt = $pdo->prepare("DELETE FROM password_resets WHERE user_id = ?");
+        $stmt->execute([$userData['id']]);
+        
+        // Insertar nuevo token
+        $stmt = $pdo->prepare("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)");
+        $stmt->execute([$userData['id'], $resetToken, $expiresAt]);
+        
+        // Enviar email con enlace de recuperación
+        $resetLink = "https://seres.blog/iniciar.php?token=" . $resetToken;
+        $emailBody = generatePasswordResetTemplate($userData['name'], $resetLink);
+        
+        $email_sent = sendEmail($email, "Recuperación de contraseña", $emailBody);
+        
+        if ($email_sent) {
+            return [
+                'success' => true,
+                'message' => 'Se ha enviado un enlace de recuperación a tu correo'
+            ];
+        } else {
+            throw new Exception('Error al enviar el correo de recuperación');
+        }
+        
+    } catch (Exception $e) {
+        throw new Exception('Error al procesar la solicitud: ' . $e->getMessage());
+    }
+}
+
+/**Restablecer contraseña con token*/
+function resetPassword($token, $newPassword, $pdo) {
+    try {
+        // Validar entrada
+        if (empty($token) || empty($newPassword)) {
+            throw new Exception('Todos los campos son obligatorios');
+        }
+        
+        // Validar contraseña
+        if (strlen($newPassword) < 8) {
+            throw new Exception('La contraseña debe tener al menos 8 caracteres');
+        }
+        
+        if (!preg_match('/[A-Z]/', $newPassword) || 
+            !preg_match('/[a-z]/', $newPassword) || 
+            !preg_match('/[0-9]/', $newPassword)) {
+            throw new Exception('La contraseña debe contener mayúsculas, minúsculas y números');
+        }
+        
+        // Verificar token
+        $stmt = $pdo->prepare("
+            SELECT pr.user_id, pr.expires_at, u.email 
+            FROM password_resets pr 
+            JOIN users u ON pr.user_id = u.id 
+            WHERE pr.token = ? AND pr.expires_at > NOW()
+        ");
+        $stmt->execute([$token]);
+        $resetData = $stmt->fetch();
+        
+        if (!$resetData) {
+            throw new Exception('Token inválido o expirado');
+        }
+        
+        // Verificar si el usuario existe
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE id = ?");
+        $stmt->execute([$resetData['user_id']]);
+        if (!$stmt->fetch()) {
+            throw new Exception('Usuario no existe');
+        }
+        
+        // Actualizar contraseña
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+        
+        $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+        $stmt->execute([$hashedPassword, $resetData['user_id']]);
+        
+        // Eliminar token usado
+        $stmt = $pdo->prepare("DELETE FROM password_resets WHERE user_id = ?");
+        $stmt->execute([$resetData['user_id']]);
+        
+        // Log de seguridad
+        error_log("Password reset successful for user: " . $resetData['email']);
+        
+        return [
+            'success' => true,
+            'message' => 'Contraseña actualizada exitosamente'
+        ];
+        
+    } catch (Exception $e) {
+        throw new Exception('Error al restablecer contraseña: ' . $e->getMessage());
+    }
+}
+
+/**Crear tabla de password_resets si no existe*/
+function createPasswordResetTable($pdo) {
+    $sql = "CREATE TABLE IF NOT EXISTS password_resets (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        token VARCHAR(255) NOT NULL UNIQUE,
+        expires_at DATETIME NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_token (token),
+        INDEX idx_expires (expires_at)
+    )";
+    
+    $pdo->exec($sql);
+}
+
+function cleanExpiredTokens($pdo) {
+    $stmt = $pdo->prepare("DELETE FROM password_resets WHERE expires_at < NOW()");
+    $stmt->execute();
+    return $stmt->rowCount();
 }

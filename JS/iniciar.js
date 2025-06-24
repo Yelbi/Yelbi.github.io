@@ -27,6 +27,19 @@ function showProfile() {
     showForm('profilePanel');
 }
 
+// NUEVAS FUNCIONES PARA RECUPERACIÓN DE CONTRASEÑAS
+function showForgotPassword() {
+    showForm('forgotPasswordForm');
+}
+
+function showResetPassword() {
+    showForm('resetPasswordForm');
+}
+
+function backToLogin() {
+    showLogin();
+}
+
 // Función para mostrar alertas
 function showAlert(elementId, message, type = 'error') {
     const alertDiv = document.getElementById(elementId);
@@ -47,11 +60,11 @@ function setButtonLoading(buttonId, isLoading) {
     
     if (isLoading) {
         button.disabled = true;
-        button.dataset.originalText = button.textContent;  // Guardar texto original
+        button.dataset.originalText = button.textContent;
         button.innerHTML = '<span class="loading-spinner"></span>';
     } else {
         button.disabled = false;
-        button.textContent = button.dataset.originalText;  // Restaurar texto
+        button.textContent = button.dataset.originalText;
     }
 }
 
@@ -87,6 +100,98 @@ function showPasswordRequirements(strengthDiv, password) {
     html += '</div>';
     
     strengthDiv.innerHTML = html;
+}
+
+// NUEVA FUNCIÓN: Solicitar recuperación de contraseña
+async function requestPasswordReset(email) {
+    if (!email) {
+        showAlert('forgotPasswordAlert', 'Por favor, ingresa tu correo electrónico.');
+        return false;
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showAlert('forgotPasswordAlert', 'Por favor, ingresa un correo electrónico válido.');
+        return false;
+    }
+
+    setButtonLoading('forgotPasswordBtn', true);
+
+    try {
+        const result = await apiRequest('request-password-reset', {
+            email: email.toLowerCase().trim()
+        });
+
+        showAlert('forgotPasswordAlert', result.message, 'success');
+        
+        // Limpiar formulario y mostrar mensaje
+        document.getElementById('forgotPasswordFormElement').reset();
+        
+        setTimeout(() => {
+            showAlert('loginAlert', 
+                'Si el correo existe, recibirás un enlace de recuperación en breve.', 
+                'info'
+            );
+            showLogin();
+        }, 3000);
+
+        return true;
+    } catch (error) {
+        showAlert('forgotPasswordAlert', error.message);
+        return false;
+    } finally {
+        setButtonLoading('forgotPasswordBtn', false);
+    }
+}
+
+// NUEVA FUNCIÓN: Resetear contraseña con token
+async function resetPassword(token, newPassword, confirmPassword) {
+    // Validar que las contraseñas coincidan
+    if (newPassword !== confirmPassword) {
+        showAlert('resetPasswordAlert', 'Las contraseñas no coinciden.');
+        return false;
+    }
+
+    // Validación de contraseña
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.valid) {
+        showAlert('resetPasswordAlert', 
+            'La contraseña debe tener al menos 8 caracteres, incluyendo mayúsculas, minúsculas y números'
+        );
+        return false;
+    }
+
+    setButtonLoading('resetPasswordBtn', true);
+
+    try {
+        const result = await apiRequest('reset-password', {
+            token: token.trim(),
+            new_password: newPassword
+        });
+
+        showAlert('resetPasswordAlert', result.message, 'success');
+        
+        // Limpiar formulario
+        document.getElementById('resetPasswordFormElement').reset();
+        const strengthEl = document.getElementById('resetPasswordStrength');
+        if (strengthEl) strengthEl.innerHTML = '';
+
+        setTimeout(() => {
+            showAlert('loginAlert', 
+                'Contraseña cambiada exitosamente. Puedes iniciar sesión ahora.', 
+                'success'
+            );
+            showLogin();
+        }, 3000);
+
+        return true;
+    } catch (error) {
+        showAlert('resetPasswordAlert', error.message);
+        return false;
+    } finally {
+        setButtonLoading('resetPasswordBtn', false);
+    }
 }
 
 // Registro
@@ -170,17 +275,15 @@ async function apiRequest(action, data = {}, method = 'POST') {
 
         const url = `${API_BASE_URL}?action=${action}`;
         const response = await fetch(url, options);
-        const textResponse = await response.text(); // Leer como texto primero
+        const textResponse = await response.text();
         
         try {
-            // Intentar parsear como JSON
             const result = JSON.parse(textResponse);
             if (!response.ok) {
                 throw new Error(result.error || `Error ${response.status}`);
             }
             return result;
         } catch (e) {
-            // Si falla el parseo, mostrar la respuesta completa
             console.error('Respuesta no JSON:', textResponse);
             throw new Error(`Respuesta inválida: ${textResponse.slice(0, 200)}`);
         }
@@ -206,17 +309,13 @@ async function login(email, password) {
             password: password
         });
 
-        // Verificar si se recibió token
         if (!result.token) {
             throw new Error('No se recibió token de autenticación');
         }
 
-        // Guardar token en localStorage
         localStorage.setItem('jwt_token', result.token);
-
         showAlert('loginAlert', '¡Inicio de sesión exitoso!', 'success');
         
-        // Cargar y mostrar perfil
         await loadProfile();
         
         return true;
@@ -236,7 +335,6 @@ async function loadProfile() {
             document.getElementById('profileName').textContent = result.user.name;
             document.getElementById('profileEmail').textContent = result.user.email;
             
-            // Mostrar sección según tipo de usuario usando role
             if (result.user.role === 'admin') {
                 document.getElementById('adminSection').style.display = 'block';
                 document.getElementById('userSection').style.display = 'none';
@@ -277,17 +375,15 @@ async function submitComplaint(subject, description) {
     }
 }
 
-// Cargar mensajes para admin - CORREGIDO
+// Cargar mensajes para admin
 async function loadAdminMessages() {
     try {
         const container = document.getElementById('messagesContainer');
         
-        // Mostrar estado de carga
         container.innerHTML = '<div class="loading-container"><div class="loading-spinner"></div><span>Cargando mensajes...</span></div>';
         
         const result = await apiRequest('get-complaints', {}, 'GET');
         
-        // Eliminada la parte de estadísticas que causaba el error
         const totalMessages = result.complaints ? result.complaints.length : 0;
         
         if (totalMessages === 0) {
@@ -362,7 +458,7 @@ async function loadAdminMessages() {
     }
 }
 
-// Alternar vista detallada del mensaje - CORREGIDO
+// Alternar vista detallada del mensaje
 function toggleMessageDetail(messageId) {
     const messageBody = document.getElementById(`messageBody-${messageId}`);
     const messageItem = document.querySelector(`[data-id="${messageId}"]`);
@@ -370,7 +466,6 @@ function toggleMessageDetail(messageId) {
     if (messageBody && messageItem) {
         const isVisible = messageBody.style.display === 'block';
         
-        // Alternar visibilidad con animación
         if (isVisible) {
             messageBody.style.display = 'none';
             messageItem.classList.remove('expanded');
@@ -381,7 +476,7 @@ function toggleMessageDetail(messageId) {
     }
 }
 
-// Eliminar mensaje - COMPLETAMENTE CORREGIDO
+// Eliminar mensaje
 async function deleteMessage(event, messageId) {
     event.stopPropagation();
     
@@ -399,20 +494,16 @@ async function deleteMessage(event, messageId) {
     const originalHTML = deleteBtn.innerHTML;
     
     try {
-        // Mostrar estado de carga
         deleteBtn.innerHTML = '<div class="loading-spinner small"></div>';
         deleteBtn.disabled = true;
         
-        // Agregar efecto visual de eliminación
         messageElement.style.opacity = '0.5';
         messageElement.style.pointerEvents = 'none';
         
-        // CORRECCIÓN: Enviar parámetro correcto y método DELETE
         await apiRequest('delete-complaint', { 
             id: messageId  
         }, 'POST'); 
         
-        // Animación de eliminación exitosa
         messageElement.style.transition = 'all 0.4s ease';
         messageElement.style.transform = 'translateX(-100%)';
         messageElement.style.opacity = '0';
@@ -420,11 +511,9 @@ async function deleteMessage(event, messageId) {
         messageElement.style.marginBottom = '0';
         messageElement.style.padding = '0';
         
-        // Eliminar elemento del DOM después de la animación
         setTimeout(() => {
             messageElement.remove();
             
-            // Verificar si ya no hay mensajes
             const remainingMessages = document.querySelectorAll('.message-item');
             if (remainingMessages.length === 0) {
                 const container = document.getElementById('messagesContainer');
@@ -438,7 +527,6 @@ async function deleteMessage(event, messageId) {
             }
         }, 400);
         
-        // Mostrar mensaje de éxito temporal
         showAlert('profileAlert', 'Mensaje eliminado correctamente', 'success');
         setTimeout(() => {
             document.getElementById('profileAlert').innerHTML = '';
@@ -447,7 +535,6 @@ async function deleteMessage(event, messageId) {
     } catch (error) {
         console.error('Error al eliminar mensaje:', error);
         
-        // Restaurar estado visual en caso de error
         messageElement.style.opacity = '1';
         messageElement.style.pointerEvents = 'auto';
         deleteBtn.innerHTML = originalHTML;
@@ -457,28 +544,39 @@ async function deleteMessage(event, messageId) {
     }
 }
 
-// Actualizar estadísticas de mensajes
-function updateMessageStats() {
-    const messages = document.querySelectorAll('.message-item');
-    const stats = document.getElementById('mailboxStats');
-    const count = messages.length;
-    stats.innerHTML = `<div class="stats-item"><span class="stats-number">${count}</span><span class="stats-label">mensajes</span></div>`;
-}
-
 // Hacer las funciones globales para que funcionen desde el HTML
 window.toggleMessageDetail = toggleMessageDetail;
 window.deleteMessage = deleteMessage;
 window.loadAdminMessages = loadAdminMessages;
+window.showForgotPassword = showForgotPassword;
+window.showResetPassword = showResetPassword;
+window.backToLogin = backToLogin;
 
 // Al cargar la página, verificar si hay token
 document.addEventListener('DOMContentLoaded', () => {
-    // Eliminamos la parte que buscaba .btn-text
-    const token = localStorage.getItem('jwt_token');
-    if (token) {
+    // 1. Obtener token de autenticación JWT (si existe)
+    const jwtToken = localStorage.getItem('jwt_token');
+    
+    // 2. Obtener token de recuperación de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const resetToken = urlParams.get('token');
+    
+    // 3. Lógica de redirección
+    if (resetToken) {
+        // Caso: Token de recuperación en URL
+        document.getElementById('resetToken').value = resetToken;
+        showResetPassword();
+    } else if (jwtToken) {
+        // Caso: Usuario ya autenticado
         loadProfile();
     } else {
+        // Caso: Ningún token - mostrar login
         showLogin();
     }
+    
+    // 4. Depuración (opcional)
+    console.log("JWT Token:", jwtToken ? "Presente" : "Ausente");
+    console.log("Reset Token:", resetToken || "No encontrado");
 });
 
 // Event Listeners
@@ -500,6 +598,22 @@ document.getElementById('loginFormElement').addEventListener('submit', async (e)
     await login(email, password);
 });
 
+// NUEVOS EVENT LISTENERS PARA RECUPERACIÓN DE CONTRASEÑAS
+document.getElementById('forgotPasswordFormElement').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const email = document.getElementById('forgotEmail').value;
+    requestPasswordReset(email); // Usar la función existente
+});
+
+document.getElementById('resetPasswordFormElement').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const token = document.getElementById('resetToken').value;
+    const newPassword = document.getElementById('resetNewPassword').value;
+    const confirmPassword = document.getElementById('resetConfirmPassword').value; // Capturar valor real
+    
+    resetPassword(token, newPassword, confirmPassword);
+});
+
 // Evento para enviar queja/sugerencia
 document.getElementById('complaintForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -515,3 +629,19 @@ document.getElementById('registerPassword')?.addEventListener('input', function(
         showPasswordRequirements(strengthDiv, this.value);
     }
 });
+
+// NUEVO: Verificación de contraseña en tiempo real para reset
+document.getElementById('resetNewPassword')?.addEventListener('input', function() {
+    const strengthDiv = document.getElementById('resetPasswordStrength');
+    if (strengthDiv) {
+        showPasswordRequirements(strengthDiv, this.value);
+    }
+});
+
+// Función para mostrar formulario reset
+function showResetPassword() {
+    document.querySelectorAll('.form-container').forEach(el => {
+        el.classList.remove('active');
+    });
+    document.getElementById('resetPasswordForm').classList.add('active');
+}

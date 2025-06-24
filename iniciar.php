@@ -7,6 +7,8 @@
     <title>Sistema de Usuarios</title>
 </head>
 <body>
+<div class="container">
+        <!-- Formulario de Registro -->
     <div class="container">
         <!-- Formulario de Registro -->
         <div id="registerForm" class="form-container active">
@@ -51,6 +53,41 @@
                 <button type="submit" class="btn" id="loginBtn">Iniciar Sesión</button>
             </form>
             <a href="#" class="link-btn" onclick="showRegister()">¿No tienes cuenta? Regístrate</a>
+            <a href="#" class="link-btn" onclick="showForgotPassword()">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <!-- Formulario Recuperación -->
+        <div id="forgotPasswordForm" class="form-container">
+            <h2>Recuperar Contraseña</h2>
+            <div id="forgotPasswordAlert"></div>
+            <form id="forgotPasswordFormElement">
+                <div class="form-group">
+                    <label for="forgotEmail">Correo Electrónico</label>
+                    <input type="email" id="forgotEmail" required>
+                </div>
+                <button type="submit" class="btn">Enviar Enlace</button>
+            </form>
+        </div>
+
+        <!-- NUEVO: Formulario de Restablecer Contraseña -->
+        <div id="resetPasswordForm" class="form-container">
+            <h2>Restablecer Contraseña</h2>
+            <div id="resetPasswordAlert"></div>
+            <form id="resetPasswordFormElement">
+                <div class="form-group">
+                    <label for="resetToken">Token de Recuperación</label>
+                    <input type="text" id="resetToken" required>
+                </div>
+                <div class="form-group">
+                    <label for="resetNewPassword">Nueva Contraseña *</label>
+                    <input type="password" id="resetNewPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="resetConfirmPassword">Confirmar Nueva Contraseña *</label>
+                    <input type="password" id="resetConfirmPassword" required>
+                </div>
+                <button type="submit" class="btn">Cambiar Contraseña</button>
+            </form>
         </div>
 
         <!-- Panel de Perfil -->

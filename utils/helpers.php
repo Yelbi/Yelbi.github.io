@@ -7,27 +7,14 @@ function sendEmail($to, $subject, $message, $headers = '') {
         'MIME-Version: 1.0',
         'Content-type: text/html; charset=UTF-8',
         'From: notificaciones@seres.blog',
-        'Reply-To: notificaciones@seres.blog',
+        'Reply-To: soporte@seres.blog',
         'X-Mailer: PHP/' . phpversion()
     ];
     
-    // Si no se proporcionan headers, usar los predeterminados
-    if (empty($headers)) {
-        $headers = implode("\r\n", $defaultHeaders);
-    }
+    $headers = implode("\r\n", $defaultHeaders);
     
     // Intentar enviar el correo
-    $success = mail($to, $subject, $message, $headers);
-    
-    if (!$success) {
-        // Registrar el error (PHP no da detalles específicos)
-        $error = error_get_last();
-        $errorMsg = $error ? $error['message'] : 'Error desconocido al enviar email';
-        error_log("Error al enviar email: $errorMsg");
-        return false;
-    }
-    
-    return true;
+    return mail($to, $subject, $message, $headers);
 }
 
 function logError($message, $file = 'error.log') {
@@ -52,9 +39,7 @@ function generateEmailVerificationTemplate($name, $verification_link) {
     </html>";
 }
 
-function generatePasswordResetTemplate($name, $reset_token) {
-    $reset_link = "https://seres.blog/reset-password.php?token=" . $reset_token;
-    
+function generatePasswordResetTemplate($name, $reset_link) {
     return "
     <html>
     <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
