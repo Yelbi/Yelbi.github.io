@@ -554,29 +554,21 @@ window.backToLogin = backToLogin;
 
 // Al cargar la página, verificar si hay token
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Obtener token de autenticación JWT (si existe)
     const jwtToken = localStorage.getItem('jwt_token');
-    
-    // 2. Obtener token de recuperación de la URL
     const urlParams = new URLSearchParams(window.location.search);
     const resetToken = urlParams.get('token');
     
-    // 3. Lógica de redirección
     if (resetToken) {
-        // Caso: Token de recuperación en URL
-        document.getElementById('resetToken').value = resetToken;
+        const tokenInput = document.getElementById('resetToken');
+        tokenInput.value = resetToken;
+        tokenInput.readOnly = true;  // Hacer el campo de solo lectura
+        tokenInput.style.backgroundColor = '#f8f9fa';  // Estilo visual para indicar que no es editable
         showResetPassword();
     } else if (jwtToken) {
-        // Caso: Usuario ya autenticado
         loadProfile();
     } else {
-        // Caso: Ningún token - mostrar login
         showLogin();
     }
-    
-    // 4. Depuración (opcional)
-    console.log("JWT Token:", jwtToken ? "Presente" : "Ausente");
-    console.log("Reset Token:", resetToken || "No encontrado");
 });
 
 // Event Listeners

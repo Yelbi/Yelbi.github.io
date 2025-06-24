@@ -9,8 +9,6 @@
 <body>
 <div class="container">
         <!-- Formulario de Registro -->
-    <div class="container">
-        <!-- Formulario de Registro -->
         <div id="registerForm" class="form-container active">
             <h2>Crear Cuenta</h2>
             <div id="registerAlert"></div>
@@ -65,29 +63,33 @@
                     <label for="forgotEmail">Correo Electrónico</label>
                     <input type="email" id="forgotEmail" required>
                 </div>
-                <button type="submit" class="btn">Enviar Enlace</button>
+                <button type="submit" class="btn" id="forgotPasswordBtn">Enviar Enlace</button>
             </form>
+            <a href="#" class="link-btn" onclick="backToLogin()">Volver al inicio de sesión</a>
         </div>
 
-        <!-- NUEVO: Formulario de Restablecer Contraseña -->
+        <!-- Formulario de Restablecer Contraseña -->
         <div id="resetPasswordForm" class="form-container">
             <h2>Restablecer Contraseña</h2>
             <div id="resetPasswordAlert"></div>
             <form id="resetPasswordFormElement">
                 <div class="form-group">
                     <label for="resetToken">Token de Recuperación</label>
-                    <input type="text" id="resetToken" required>
+                    <input type="text" id="resetToken" required readonly>
+                    <small class="form-text text-muted">Este token se completó automáticamente</small>
                 </div>
                 <div class="form-group">
                     <label for="resetNewPassword">Nueva Contraseña *</label>
                     <input type="password" id="resetNewPassword" required>
+                    <div id="resetPasswordStrength" class="password-strength"></div>
                 </div>
                 <div class="form-group">
                     <label for="resetConfirmPassword">Confirmar Nueva Contraseña *</label>
                     <input type="password" id="resetConfirmPassword" required>
                 </div>
-                <button type="submit" class="btn">Cambiar Contraseña</button>
+                <button type="submit" class="btn" id="resetPasswordBtn">Cambiar Contraseña</button>
             </form>
+            <a href="#" class="link-btn" onclick="backToLogin()">Volver al inicio de sesión</a>
         </div>
 
         <!-- Panel de Perfil -->
@@ -110,14 +112,17 @@
                             <label for="complaintDescription">Descripción *</label>
                             <textarea id="complaintDescription" rows="4" required></textarea>
                         </div>
-                        <button type="submit" class="btn">Enviar</button>
+                        <button type="submit" class="btn">Enviar Mensaje</button>
                     </form>
                 </div>
                 
                 <!-- Sección para administradores -->
                 <div id="adminSection" style="display: none;">
-                    <h3>Buzón de Mensajes</h3>
+                    <h3>Panel de Administración</h3>
                     <div class="mailbox-header">
+                        <div class="mailbox-title">
+                            Bandeja de entrada
+                        </div>
                         <button class="btn-refresh" onclick="loadAdminMessages()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M23 4v6h-6M1 20v-6h6"></path>
