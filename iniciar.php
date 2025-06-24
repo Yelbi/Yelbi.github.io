@@ -122,19 +122,28 @@
                     <div class="mailbox-header">
                         <div class="mailbox-title">
                             Bandeja de entrada
+                            <span class="message-count" id="messageCount" style="display: none;">0</span>
                         </div>
                         <button class="btn-refresh" onclick="loadAdminMessages()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M23 4v6h-6M1 20v-6h6"></path>
                                 <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
                             </svg>
                             Actualizar
                         </button>
                     </div>
-                    <div id="messagesContainer" class="mailbox-container">
-                        <!-- Mensajes se cargarán aquí -->
-                    </div>
-                </div>
+    
+    <!-- Toolbar -->
+    <div class="mailbox-toolbar" style="display: none;">
+        <button class="toolbar-btn active">Todos</button>
+        <button class="toolbar-btn">No leídos</button>
+        <button class="toolbar-btn">Importantes</button>
+    </div>
+    
+    <div id="messagesContainer" class="mailbox-container">
+        <!-- Mensajes se cargarán aquí -->
+    </div>
+</div>
                 
                 <button class="btn" onclick="logout()">Cerrar Sesión</button>
             </div>

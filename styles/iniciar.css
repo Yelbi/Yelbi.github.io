@@ -246,119 +246,148 @@ input:hover:not(:focus) {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 20px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #e1e5e9;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e8eaed 100%);
+    border-bottom: 1px solid #dadce0;
     border-radius: 12px 12px 0 0;
+    box-shadow: 0 1px 3px rgba(60, 64, 67, 0.12);
 }
 
 .mailbox-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #202124;
+    font-size: 20px;
+    font-weight: 500;
+    color: #3c4043;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    font-family: 'Google Sans', 'Segoe UI', sans-serif;
 }
 
 .mailbox-title::before {
-    content: "📧";
-    font-size: 18px;
+    content: "📬";
+    font-size: 24px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
 }
 
+/* Contador de mensajes */
+.message-count {
+    background: #ea4335;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* Botón refresh mejorado */
 .btn-refresh {
     background: #1a73e8;
     color: white;
-    padding: 8px 16px;
+    padding: 10px 20px;
     border: none;
-    border-radius: 20px;
+    border-radius: 24px;
     cursor: pointer;
     font-weight: 500;
-    font-size: 13px;
-    transition: all 0.2s ease;
+    font-size: 14px;
+    transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    box-shadow: 0 1px 3px rgba(26, 115, 232, 0.4);
 }
 
 .btn-refresh:hover {
     background: #1557b0;
-    box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+    box-shadow: 0 2px 8px rgba(26, 115, 232, 0.4);
+    transform: translateY(-1px);
 }
 
-.btn-refresh svg {
-    width: 14px;
-    height: 14px;
+.btn-refresh:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(26, 115, 232, 0.4);
 }
 
-/* Contenedor del buzón */
+/* Contenedor del buzón mejorado */
 .mailbox-container {
     max-height: 500px;
     overflow-y: auto;
-    border: 1px solid #e1e5e9;
-    border-radius: 12px;
+    border: 1px solid #dadce0;
+    border-radius: 0 0 12px 12px;
     background: white;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: relative;
 }
 
+/* Scrollbar personalizado */
 .mailbox-container::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
 }
 
 .mailbox-container::-webkit-scrollbar-track {
-    background: #f1f3f4;
+    background: #f8f9fa;
+    border-radius: 4px;
 }
 
 .mailbox-container::-webkit-scrollbar-thumb {
     background: #dadce0;
-    border-radius: 3px;
+    border-radius: 4px;
+    border: 1px solid #f8f9fa;
 }
 
 .mailbox-container::-webkit-scrollbar-thumb:hover {
     background: #bdc1c6;
 }
 
-/* Items de mensaje - Estilo Gmail */
+/* Items de mensaje - Estilo Gmail mejorado */
 .message-item {
     border-bottom: 1px solid #f0f0f0;
-    transition: all 0.2s ease;
-    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0.0, 0.2, 1);
     position: relative;
+    background: white;
 }
 
 .message-item:hover {
-    background: #f8f9fa;
+    background: #fafafa;
     box-shadow: inset 1px 0 0 #dadce0, inset -1px 0 0 #dadce0;
+    z-index: 1;
 }
 
 .message-item.expanded {
     background: #f0f4ff;
-    border-left: 3px solid #1a73e8;
+    border-left: 4px solid #1a73e8;
+    box-shadow: 0 2px 5px rgba(26, 115, 232, 0.15);
+    z-index: 2;
 }
 
 .message-item:last-child {
     border-bottom: none;
+    border-radius: 0 0 12px 12px;
 }
 
-/* Header del mensaje */
+/* Header del mensaje mejorado */
 .message-header {
     display: flex;
     align-items: center;
-    padding: 12px 16px;
-    gap: 12px;
+    padding: 16px 20px;
+    gap: 16px;
+    cursor: pointer;
 }
 
 .sender-info {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
     flex: 1;
     min-width: 0;
 }
 
+/* Avatar mejorado */
 .sender-avatar {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: linear-gradient(135deg, #1a73e8, #4285f4);
     color: white;
@@ -366,11 +395,14 @@ input:hover:not(:focus) {
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 16px;
     flex-shrink: 0;
     text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(26, 115, 232, 0.3);
+    border: 2px solid white;
 }
 
+/* Detalles del remitente */
 .sender-details {
     flex: 1;
     min-width: 0;
@@ -378,154 +410,279 @@ input:hover:not(:focus) {
 
 .sender-name {
     font-weight: 500;
-    font-size: 14px;
+    font-size: 16px;
     color: #202124;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .message-subject {
-    font-size: 13px;
+    font-size: 14px;
     color: #5f6368;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: 400;
+    line-height: 1.3;
 }
 
+/* Meta información */
 .message-meta {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     flex-shrink: 0;
 }
 
 .message-date {
-    font-size: 12px;
+    font-size: 13px;
     color: #5f6368;
     white-space: nowrap;
+    font-weight: 400;
 }
 
+/* Botón eliminar mejorado */
 .btn-delete {
     background: none;
     border: none;
     color: #5f6368;
     cursor: pointer;
-    padding: 6px;
+    padding: 8px;
     border-radius: 50%;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
+    transform: scale(0.8);
 }
 
 .message-item:hover .btn-delete {
     opacity: 1;
+    transform: scale(1);
 }
 
 .btn-delete:hover {
     background: #fce8e6;
     color: #d93025;
+    transform: scale(1.1);
 }
 
-.btn-delete svg {
-    width: 16px;
-    height: 16px;
+.btn-delete:active {
+    transform: scale(0.95);
 }
 
-/* Cuerpo del mensaje */
+/* Indicador de mensaje nuevo/no leído */
+.message-item.unread::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: #1a73e8;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+.message-item.unread .sender-name {
+    font-weight: 600;
+}
+
+.message-item.unread .message-subject {
+    font-weight: 500;
+    color: #3c4043;
+}
+
+/* Cuerpo del mensaje mejorado */
 .message-body {
-    padding: 0 16px 16px 60px;
-    animation: expandMessage 0.3s ease;
-    border-top: 1px solid #f0f0f0;
+    padding: 0 20px 20px 76px;
+    animation: expandMessage 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    border-top: 1px solid #e8eaed;
     margin-top: 8px;
+    background: rgba(240, 244, 255, 0.3);
 }
 
 @keyframes expandMessage {
     from {
         opacity: 0;
         max-height: 0;
-        padding-top: 0;
         padding-bottom: 0;
     }
     to {
         opacity: 1;
-        max-height: 300px;
-        padding-top: 16px;
-        padding-bottom: 16px;
+        max-height: 400px;
+        padding-bottom: 20px;
     }
 }
 
 .message-content {
-    background: #f8f9fa;
-    padding: 16px;
-    border-radius: 8px;
-    border-left: 3px solid #1a73e8;
-    margin-bottom: 12px;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e8eaed;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(60, 64, 67, 0.12);
+    position: relative;
+}
+
+.message-content::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #1a73e8;
+    border-radius: 2px 0 0 2px;
 }
 
 .message-content p {
-    color: #202124;
-    line-height: 1.5;
+    color: #3c4043;
+    line-height: 1.6;
     margin: 0;
-    font-size: 14px;
+    font-size: 15px;
     word-wrap: break-word;
 }
 
+/* Footer del mensaje */
 .message-footer {
-    padding-top: 8px;
+    padding-top: 12px;
     border-top: 1px solid #e8eaed;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .message-footer small {
     color: #5f6368;
-    font-size: 11px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
-/* Estados especiales del buzón */
-.loading-container,
-.empty-mailbox,
-.error-state {
+/* Estados especiales mejorados */
+.loading-container {
     text-align: center;
-    padding: 40px 20px;
+    padding: 60px 20px;
+    color: #5f6368;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.loading-container .loading-spinner {
+    width: 32px;
+    height: 32px;
+    border-width: 3px;
+}
+
+.empty-mailbox {
+    text-align: center;
+    padding: 80px 20px;
     color: #5f6368;
 }
 
-.empty-mailbox .empty-icon,
+.empty-mailbox .empty-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    display: block;
+    opacity: 0.7;
+}
+
+.empty-mailbox h3 {
+    color: #3c4043;
+    margin-bottom: 12px;
+    font-size: 20px;
+    border: none;
+    padding: 0;
+    font-weight: 400;
+}
+
+.empty-mailbox p {
+    color: #5f6368;
+    font-size: 16px;
+    margin-bottom: 0;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+}
+
+/* Error state mejorado */
+.error-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #5f6368;
+}
+
 .error-state .error-icon {
     font-size: 48px;
     margin-bottom: 16px;
     display: block;
 }
 
-.empty-mailbox h3,
 .error-state h3 {
-    color: #202124;
+    color: #d93025;
     margin-bottom: 8px;
     font-size: 18px;
     border: none;
     padding: 0;
 }
 
-.empty-mailbox p,
-.error-state p {
-    color: #5f6368;
-    font-size: 14px;
-    margin-bottom: 16px;
-}
-
 .btn-retry {
     background: #1a73e8;
     color: white;
-    padding: 8px 16px;
+    padding: 10px 24px;
     border: none;
-    border-radius: 20px;
+    border-radius: 24px;
     cursor: pointer;
     font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    margin-top: 16px;
+}
+
+.btn-retry:hover {
+    background: #1557b0;
+    box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+}
+
+/* Toolbar adicional (opcional) */
+.mailbox-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e8eaed;
+}
+
+.toolbar-btn {
+    background: none;
+    border: 1px solid #dadce0;
+    color: #5f6368;
+    padding: 6px 12px;
+    border-radius: 4px;
     font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toolbar-btn:hover {
+    background: #f1f3f4;
+    border-color: #c0c4c7;
+}
+
+.toolbar-btn.active {
+    background: #e8f0fe;
+    border-color: #1a73e8;
+    color: #1a73e8;
 }
 
 /* Spinner de carga */

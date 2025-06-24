@@ -1,6 +1,6 @@
 <?php
 // detalle.php
-require 'config/database.php';
+require 'config/connection.php';
 
 // Obtener el slug del ser
 $slug = $_GET['ser'] ?? '';
