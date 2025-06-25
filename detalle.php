@@ -97,10 +97,7 @@ try {
             </div>
             <?php if ($detalle && !empty($detalle['ser_img'])): ?>
                 <div class="hero-portrait">
-                    <img src="<?= htmlspecialchars($detalle['ser_img']) ?>" 
-                         alt="Retrato de <?= htmlspecialchars($ser['nombre']) ?>" 
-                         class="portrait-image"
-                         onerror="this.onerror=null;this.classList.add('error')">
+                    <img src="<?= htmlspecialchars($detalle['ser_img']) ?>" alt="Retrato de <?= htmlspecialchars($ser['nombre']) ?>" class="portrait-image">
                 </div>
             <?php endif; ?>
         </div>
@@ -125,10 +122,7 @@ try {
                     </div>
                     <?php if (!empty($detalle['caracteristicas_img'])): ?>
                     <div class="characteristics-image">
-                        <img src="<?= htmlspecialchars($detalle['caracteristicas_img']) ?>" 
-                             alt="Características de <?= htmlspecialchars($ser['nombre']) ?>" 
-                             loading="lazy"
-                             onerror="this.onerror=null;this.classList.add('error')">
+                        <img src="<?= htmlspecialchars($detalle['caracteristicas_img']) ?>" alt="Características de <?= htmlspecialchars($ser['nombre']) ?>" loading="lazy">
                     </div>
                     <?php endif; ?>
                 </div>
@@ -158,10 +152,7 @@ try {
         <div class="content-card">
             <h2 class="section-title">Árbol Genealógico</h2>
             <div class="genealogy-image">
-                <img src="<?= htmlspecialchars($detalle['arbolg_img']) ?>" 
-                     alt="Árbol genealógico de <?= htmlspecialchars($ser['nombre']) ?>" 
-                     loading="lazy"
-                     onerror="this.onerror=null;this.classList.add('error')">
+                <img src="<?= htmlspecialchars($detalle['arbolg_img']) ?>" alt="Árbol genealógico de <?= htmlspecialchars($ser['nombre']) ?>" loading="lazy">
             </div>
         </div>
     </section>
@@ -174,12 +165,7 @@ try {
         <div class="image-gallery">
             <?php foreach ($imagenes as $img): ?>
             <div class="gallery-item">
-                <div class="gallery-image-container">
-                    <img src="<?= htmlspecialchars($img['imagen_url']) ?>" 
-                         alt="<?= htmlspecialchars($ser['nombre']) ?>" 
-                         loading="lazy"
-                         onerror="this.onerror=null;this.classList.add('error')">
-                </div>
+                <img src="<?= htmlspecialchars($img['imagen_url']) ?>" alt="<?= htmlspecialchars($ser['nombre']) ?>" loading="lazy" onclick="openModal(this)">
             </div>
             <?php endforeach; ?>
         </div>
