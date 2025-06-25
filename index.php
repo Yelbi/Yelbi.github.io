@@ -43,7 +43,7 @@
             <div class="section-content">
                 <h1>Proximamente</h1>
                 <p>Espera a por mas</p>
-                <a href="#" class="btn">Descubrir</a>
+                <a href="/galeria.php" class="btn">Descubrir</a>
             </div>
         </section>
 
@@ -51,8 +51,8 @@
         <section class="section section3" id="section3">
             <div class="section-content">
                 <h1>Contactar</h1>
-                <p>Únete a nuestra comunidad y forma parte de algo más grande. Juntos construimos el futuro digital con pasión y dedicación.</p>
-                <a href="/feedback.php" class="btn">Aqui</a>
+                <p>Para quejas y sugerencias dirígete a tu perfil y escríbeme.</p>
+                <a href="/iniciar.php" class="btn">Aqui</a>
             </div>
         </section>
     </div>

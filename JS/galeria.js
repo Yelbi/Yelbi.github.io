@@ -415,62 +415,138 @@ class ResponsiveGallery {
 
   // === LAZY LOADING OPTIMIZADO ===
   setupLazyLoading() {
-    const imageObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          this.loadImage(entry.target);
-          imageObserver.unobserve(entry.target);
-        }
-      });
-    }, {
-      rootMargin: this.config.lazyLoadMargin,
-      threshold: 0.01
-    });
-
-    this.observers.set('images', imageObserver);
-
-    this.elements.images.forEach((img, index) => {
-      // Preload imágenes críticas
-      if (index < this.config.preloadCount) {
-        img.loading = 'eager';
-        this.loadImage(img);
-      } else {
-        imageObserver.observe(img);
+  const imageObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        this.loadImage(entry.target);
+        imageObserver.unobserve(entry.target);
       }
     });
-  }
+  }, {
+    rootMargin: this.config.lazyLoadMargin,
+    threshold: 0.01
+  });
 
-  loadImage(img) {
-    const card = img.closest('.card');
-    
-    if (card) {
-      card.classList.add('loading');
+  this.observers.set('images', imageObserver);
+
+  this.elements.images.forEach((img, index) => {
+    // Preload imágenes críticas
+    if (index < this.config.preloadCount) {
+      img.loading = 'eager';
+      this.loadImage(img);
+    } else {
+      imageObserver.observe(img);
     }
+  });
+}
 
-    img.addEventListener('load', () => {
-      img.classList.add('loaded');
-      img.style.opacity = '1';
-      if (card) card.classList.remove('loading');
-    }, { once: true });
+loadImage(img) {
+  const card = img.closest('.card');
+  
+  // FIX 1: Verificar si la imagen ya está completamente cargada antes de agregar loading
+  if (img.complete && img.naturalHeight !== 0) {
+    this.handleImageLoaded(img, card);
+    return;
+  }
 
-    img.addEventListener('error', () => {
-      this.handleImageError(img, card);
-    }, { once: true });
+  // FIX 2: Solo agregar loading si no está ya cargada
+  if (card && !img.classList.contains('loaded')) {
+    card.classList.add('loading');
+  }
 
-    // Si ya está cargada
-    if (img.complete && img.naturalHeight !== 0) {
-      img.classList.add('loaded');
-      img.style.opacity = '1';
-      if (card) card.classList.remove('loading');
+  // FIX 3: Usar un timeout como fallback para evitar estados colgados
+  const loadingTimeout = setTimeout(() => {
+    console.warn('Timeout de carga para imagen:', img.alt || img.src);
+    this.handleImageLoaded(img, card, true); // true indica que fue por timeout
+  }, 5000); // 5 segundos de timeout
+
+  const handleLoad = () => {
+    clearTimeout(loadingTimeout);
+    this.handleImageLoaded(img, card);
+  };
+
+  const handleError = () => {
+    clearTimeout(loadingTimeout);
+    this.handleImageError(img, card);
+  };
+
+  // FIX 4: Remover listeners existentes antes de agregar nuevos
+  img.removeEventListener('load', handleLoad);
+  img.removeEventListener('error', handleError);
+  
+  img.addEventListener('load', handleLoad, { once: true });
+  img.addEventListener('error', handleError, { once: true });
+}
+
+handleImageLoaded(img, card, wasTimeout = false) {
+  if (!img.classList.contains('loaded')) {
+    img.classList.add('loaded');
+    img.style.opacity = '1';
+  }
+  
+  if (card) {
+    card.classList.remove('loading');
+    // FIX 6: Forzar un reflow para asegurar que se apliquen los estilos
+    card.offsetHeight;
+  }
+  
+  if (wasTimeout) {
+    console.warn('Imagen cargada por timeout:', img.alt || img.src);
+  }
+}
+
+handleImageError(img, card) {
+  img.style.opacity = '0.5';
+  img.src = this.generatePlaceholderSVG();
+  img.classList.add('loaded'); // FIX 7: Marcar como loaded incluso en error
+  
+  if (card) {
+    card.classList.remove('loading');
+    card.offsetHeight; // Forzar reflow
+  }
+  
+  console.warn('Error cargando imagen:', img.alt || img.src);
+}
+
+// FIX 8: Método para verificar y limpiar estados colgados
+checkAndFixStuckLoadingStates() {
+  this.elements.cards.forEach(card => {
+    if (card.classList.contains('loading')) {
+      const img = card.querySelector('img');
+      
+      if (img && (img.complete && img.naturalHeight !== 0)) {
+        console.warn('Limpiando estado loading colgado para tarjeta:', card.dataset.nombre);
+        card.classList.remove('loading');
+        img.classList.add('loaded');
+        img.style.opacity = '1';
+      }
     }
-  }
+  });
+}
 
-  handleImageError(img, card) {
-    img.style.opacity = '0.5';
-    img.src = this.generatePlaceholderSVG();
-    if (card) card.classList.remove('loading');
-    console.warn('Error cargando imagen:', img.alt);
+// FIX 9: Agregar método de diagnóstico
+diagnoseLoadingIssues() {
+  const stuckCards = Array.from(this.elements.cards).filter(card => 
+    card.classList.contains('loading')
+  );
+  
+  if (stuckCards.length > 0) {
+    console.group('🔍 Diagnóstico de tarjetas con loading colgado:');
+    stuckCards.forEach(card => {
+      const img = card.querySelector('img');
+      console.log({
+        card: card.dataset.nombre,
+        imageComplete: img ? img.complete : 'No image',
+        imageNaturalHeight: img ? img.naturalHeight : 'No image',
+        imageLoaded: img ? img.classList.contains('loaded') : 'No image',
+        imageSrc: img ? img.src : 'No image'
+      });
+    });
+    console.groupEnd();
   }
+  
+  return stuckCards.length;
+}
 
   generatePlaceholderSVG() {
     return 'data:image/svg+xml;base64,' + btoa(`
@@ -696,25 +772,60 @@ class ResponsiveGallery {
 
   // === INICIALIZACIÓN PRINCIPAL ===
   init() {
-    try {
-      this.loadFiltersFromURL();
-      this.setupEventListeners();
-      this.setupCardInteractions();
-      this.setupLazyLoading();
-      
-      // Setup de cleanup automático
-      window.addEventListener('beforeunload', () => this.cleanup());
-      
-      console.log('Galería responsiva inicializada:', {
-        cards: this.elements.cards.length,
-        device: this.deviceInfo,
-        config: this.config
-      });
-    } catch (error) {
-      console.error('Error inicializando galería:', error);
+  try {
+    this.loadFiltersFromURL();
+    this.setupEventListeners();
+    this.setupCardInteractions();
+    this.setupLazyLoading();
+    
+    // FIX 10: Verificar estados después de la inicialización
+    setTimeout(() => {
+      this.checkAndFixStuckLoadingStates();
+    }, 1000);
+    
+    // FIX 11: Verificación periódica (solo en desarrollo)
+    if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')) {
+      setInterval(() => {
+        const stuckCount = this.diagnoseLoadingIssues();
+        if (stuckCount > 0) {
+          this.checkAndFixStuckLoadingStates();
+        }
+      }, 10000); // Cada 10 segundos en desarrollo
     }
+    
+    // Setup de cleanup automático
+    window.addEventListener('beforeunload', () => this.cleanup());
+    
+    console.log('Galería responsiva inicializada:', {
+      cards: this.elements.cards.length,
+      device: this.deviceInfo,
+      config: this.config
+    });
+  } catch (error) {
+    console.error('Error inicializando galería:', error);
   }
 }
+
+// FIX 12: Método para forzar recarga de imágenes problemáticas
+  forceReloadStuckImages() {
+    const stuckCards = Array.from(this.elements.cards).filter(card => 
+      card.classList.contains('loading')
+    );
+    
+    stuckCards.forEach(card => {
+      const img = card.querySelector('img');
+      if (img) {
+        const originalSrc = img.src;
+        img.src = '';
+        setTimeout(() => {
+          img.src = originalSrc;
+        }, 100);
+      }
+    });
+    
+    return stuckCards.length;
+  }
+} // <-- Cierre de la clase ResponsiveGallery
 
 // === INICIALIZACIÓN AUTOMÁTICA ===
 document.addEventListener('DOMContentLoaded', () => {
@@ -730,5 +841,9 @@ window.GalleryAPI = {
       window.galleryInstance.state.filters[type] = value;
       window.galleryInstance.applyFilters();
     }
-  }
+  },
+  // Métodos de debugging
+  diagnoseLoading: () => window.galleryInstance?.diagnoseLoadingIssues(),
+  fixStuckCards: () => window.galleryInstance?.checkAndFixStuckLoadingStates(),
+  forceReload: () => window.galleryInstance?.forceReloadStuckImages()
 };

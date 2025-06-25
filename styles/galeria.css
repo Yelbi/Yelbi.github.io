@@ -923,3 +923,115 @@ body {
     transform: scale(0.95);
   }
 }
+
+/* FIX: Asegurar que las transiciones se detengan cuando la imagen está cargada */
+.card.loading img {
+  opacity: 0.3;
+  transform: scale(1);
+  animation: pulseLoading 1.5s ease-in-out infinite;
+}
+
+.card img.loaded {
+  opacity: 1 !important;
+  transform: scale(1) !important;
+  animation: none !important;
+  transition: opacity 0.3s ease;
+}
+
+/* FIX: Mejorar la animación de loading para evitar escalado excesivo */
+@keyframes pulseLoading {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.02); /* Reducido de valores mayores */
+  }
+}
+
+/* FIX: Asegurar que las tarjetas no queden en estado intermedio */
+.card {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.card:not(.loading) {
+  transform: none !important;
+  animation: none !important;
+}
+
+/* FIX: Estado específico para imágenes completamente cargadas */
+.card img.loaded {
+  opacity: 1;
+  transform: none;
+}
+
+/* FIX: Prevenir que las tarjetas se queden "bailando" */
+.card.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* FIX: Remover el indicador de carga cuando la imagen está lista */
+.card:not(.loading)::after {
+  display: none !important;
+}
+
+/* FIX: Asegurar que las imágenes con error también detengan la animación */
+.card img[src*="data:image/svg+xml"] {
+  opacity: 0.5 !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+/* FIX: Media query para dispositivos con prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .card.loading img {
+    animation: none;
+    opacity: 0.5;
+  }
+  
+  .card.loading::after {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/* FIX: Prevenir problemas en dispositivos de bajo rendimiento */
+@media (max-width: 768px) {
+  .card.loading img {
+    animation-duration: 2s; /* Más lento en móviles */
+  }
+}
+
+/* FIX: Fallback para navegadores que no soportan :not() */
+.card.image-loaded {
+  animation: none !important;
+  transform: none !important;
+}
+
+.card.image-loaded img {
+  opacity: 1 !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+.card.image-loaded::after {
+  display: none !important;
+}
