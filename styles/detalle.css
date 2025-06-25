@@ -601,3 +601,82 @@ html {
     image-rendering: crisp-edges;
   }
 }
+
+/* Sección Hero con retrato */
+.hero-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 500px;
+  align-items: center;
+  gap: 2rem;
+}
+
+.hero-portrait {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.portrait-image {
+  max-width: 100%;
+  max-height: 500px;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
+}
+
+.portrait-image:hover {
+  transform: scale(1.03);
+}
+
+/* Sección de características con imagen */
+.characteristics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: center;
+}
+
+.characteristics-image img {
+  width: 100%;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Árbol genealógico */
+.genealogy-section .content-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.genealogy-image img {
+  width: 100%;
+  border-radius: 1rem;
+  margin-top: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hero-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .characteristics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .characteristics-image {
+    order: -1; /* Mover imagen arriba en móvil */
+    margin-bottom: 1.5rem;
+  }
+  
+  .portrait-image {
+    max-height: 350px;
+  }
+}
+
+@media (max-width: 576px) {
+  .portrait-image {
+    max-height: 280px;
+  }
+}

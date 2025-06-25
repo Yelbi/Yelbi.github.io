@@ -2,7 +2,6 @@
 // detalle.php
 require 'config/connection.php';
 
-// Obtener el slug del ser
 $slug = $_GET['ser'] ?? '';
 
 if (empty($slug)) {
@@ -80,12 +79,9 @@ try {
 </nav>
 
 <main class="detail-container">
+    <!-- Sección Hero con retrato -->
     <section class="hero-section">
         <div class="hero-content">
-            <div class="hero-image">
-                <img src="<?= htmlspecialchars($ser['imagen']) ?>" alt="<?= htmlspecialchars($ser['nombre']) ?>" class="main-image">
-                <div class="image-overlay"></div>
-            </div>
             <div class="hero-info">
                 <h1 class="ser-title"><?= htmlspecialchars($ser['nombre']) ?></h1>
                 <div class="basic-info">
@@ -99,6 +95,11 @@ try {
                     </div>
                 </div>
             </div>
+            <?php if ($detalle && !empty($detalle['ser_img'])): ?>
+                <div class="hero-portrait">
+                    <img src="<?= htmlspecialchars($detalle['ser_img']) ?>" alt="Retrato de <?= htmlspecialchars($ser['nombre']) ?>" class="portrait-image">
+                </div>
+            <?php endif; ?>
         </div>
     </section>
 
@@ -112,6 +113,22 @@ try {
             </div>
             <?php endif; ?>
 
+            <?php if (!empty($detalle['caracteristicas'])): ?>
+            <div class="content-card characteristics-card">
+                <div class="characteristics-grid">
+                    <div class="characteristics-text">
+                        <h2 class="section-title">Características</h2>
+                        <div class="content-text"><?= nl2br(htmlspecialchars($detalle['caracteristicas'])) ?></div>
+                    </div>
+                    <?php if (!empty($detalle['caracteristicas_img'])): ?>
+                    <div class="characteristics-image">
+                        <img src="<?= htmlspecialchars($detalle['caracteristicas_img']) ?>" alt="Características de <?= htmlspecialchars($ser['nombre']) ?>" loading="lazy">
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <?php if (!empty($detalle['etimologia'])): ?>
             <div class="content-card etymology-card">
                 <h2 class="section-title">Etimología</h2>
@@ -119,24 +136,29 @@ try {
             </div>
             <?php endif; ?>
 
-            <?php if (!empty($detalle['caracteristicas'])): ?>
-            <div class="content-card characteristics-card">
-                <h2 class="section-title">Características</h2>
-                <div class="content-text"><?= nl2br(htmlspecialchars($detalle['caracteristicas'])) ?></div>
-            </div>
-
             <?php if (!empty($detalle['historia'])): ?>
             <div class="content-card history-card">
                 <h2 class="section-title">Historia</h2>
                 <div class="content-text"><?= nl2br(htmlspecialchars($detalle['historia'])) ?></div>
             </div>
             <?php endif; ?>
-
-            <?php endif; ?>
         </div>
     </section>
     <?php endif; ?>
 
+    <!-- Árbol genealógico -->
+    <?php if ($detalle && !empty($detalle['arbolg_img'])): ?>
+    <section class="genealogy-section">
+        <div class="content-card">
+            <h2 class="section-title">Árbol Genealógico</h2>
+            <div class="genealogy-image">
+                <img src="<?= htmlspecialchars($detalle['arbolg_img']) ?>" alt="Árbol genealógico de <?= htmlspecialchars($ser['nombre']) ?>" loading="lazy">
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <!-- Galería de imágenes -->
     <?php if (!empty($imagenes)): ?>
     <section class="gallery-section">
         <h2 class="section-title">Galería de Imágenes</h2>
