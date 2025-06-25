@@ -46,6 +46,15 @@ document.addEventListener('DOMContentLoaded', function() {
         connection.effectiveType === 'slow-2g' || 
         connection.effectiveType === '2g';
     }
+    // Detectar conexiones lentas
+    if (navigator.connection) {
+      const connection = navigator.connection;
+      if (connection.saveData || 
+          connection.effectiveType.includes('2g') || 
+          connection.effectiveType.includes('slow-2g')) {
+        deviceInfo.isLowPerformance = true;
+      }
+    }
   }
   
   detectLowPerformance();
@@ -461,6 +470,13 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn('Error cargando imagen:', this.alt);
       });
     });
+    // Configurar prioridad de carga para primeras imágenes
+    images.forEach((img, index) => {
+      if (index < (deviceInfo.isMobile ? 3 : 6)) {
+        img.loading = "eager";
+        img.removeAttribute('loading');
+      }
+    });
   }
   
   // === SCROLL EFFECTS OPTIMIZADOS ===
@@ -718,6 +734,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Preload crítico
     setupCriticalPreload();
+
+    setupMemoryManagement();
     
     console.log(`Galería responsiva inicializada:`, {
       cards: cards.length,

@@ -1,9 +1,10 @@
-// Configuración
+// Configuración optimizada para móviles
+const isMobile = window.innerWidth <= 768;
 const CONFIG = {
-    scrollDelay: 800,
-    wheelDebounce: 50,
-    swipeThreshold: 50,
-    scrollIndicatorDelay: 5000
+    scrollDelay: isMobile ? 1000 : 800,
+    wheelDebounce: isMobile ? 100 : 50,
+    swipeThreshold: isMobile ? 30 : 50,
+    scrollIndicatorDelay: 3000
 };
 
 // Variables globales
@@ -12,6 +13,7 @@ let isScrolling = false;
 let wheelTimeout;
 let touchStartY = 0;
 let touchEndY = 0;
+let touchStartTime = 0;
 let scrollIndicatorTimeout;
 
 // Cache de elementos DOM
@@ -45,7 +47,7 @@ function goToSection(index) {
     isScrolling = true;
     currentSection = index;
     
-    // Scroll suave a la sección
+    // Scroll suave a la sección - corregido para móviles
     elements.sections[currentSection].scrollIntoView({
         behavior: 'smooth',
         block: 'start'
@@ -148,11 +150,17 @@ function initTouchNavigation() {
     
     elements.container.addEventListener('touchstart', (e) => {
         touchStartY = e.changedTouches[0].screenY;
+        touchStartTime = Date.now();
     }, { passive: true });
 
     elements.container.addEventListener('touchend', (e) => {
         touchEndY = e.changedTouches[0].screenY;
-        handleSwipe();
+        const touchDuration = Date.now() - touchStartTime;
+        
+        // Solo considerar swipes rápidos
+        if (touchDuration < 300) {
+            handleSwipe();
+        }
     }, { passive: true });
 }
 
@@ -215,16 +223,20 @@ function init() {
         return false;
     }
     
+    // Establecer estado inicial
+    updateActiveSection();
+    handleScrollIndicator();
+    
     // Inicializar todos los event listeners
     initNavDots();
-    initWheelNavigation();
     initKeyboardNavigation();
     initTouchNavigation();
     initScrollIndicator();
     
-    // Establecer estado inicial
-    updateActiveSection();
-    handleScrollIndicator();
+    // Solo activar navegación por rueda en desktop
+    if (!isMobile) {
+        initWheelNavigation();
+    }
     
     console.log('Navigation initialized successfully');
     return true;

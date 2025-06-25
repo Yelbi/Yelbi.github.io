@@ -581,7 +581,7 @@ body {
 }
 
 /* Tablet Landscape (768px - 991px) */
-@media (min-width: 768px) and (max-width: 991px) {
+@media (min-width: 769px) and (max-width: 991px) {
   .search-and-toggle {
     align-items: stretch;
   }
@@ -650,13 +650,76 @@ body {
   }
   
   .grid-container {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1.2rem;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.6rem;
   }
   
   .card {
-    max-width: 240px;
-    height: 340px;
+    height: 220px;
+    max-width: none;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  }
+
+  .card-info {
+    padding: 0.8rem;
+  }
+
+  .nombre {
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .badge {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* Reducir efectos visuales en móvil */
+  .card:hover {
+    transform: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  }
+  
+  /* Optimizar panel de filtros */
+  .filter-panel {
+    padding: 0.8rem;
+    border-radius: 16px;
+  }
+  
+  .search-input {
+    font-size: 0.9rem;
+    padding: 0.7rem 0.8rem 0.7rem 2.5rem;
+  }
+  
+  .search-icon {
+    left: 0.9rem;
+    font-size: 1rem;
+  }
+}
+
+/* Priorizar touch sobre hover */
+@media (pointer: coarse) {
+  .card {
+    transform: translateZ(0); /* Activar GPU */
+  }
+  
+  .card:active {
+    transform: scale(0.97);
+    transition: transform 0.1s ease;
+  }
+  
+  .badge {
+    pointer-events: none; /* Mejorar respuesta táctil */
+  }
+}
+
+/* Desactivar animaciones cuando no son necesarias */
+@media (prefers-reduced-motion: reduce), 
+       (max-width: 767px) and (prefers-contrast: more) {
+  .card {
+    animation: none !important;
+    transition: none !important;
   }
 }
 

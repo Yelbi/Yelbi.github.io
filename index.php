@@ -28,15 +28,16 @@
 
     <div class="container" id="container">
         <!-- Sección 1 -->
-        <section class="section section1 active" id="section1">
-            <canvas id="starfield"></canvas>
-            <div class="section-content">
-                <p style="margin: 0;">Bienvenido a</p>
-                <h1>Seres</h1>
-                <p>Descubre un mundo lleno de deidades y seres mitológicos.</p>
-                <a href="/galeria.php" class="btn">Explorar</a>
-            </div>
-        </section>
+<section class="section section1 active" id="section1">
+    <canvas id="starfield"></canvas>
+    <div class="section-content">
+        <p style="margin: 0;">Bienvenido a</p>
+        <h1>Seres</h1>
+        <p>Explora dioses, criaturas y héroes de culturas ancestrales. ¡Tu viaje al mundo sagrado comienza aquí!</p>
+        <a href="/galeria.php" class="btn">Explorar</a>
+    </div>
+</section>
+        
         <!-- Sección 2 -->
         <section class="section section2" id="section2">
             <div class="section-content">

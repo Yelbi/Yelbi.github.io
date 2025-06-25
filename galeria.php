@@ -10,6 +10,18 @@ $seres = $stmt->fetchAll();
 $stmt_tipos = $pdo->query("SELECT DISTINCT tipo FROM seres WHERE tipo IS NOT NULL AND tipo != '' ORDER BY tipo ASC");
 $tipos = $stmt_tipos->fetchAll(PDO::FETCH_COLUMN);
 
+// Optimización para móvil: limitar campos innecesarios
+// Detectar si es móvil (fallback si $device no está definido)
+$isMobile = false;
+if (isset($device) && is_object($device) && property_exists($device, 'isMobile')) {
+    $isMobile = $device->isMobile;
+} elseif (preg_match('/Mobile|Android|iPhone|iPad|iPod/i', $_SERVER['HTTP_USER_AGENT'])) {
+    $isMobile = true;
+}
+$fields = $isMobile ? 'id, nombre, slug, imagen, tipo, region' : '*';
+$stmt = $pdo->query("SELECT $fields FROM seres ORDER BY nombre ASC");
+$seres = $stmt->fetchAll();
+
 // Obtener regiones únicas (dinámicamente desde la base de datos)
 $stmt_regiones = $pdo->query("SELECT DISTINCT region FROM seres WHERE region IS NOT NULL AND region != '' ORDER BY region ASC");
 $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
