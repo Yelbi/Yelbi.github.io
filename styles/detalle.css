@@ -66,45 +66,15 @@ body {
 
 .hero-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 400px;
   min-height: 500px;
   align-items: center;
-}
-
-.hero-image {
-  position: relative;
-  height: 500px;
-  overflow: hidden;
-}
-
-.main-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  transition: transform 0.5s ease;
-}
-
-.hero-image:hover .main-image {
-  transform: scale(1.05);
-}
-
-.image-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    45deg,
-    rgba(0, 0, 0, 0.3) 0%,
-    transparent 50%,
-    rgba(0, 0, 0, 0.2) 100%
-  );
+  gap: 2rem;
+  padding: 2rem;
 }
 
 .hero-info {
-  padding: 2.5rem;
+  padding: 0;
 }
 
 .ser-title {
@@ -155,6 +125,7 @@ body {
   border-color: rgba(16, 185, 129, 0.6);
 }
 
+/* Estilos para diferentes niveles de peligrosidad */
 .value.peligrosidad-bajo {
   background: rgba(34, 197, 94, 0.4);
   border-color: rgba(34, 197, 94, 0.6);
@@ -175,6 +146,7 @@ body {
   border-color: rgba(239, 68, 68, 0.6);
 }
 
+/* Estilos para niveles de rareza */
 .value.rareza-común {
   background: rgba(156, 163, 175, 0.4);
   border-color: rgba(156, 163, 175, 0.6);
@@ -198,6 +170,35 @@ body {
 .value.rareza-legendario {
   background: linear-gradient(45deg, rgba(255, 215, 0, 0.4), rgba(255, 165, 0, 0.4));
   border-color: rgba(255, 215, 0, 0.6);
+}
+
+/* Hero Portrait - Imagen del ser mejorada */
+.hero-portrait {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  max-height: 500px;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.portrait-image {
+  width: 100%;
+  height: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 1rem;
+  transition: transform 0.3s ease;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.portrait-image:hover {
+  transform: scale(1.02);
 }
 
 /* Sección de contenido */
@@ -244,7 +245,63 @@ body {
   text-align: justify;
 }
 
-/* Galería de imágenes */
+/* Sección de características con imagen mejorada */
+.characteristics-grid {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 2rem;
+  align-items: start;
+}
+
+.characteristics-image {
+  position: relative;
+  max-height: 400px;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.characteristics-image img {
+  width: 100%;
+  height: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 1rem;
+  transition: transform 0.3s ease;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.characteristics-image img:hover {
+  transform: scale(1.02);
+}
+
+/* Árbol genealógico */
+.genealogy-section .content-card {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.genealogy-image {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
+.genealogy-image img {
+  max-width: 100%;
+  max-height: 600px;
+  object-fit: contain;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Galería de imágenes mejorada */
 .gallery-section {
   margin-bottom: 3rem;
 }
@@ -257,8 +314,9 @@ body {
 
 .image-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
+  max-width: 100%;
 }
 
 .gallery-item {
@@ -270,18 +328,22 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
   cursor: pointer;
+  height: 300px;
 }
 
 .gallery-item:hover {
   transform: translateY(-5px);
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .gallery-item img {
   width: 100%;
-  height: 200px;
-  object-fit: cover;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
   transition: transform 0.3s ease;
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .gallery-item:hover img {
@@ -289,10 +351,21 @@ body {
 }
 
 .image-description {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   padding: 1rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.9);
   text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.gallery-item:hover .image-description {
+  opacity: 1;
 }
 
 /* Navegación */
@@ -361,7 +434,7 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Modal para imágenes */
+/* Modal para imágenes mejorado */
 .modal {
   display: none;
   position: fixed;
@@ -377,18 +450,23 @@ body {
 .modal-content {
   position: relative;
   margin: auto;
-  display: block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 90%;
-  max-width: 1000px;
+  max-width: 1200px;
+  height: 90vh;
   top: 50%;
   transform: translateY(-50%);
   animation: modalFadeIn 0.3s ease;
 }
 
 .modal-content img {
-  width: 100%;
-  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
   border-radius: 1rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
 }
 
 .close {
@@ -400,6 +478,7 @@ body {
   font-weight: bold;
   cursor: pointer;
   transition: color 0.3s ease;
+  z-index: 1001;
 }
 
 .close:hover {
@@ -411,24 +490,60 @@ body {
   to { opacity: 1; transform: translateY(-50%) scale(1); }
 }
 
-/* Responsive Design */
+/* RESPONSIVE DESIGN */
+
+/* Large Tablets */
+@media (max-width: 1024px) {
+  .hero-content {
+    grid-template-columns: 1fr 350px;
+    gap: 1.5rem;
+  }
+  
+  .characteristics-grid {
+    grid-template-columns: 1fr 350px;
+    gap: 1.5rem;
+  }
+  
+  .image-gallery {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+}
 
 /* Tablet */
 @media (max-width: 768px) {
+  .breadcrumb {
+    padding: 70px 15px 15px 15px;
+    font-size: 0.8rem;
+  }
+  
+  .detail-container {
+    padding: 0 15px 30px 15px;
+  }
+  
   .hero-content {
     grid-template-columns: 1fr;
+    padding: 1.5rem;
+    gap: 1.5rem;
   }
   
-  .hero-image {
-    height: 300px;
-  }
-  
-  .hero-info {
-    padding: 2rem;
+  .hero-portrait {
+    order: -1;
+    max-height: 400px;
   }
   
   .ser-title {
     font-size: 2.5rem;
+    text-align: center;
+  }
+  
+  .characteristics-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .characteristics-image {
+    order: -1;
+    max-height: 300px;
   }
   
   .content-card {
@@ -437,6 +552,16 @@ body {
   
   .section-title {
     font-size: 1.5rem;
+    text-align: center;
+  }
+  
+  .image-gallery {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  
+  .gallery-item {
+    height: 250px;
   }
   
   .nav-buttons {
@@ -457,20 +582,26 @@ body {
 /* Móvil */
 @media (max-width: 576px) {
   .breadcrumb {
-    padding: 70px 15px 15px 15px;
-    font-size: 0.8rem;
+    padding: 70px 10px 10px 10px;
+    font-size: 0.75rem;
+    flex-wrap: wrap;
   }
   
   .detail-container {
-    padding: 0 15px 30px 15px;
+    padding: 0 10px 20px 10px;
   }
   
-  .hero-image {
-    height: 250px;
+  .hero-content {
+    padding: 1rem;
+    gap: 1rem;
   }
   
-  .hero-info {
-    padding: 1.5rem;
+  .hero-portrait {
+    max-height: 300px;
+  }
+  
+  .portrait-image {
+    max-height: 300px;
   }
   
   .ser-title {
@@ -495,7 +626,8 @@ body {
   }
   
   .content-card {
-    padding: 1.2rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
   }
   
   .section-title {
@@ -504,8 +636,12 @@ body {
   }
   
   .content-text {
-    font-size: 1rem;
+    font-size: 0.95rem;
     line-height: 1.6;
+  }
+  
+  .characteristics-image {
+    max-height: 250px;
   }
   
   .image-gallery {
@@ -513,8 +649,8 @@ body {
     gap: 1rem;
   }
   
-  .gallery-item img {
-    height: 180px;
+  .gallery-item {
+    height: 200px;
   }
   
   .nav-buttons {
@@ -532,12 +668,40 @@ body {
   
   .modal-content {
     width: 95%;
-    padding: 0 10px;
+    height: 85vh;
+    padding: 0 5px;
   }
   
   .close {
     top: -30px;
     font-size: 1.5rem;
+  }
+}
+
+/* Extra Small Mobile */
+@media (max-width: 375px) {
+  .hero-portrait {
+    max-height: 250px;
+  }
+  
+  .portrait-image {
+    max-height: 250px;
+  }
+  
+  .ser-title {
+    font-size: 1.8rem;
+  }
+  
+  .characteristics-image {
+    max-height: 200px;
+  }
+  
+  .gallery-item {
+    height: 180px;
+  }
+  
+  .genealogy-image img {
+    max-height: 400px;
   }
 }
 
@@ -569,23 +733,29 @@ body {
     animation: none;
   }
   
-  .main-image,
+  .portrait-image,
+  .characteristics-image img,
   .gallery-item img {
     transition: none;
   }
   
-  .hero-image:hover .main-image,
+  .portrait-image:hover,
+  .characteristics-image img:hover,
   .gallery-item:hover img {
     transform: none;
   }
 }
 
-/* Focus states */
+/* Focus states mejorados */
 .btn-back:focus,
 .btn-nav:focus,
 .gallery-item:focus {
   outline: 2px solid rgba(255, 255, 255, 0.6);
   outline-offset: 2px;
+}
+
+.gallery-item:focus {
+  border-color: rgba(255, 255, 255, 0.6);
 }
 
 /* Scroll suave */
@@ -595,88 +765,61 @@ html {
 
 /* Mejoras para pantallas de alta densidad */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .main-image,
+  .portrait-image,
+  .characteristics-image img,
   .gallery-item img {
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
   }
 }
 
-/* Sección Hero con retrato */
-.hero-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 500px;
-  align-items: center;
-  gap: 2rem;
+/* Estados de carga para imágenes */
+.portrait-image,
+.characteristics-image img,
+.gallery-item img {
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.hero-portrait {
+.portrait-image.loaded,
+.characteristics-image img.loaded,
+.gallery-item img.loaded {
+  opacity: 1;
+}
+
+/* Placeholder para imágenes que fallan al cargar */
+.portrait-image.error,
+.characteristics-image img.error,
+.gallery-item img.error {
+  background: rgba(255, 255, 255, 0.1);
   display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: center;
 }
 
-.portrait-image {
-  max-width: 100%;
-  max-height: 500px;
-  border-radius: 1rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease;
+.portrait-image.error::after,
+.characteristics-image img.error::after,
+.gallery-item img.error::after {
+  content: "Imagen no disponible";
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
 }
 
-.portrait-image:hover {
-  transform: scale(1.03);
+/* Touch improvements */
+.touch-active {
+  transform: scale(0.98);
 }
 
-/* Sección de características con imagen */
-.characteristics-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  align-items: center;
-}
-
-.characteristics-image img {
-  width: 100%;
-  border-radius: 1rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-}
-
-/* Árbol genealógico */
-.genealogy-section .content-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.genealogy-image img {
-  width: 100%;
-  border-radius: 1rem;
-  margin-top: 1rem;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .hero-content {
-    grid-template-columns: 1fr;
+/* Print styles */
+@media print {
+  .modal,
+  .nav-buttons {
+    display: none !important;
   }
   
-  .characteristics-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .characteristics-image {
-    order: -1; /* Mover imagen arriba en móvil */
-    margin-bottom: 1.5rem;
-  }
-  
-  .portrait-image {
-    max-height: 350px;
-  }
-}
-
-@media (max-width: 576px) {
-  .portrait-image {
-    max-height: 280px;
+  .content-card {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
   }
 }
