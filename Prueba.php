@@ -4,371 +4,485 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planeta Arenoso con Tormentas - Fondo Animado</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            overflow: hidden;
-            background: linear-gradient(135deg, #0a0a15 0%, #1a1a30 100%);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-        
-        #planetCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-        
-        .info-overlay {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #d4b483;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #d4b483;
-            max-width: 300px;
-            z-index: 2;
-            backdrop-filter: blur(5px);
-            transition: opacity 0.5s;
-        }
-        
-        .info-overlay h3 {
-            margin-bottom: 10px;
-            color: #e0c28d;
-        }
-        
-        .info-overlay p {
-            margin-bottom: 8px;
-            line-height: 1.4;
-            font-size: 14px;
-        }
-    </style>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+body {
+  width: 100vw;
+  height: 100vh;
+  background: #141414;
+}
+
+a-hole {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+a-hole:before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  display: block;
+  width: 150%;
+  height: 140%;
+  background: radial-gradient(ellipse at 50% 55%, transparent 10%, black 50%);
+  transform: translate3d(-50%, -50%, 0);
+  content: "";
+}
+a-hole:after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 5;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at 50% 75%, #a900ff 20%, transparent 75%);
+  mix-blend-mode: overlay;
+  transform: translate3d(-50%, -50%, 0);
+  content: "";
+}
+a-hole canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <canvas id="planetCanvas"></canvas>
-        <div class="info-overlay">
-            <h3>Planeta Arenoso con Tormentas</h3>
-            <p>Este planeta presenta patrones de tormentas dinámicas similares a las de Júpiter, con una superficie arenosa y colores cálidos.</p>
-            <p>Las bandas atmosféricas y remolinos se generan mediante algoritmos de ruido y funciones trigonométricas.</p>
-            <p>La animación es continua y suave, con una transición perfecta entre los bordes del planeta y el espacio.</p>
-        </div>
-    </div>
+<a-hole>
+  <canvas class="js-canvas" width="1070" height="854"></canvas>
+</a-hole>
 
-    <script>
-        const canvas = document.getElementById('planetCanvas');
-        const ctx = canvas.getContext('2d');
-        let animationId;
-        let stars = [];
+<script id="rendered-js" type="module">
+import easingUtils from "https://esm.sh/easing-utils";
 
-        // Parámetros optimizados para fondo animado
-        const params = {
-            rotationSpeed: 0.3,
-            planetSize: 0.45,
-            starCount: 400
-        };
+class AHole extends HTMLElement {
+  /**
+   * Init
+   */
+  connectedCallback() {
+    // Elements
+    this.canvas = this.querySelector(".js-canvas");
+    this.ctx = this.canvas.getContext("2d");
 
-        let lastTime = 0;
-        const targetFPS = 60;
-        const frameTime = 1000 / targetFPS;
-        let rotation = 0;
-        let time = 0;
+    this.discs = [];
+    this.lines = [];
 
-        // Ajustar tamaño del canvas
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            createStars();
+    // Init
+    this.setSize();
+    this.setDiscs();
+    this.setLines();
+    this.setParticles();
+
+    this.bindEvents();
+
+    // RAF
+    requestAnimationFrame(this.tick.bind(this));
+  }
+
+  /**
+   * Bind events
+   */
+  bindEvents() {
+    window.addEventListener("resize", this.onResize.bind(this));
+  }
+
+  /**
+   * Resize handler
+   */
+  onResize() {
+    this.setSize();
+    this.setDiscs();
+    this.setLines();
+    this.setParticles();
+  }
+
+  /**
+   * Set size
+   */
+  setSize() {
+    this.rect = this.getBoundingClientRect();
+
+    this.render = {
+      width: this.rect.width,
+      height: this.rect.height,
+      dpi: window.devicePixelRatio };
+
+
+    this.canvas.width = this.render.width * this.render.dpi;
+    this.canvas.height = this.render.height * this.render.dpi;
+  }
+
+  /**
+   * Set discs
+   */
+  setDiscs() {
+    const { width, height } = this.rect;
+
+    this.discs = [];
+
+    this.startDisc = {
+      x: width * 0.5,
+      y: height * 0.45,
+      w: width * 0.75,
+      h: height * 0.7 };
+
+
+    this.endDisc = {
+      x: width * 0.5,
+      y: height * 0.95,
+      w: 0,
+      h: 0 };
+
+
+    const totalDiscs = 100;
+
+    let prevBottom = height;
+    this.clip = {};
+
+    for (let i = 0; i < totalDiscs; i++) {
+      const p = i / totalDiscs;
+
+      const disc = this.tweenDisc({
+        p });
+
+
+      const bottom = disc.y + disc.h;
+
+      if (bottom <= prevBottom) {
+        this.clip = {
+          disc: { ...disc },
+          i };
+
+      }
+
+      prevBottom = bottom;
+
+      this.discs.push(disc);
+    }
+
+    this.clip.path = new Path2D();
+    this.clip.path.ellipse(
+    this.clip.disc.x,
+    this.clip.disc.y,
+    this.clip.disc.w,
+    this.clip.disc.h,
+    0,
+    0,
+    Math.PI * 2);
+
+    this.clip.path.rect(
+    this.clip.disc.x - this.clip.disc.w,
+    0,
+    this.clip.disc.w * 2,
+    this.clip.disc.y);
+
+  }
+
+  /**
+   * Set lines
+   */
+  setLines() {
+    const { width, height } = this.rect;
+
+    this.lines = [];
+
+    const totalLines = 100;
+    const linesAngle = Math.PI * 2 / totalLines;
+
+    for (let i = 0; i < totalLines; i++) {
+      this.lines.push([]);
+    }
+
+    this.discs.forEach(disc => {
+      for (let i = 0; i < totalLines; i++) {
+        const angle = i * linesAngle;
+
+        const p = {
+          x: disc.x + Math.cos(angle) * disc.w,
+          y: disc.y + Math.sin(angle) * disc.h };
+
+
+        this.lines[i].push(p);
+      }
+    });
+
+    this.linesCanvas = new OffscreenCanvas(width, height);
+    const ctx = this.linesCanvas.getContext("2d");
+
+    this.lines.forEach((line, i) => {
+      ctx.save();
+
+      let lineIsIn = false;
+      line.forEach((p1, j) => {
+        if (j === 0) {
+          return;
         }
 
-        window.addEventListener('resize', resize);
-        resize();
+        const p0 = line[j - 1];
 
-        // Crear campo de estrellas
-        function createStars() {
-            stars = [];
-            for (let i = 0; i < params.starCount; i++) {
-                const brightness = Math.random();
-                let size, alpha;
-                
-                if (brightness < 0.7) {
-                    size = Math.random() * 0.5 + 0.2;
-                    alpha = Math.random() * 0.3 + 0.2;
-                } else if (brightness < 0.92) {
-                    size = Math.random() * 0.8 + 0.4;
-                    alpha = Math.random() * 0.5 + 0.3;
-                } else {
-                    size = Math.random() * 1.5 + 0.8;
-                    alpha = Math.random() * 0.7 + 0.5;
-                }
-                
-                stars.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    size: size,
-                    twinkle: Math.random() * 0.015 + 0.005,
-                    offset: Math.random() * Math.PI * 2,
-                    alpha: alpha,
-                    color: `rgba(255, ${240 + Math.random() * 15}, ${220 + Math.random() * 35}, ${alpha})`
-                });
-            }
+        if (
+        !lineIsIn && (
+        ctx.isPointInPath(this.clip.path, p1.x, p1.y) ||
+        ctx.isPointInStroke(this.clip.path, p1.x, p1.y)))
+        {
+          lineIsIn = true;
+        } else if (lineIsIn) {
+          ctx.clip(this.clip.path);
         }
 
-        // Dibujar estrellas con efecto de parpadeo
-        function drawStars(t) {
-            for (let star of stars) {
-                const twinkle = Math.sin(t * star.twinkle + star.offset) * 0.4 + 0.6;
-                const currentAlpha = star.alpha * twinkle;
-                ctx.fillStyle = star.color.replace(/[\d.]+\)$/, `${currentAlpha})`);
-                
-                ctx.beginPath();
-                ctx.arc(star.x, star.y, star.size * twinkle, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
+        ctx.beginPath();
 
-        // Función para generar ruido Perlin simplificado
-        function noise(x, y, scale = 1) {
-            const X = Math.floor(x * scale) & 255;
-            const Y = Math.floor(y * scale) & 255;
-            
-            x *= scale;
-            y *= scale;
-            
-            const xf = x - Math.floor(x);
-            const yf = y - Math.floor(y);
-            
-            const u = fade(xf);
-            const v = fade(yf);
-            
-            const A = (X + Y * 57) * 0.017453292;
-            const B = ((X + 1) + Y * 57) * 0.017453292;
-            const C = (X + (Y + 1) * 57) * 0.017453292;
-            const D = ((X + 1) + (Y + 1) * 57) * 0.017453292;
-            
-            return lerp(v, 
-                lerp(u, Math.sin(A), Math.sin(B)),
-                lerp(u, Math.sin(C), Math.sin(D))
-            );
-        }
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
 
-        function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
-        function lerp(t, a, b) { return a + t * (b - a); }
+        ctx.strokeStyle = "#444";
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
-        // Generar textura de planeta arenoso con tormentas
-        function generatePlanetSurface(x, y, centerX, centerY, radius) {
-            const dx = x - centerX;
-            const dy = y - centerY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance > radius) return null;
-            
-            // Coordenadas normalizadas desde el centro
-            const normalizedX = dx / radius;
-            const normalizedY = dy / radius;
-            const normalizedDist = distance / radius;
-            
-            // Calcular coordenadas 3D en la esfera
-            const z = Math.sqrt(Math.max(0, 1 - normalizedDist * normalizedDist));
-            
-            // Vista desde el ecuador: rotación horizontal alrededor del eje Y
-            // Longitud (rotación horizontal)
-            const longitude = Math.atan2(normalizedX, z) + rotation;
-            
-            // Latitud (altura desde el ecuador)
-            const latitude = Math.asin(normalizedY);
-            
-            // Crear patrones para un planeta arenoso con tormentas
-            // Bandas atmosféricas horizontales
-            const bandPattern = 
-                Math.sin(latitude * 18 + time * 0.2) * 0.7 +
-                noise(latitude * 12, longitude * 4, 0.5) * 0.3;
-            
-            // Patrones de tormentas (remolinos)
-            const stormPattern = 
-                Math.sin(longitude * 10 + latitude * 20) * 0.5 +
-                noise(longitude * 15, latitude * 15, 1.2) * 0.4;
-            
-            // Gran tormenta principal
-            const bigStorm = 
-                Math.exp(-(Math.pow(longitude - 1.8, 2) * 12 + Math.pow(latitude + 0.3, 2) * 25)) * 0.8;
-            
-            // Combinar patrones
-            const finalPattern = bandPattern * 0.7 + stormPattern * 0.3 + bigStorm * 0.5;
-            
-            // Colores para planeta arenoso con tormentas
-            let baseColor;
-            const elevation = finalPattern;
-            
-            // Zonas con diferentes colores según la elevación
-            if (elevation < -0.4) {
-                // Bandas oscuras profundas
-                baseColor = {
-                    r: 120 + Math.random() * 20,
-                    g: 80 + Math.random() * 15,
-                    b: 50 + Math.random() * 10
-                };
-            } else if (elevation < -0.2) {
-                // Bandas medias
-                baseColor = {
-                    r: 160 + Math.random() * 25,
-                    g: 120 + Math.random() * 20,
-                    b: 70 + Math.random() * 15
-                };
-            } else if (elevation < 0) {
-                // Transición a bandas claras
-                baseColor = {
-                    r: 180 + Math.random() * 30,
-                    g: 150 + Math.random() * 25,
-                    b: 100 + Math.random() * 20
-                };
-            } else if (elevation < 0.3) {
-                // Bandas claras
-                baseColor = {
-                    r: 210 + Math.random() * 30,
-                    g: 180 + Math.random() * 25,
-                    b: 130 + Math.random() * 20
-                };
-            } else {
-                // Tormentas - colores más intensos
-                if (bigStorm > 0.3) {
-                    // Gran tormenta - color rojizo
-                    baseColor = {
-                        r: 180 + Math.random() * 50,
-                        g: 70 + Math.random() * 30,
-                        b: 60 + Math.random() * 20
-                    };
-                } else {
-                    // Tormentas menores - color más claro
-                    baseColor = {
-                        r: 220 + Math.random() * 30,
-                        g: 200 + Math.random() * 40,
-                        b: 170 + Math.random() * 30
-                    };
-                }
-            }
-            
-            // Iluminación
-            const lightDir = { x: -0.7, y: -0.3, z: 0.9 };
-            
-            // Normales de superficie en vista ecuatorial
-            const normalX = normalizedX;
-            const normalY = normalizedY;
-            const normalZ = z;
-            
-            // Iluminación difusa
-            const diffuse = Math.max(0.15, 
-                normalX * lightDir.x + 
-                normalY * lightDir.y + 
-                normalZ * lightDir.z
-            );
-            
-            // Suavizar la iluminación para planeta gaseoso
-            const surfaceLighting = Math.pow(diffuse, 0.7);
-            
-            // Agregar brillo a las tormentas
-            const stormGlow = (elevation > 0.3 && bigStorm < 0.3) ? 
-                Math.pow(Math.max(0, diffuse), 8) * 0.4 : 0;
-            
-            // Suavizado del borde
-            const edgeFactor = Math.min(1, (1 - normalizedDist) / 0.05);
-            const edgeSmooth = edgeFactor < 1 ? Math.pow(edgeFactor, 1.5) : 1;
-            
-            return {
-                r: Math.min(255, Math.max(0, baseColor.r * surfaceLighting + stormGlow * 150)),
-                g: Math.min(255, Math.max(0, baseColor.g * surfaceLighting + stormGlow * 120)),
-                b: Math.min(255, Math.max(0, baseColor.b * surfaceLighting + stormGlow * 100)),
-                a: edgeSmooth
-            };
-        }
+        ctx.closePath();
+      });
 
-        // Dibujar planeta con borde suavizado
-        function drawPlanet() {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = Math.min(canvas.width, canvas.height) * params.planetSize;
-            
-            if (!canvas.width || !canvas.height || radius <= 0) return;
-            
-            const diameter = Math.ceil(radius * 2);
-            
-            // Renderizar por sectores para mejor performance
-            const imageData = ctx.createImageData(diameter, diameter);
-            const data = imageData.data;
-            
-            for (let y = 0; y < diameter; y++) {
-                for (let x = 0; x < diameter; x++) {
-                    const pixelX = centerX - radius + x;
-                    const pixelY = centerY - radius + y;
-                    const surface = generatePlanetSurface(pixelX, pixelY, centerX, centerY, radius);
-                    
-                    if (surface) {
-                        const index = (y * diameter + x) * 4;
-                        data[index] = surface.r;
-                        data[index + 1] = surface.g;
-                        data[index + 2] = surface.b;
-                        data[index + 3] = surface.a * 255;
-                    }
-                }
-            }
-            
-            ctx.putImageData(imageData, centerX - radius, centerY - radius);
-        }
+      ctx.restore();
+    });
 
-        // Función de animación optimizada
-        function animate(currentTime = 0) {
-            animationId = requestAnimationFrame(animate);
-            
-            const deltaTime = currentTime - lastTime;
-            if (deltaTime < frameTime) return;
-            
-            lastTime = currentTime;
-            time += 0.01;
-            
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            drawStars(time);
-            
-            // Rotación horizontal suave
-            rotation += params.rotationSpeed * 0.008;
-            if (rotation > Math.PI * 2) rotation -= Math.PI * 2;
-            
-            drawPlanet();
-        }
+    this.linesCtx = ctx;
+  }
 
-        // Manejar cambios de visibilidad para optimizar recursos
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                cancelAnimationFrame(animationId);
-            } else {
-                animate();
-            }
-        });
+  /**
+   * Set particles
+   */
+  setParticles() {
+    const { width, height } = this.rect;
 
-        // Iniciar animación
-        setTimeout(() => {
-            createStars();
-            animate();
-        }, 100);
+    this.particles = [];
+
+    this.particleArea = {
+      sw: this.clip.disc.w * 0.5,
+      ew: this.clip.disc.w * 2,
+      h: height * 0.85 };
+
+    this.particleArea.sx = (width - this.particleArea.sw) / 2;
+    this.particleArea.ex = (width - this.particleArea.ew) / 2;
+
+    const totalParticles = 100;
+
+    for (let i = 0; i < totalParticles; i++) {
+      const particle = this.initParticle(true);
+
+      this.particles.push(particle);
+    }
+  }
+
+  /**
+   * Init particle
+   */
+  initParticle(start = false) {
+    const sx = this.particleArea.sx + this.particleArea.sw * Math.random();
+    const ex = this.particleArea.ex + this.particleArea.ew * Math.random();
+    const dx = ex - sx;
+    const vx = 0.1 + Math.random() * 0.5;
+    const y = start ? this.particleArea.h * Math.random() : this.particleArea.h;
+    const r = 0.5 + Math.random() * 4;
+    const vy = 0.5 + Math.random();
+
+    return {
+      x: sx,
+      sx,
+      dx,
+      y,
+      vy,
+      p: 0,
+      r,
+      c: `rgba(255, 255, 255, ${Math.random()})` };
+
+  }
+
+  /**
+   * Tween value
+   */
+  tweenValue(start, end, p, ease = false) {
+    const delta = end - start;
+
+    const easeFn =
+    easingUtils[
+    ease ? "ease" + ease.charAt(0).toUpperCase() + ease.slice(1) : "linear"];
+
+
+    return start + delta * easeFn(p);
+  }
+
+  /**
+   * Draw discs
+   */
+  drawDiscs() {
+    const { ctx } = this;
+
+    ctx.strokeStyle = "#444";
+    ctx.lineWidth = 2;
+
+    // Outer disc
+    const outerDisc = this.startDisc;
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+    outerDisc.x,
+    outerDisc.y,
+    outerDisc.w,
+    outerDisc.h,
+    0,
+    0,
+    Math.PI * 2);
+
+    ctx.stroke();
+
+    ctx.closePath();
+
+    // Discs
+    this.discs.forEach((disc, i) => {
+      if (i % 5 !== 0) {
+        return;
+      }
+
+      if (disc.w < this.clip.disc.w - 5) {
+        ctx.save();
+
+        ctx.clip(this.clip.path);
+      }
+
+      ctx.beginPath();
+
+      ctx.ellipse(disc.x, disc.y, disc.w, disc.h, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.closePath();
+
+      if (disc.w < this.clip.disc.w - 5) {
+        ctx.restore();
+      }
+    });
+  }
+
+  /**
+   * Draw lines
+   */
+  drawLines() {
+    const { ctx, linesCanvas } = this;
+
+    ctx.drawImage(linesCanvas, 0, 0);
+  }
+
+  /**
+   * Draw particles
+   */
+  drawParticles() {
+    const { ctx } = this;
+
+    ctx.save();
+
+    ctx.clip(this.clip.path);
+
+    this.particles.forEach(particle => {
+      ctx.fillStyle = particle.c;
+      ctx.beginPath();
+      ctx.rect(particle.x, particle.y, particle.r, particle.r);
+      ctx.closePath();
+
+      ctx.fill();
+    });
+
+    ctx.restore();
+  }
+
+  /**
+   * Move discs
+   */
+  moveDiscs() {
+    this.discs.forEach(disc => {
+      disc.p = (disc.p + 0.001) % 1;
+
+      this.tweenDisc(disc);
+    });
+  }
+
+  /**
+   * Move Particles
+   */
+  moveParticles() {
+    this.particles.forEach(particle => {
+      particle.p = 1 - particle.y / this.particleArea.h;
+      particle.x = particle.sx + particle.dx * particle.p;
+      particle.y -= particle.vy;
+
+      if (particle.y < 0) {
+        particle.y = this.initParticle().y;
+      }
+    });
+  }
+
+  /**
+   * Tween disc
+   */
+  tweenDisc(disc) {
+    disc.x = this.tweenValue(this.startDisc.x, this.endDisc.x, disc.p);
+    disc.y = this.tweenValue(
+    this.startDisc.y,
+    this.endDisc.y,
+    disc.p,
+    "inExpo");
+
+
+    disc.w = this.tweenValue(this.startDisc.w, this.endDisc.w, disc.p);
+    disc.h = this.tweenValue(this.startDisc.h, this.endDisc.h, disc.p);
+
+    return disc;
+  }
+
+  /**
+   * Tick
+   */
+  tick(time) {
+    const { ctx } = this;
+
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    ctx.save();
+    ctx.scale(this.render.dpi, this.render.dpi);
+
+    this.moveDiscs();
+    this.moveParticles();
+
+    this.drawDiscs();
+    this.drawLines();
+    this.drawParticles();
+
+    ctx.restore();
+
+    requestAnimationFrame(this.tick.bind(this));
+  }}
+
+
+class Particle {
+  constructor(x, y, ctx) {}
+
+  move() {}
+
+  draw() {}}
+
+
+customElements.define("a-hole", AHole);
+//# sourceURL=pen.js
     </script>
 </body>
 </html>

@@ -805,7 +805,6 @@ input:hover:not(:focus) {
 @media (max-width: 480px) {
     body {
         padding: 5px;
-        align-items: flex-start;
         padding-top: 20px;
     }
     
