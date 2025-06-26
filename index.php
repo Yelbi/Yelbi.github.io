@@ -44,9 +44,7 @@
         <canvas class="js-canvas"></canvas>
     </a-hole-section2>
     <div class="section-content">
-        <h1>Proximamente</h1>
-        <p>Espera a por mas</p>
-        <a href="/galeria.php" class="btn">Descubrir</a>
+        
     </div>
 </section>
 

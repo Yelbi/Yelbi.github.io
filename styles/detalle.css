@@ -8,12 +8,16 @@
 body {
   font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-image: url(/Img/back.jpg);
-  background-repeat: no-repeat;
+  background-repeat: repeat;
   background-size: cover;
   background-attachment: fixed;
   color: #fff;
   line-height: 1.6;
   min-height: 100vh;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 /* Breadcrumb */
@@ -66,42 +70,24 @@ body {
 
 .hero-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 0.5fr;
   min-height: 300px;
   max-height: 400px;
   align-items: center;
+  gap: 2rem;
 }
 
-.hero-image {
-  position: relative;
-  height: 500px;
-  overflow: hidden;
+.hero-portrait {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.main-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  transition: transform 0.5s ease;
-}
-
-.hero-image:hover .main-image {
-  transform: scale(1.05);
-}
-
-.image-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    45deg,
-    rgba(0, 0, 0, 0.3) 0%,
-    transparent 50%,
-    rgba(0, 0, 0, 0.2) 100%
-  );
+.portrait-image {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .hero-info {
@@ -156,51 +142,6 @@ body {
   border-color: rgba(16, 185, 129, 0.6);
 }
 
-.value.peligrosidad-bajo {
-  background: rgba(34, 197, 94, 0.4);
-  border-color: rgba(34, 197, 94, 0.6);
-}
-
-.value.peligrosidad-medio {
-  background: rgba(234, 179, 8, 0.4);
-  border-color: rgba(234, 179, 8, 0.6);
-}
-
-.value.peligrosidad-alto {
-  background: rgba(249, 115, 22, 0.4);
-  border-color: rgba(249, 115, 22, 0.6);
-}
-
-.value.peligrosidad-extremo {
-  background: rgba(239, 68, 68, 0.4);
-  border-color: rgba(239, 68, 68, 0.6);
-}
-
-.value.rareza-común {
-  background: rgba(156, 163, 175, 0.4);
-  border-color: rgba(156, 163, 175, 0.6);
-}
-
-.value.rareza-poco-común {
-  background: rgba(34, 197, 94, 0.4);
-  border-color: rgba(34, 197, 94, 0.6);
-}
-
-.value.rareza-raro {
-  background: rgba(59, 130, 246, 0.4);
-  border-color: rgba(59, 130, 246, 0.6);
-}
-
-.value.rareza-muy-raro {
-  background: rgba(147, 51, 234, 0.4);
-  border-color: rgba(147, 51, 234, 0.6);
-}
-
-.value.rareza-legendario {
-  background: linear-gradient(45deg, rgba(255, 215, 0, 0.4), rgba(255, 165, 0, 0.4));
-  border-color: rgba(255, 215, 0, 0.6);
-}
-
 /* Sección de contenido */
 .content-section {
   margin-bottom: 3rem;
@@ -220,6 +161,7 @@ body {
   padding: 2rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
+  animation: fadeInUp 0.6s ease forwards;
 }
 
 .content-card:hover {
@@ -227,6 +169,12 @@ body {
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
   border-color: rgba(255, 255, 255, 0.3);
 }
+
+.content-card:nth-child(2) { animation-delay: 0.1s; }
+.content-card:nth-child(3) { animation-delay: 0.2s; }
+.content-card:nth-child(4) { animation-delay: 0.3s; }
+.content-card:nth-child(5) { animation-delay: 0.4s; }
+.content-card:nth-child(6) { animation-delay: 0.5s; }
 
 .section-title {
   font-size: 1.8rem;
@@ -243,6 +191,36 @@ body {
   line-height: 1.8;
   color: rgba(255, 255, 255, 0.9);
   text-align: justify;
+}
+
+/* Sección de características con imagen */
+.characteristics-grid {
+  display: grid;
+  grid-template-columns: 1fr 0.5fr;
+  gap: 2rem;
+  align-items: center;
+}
+
+.characteristics-grid.single-column {
+  grid-template-columns: 1fr !important;
+}
+
+.characteristics-image img {
+  width: 100%;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Árbol genealógico */
+.genealogy-section .content-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.genealogy-image img {
+  width: 100%;
+  border-radius: 1rem;
+  margin-top: 1rem;
 }
 
 /* Galería de imágenes */
@@ -287,13 +265,6 @@ body {
 
 .gallery-item:hover img {
   transform: scale(1.05);
-}
-
-.image-description {
-  padding: 1rem;
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
-  text-align: center;
 }
 
 /* Navegación */
@@ -407,21 +378,50 @@ body {
   color: #ccc;
 }
 
+/* Animaciones */
 @keyframes modalFadeIn {
   from { opacity: 0; transform: translateY(-50%) scale(0.8); }
   to { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Focus states */
+.btn-back:focus,
+.btn-nav:focus,
+.gallery-item:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
 }
 
 /* Responsive Design */
 
 /* Tablet */
 @media (max-width: 768px) {
+
+  .basic-info {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
   .hero-content {
     grid-template-columns: 1fr;
+    max-height: 700px;
+    text-align: center;
   }
   
-  .hero-image {
-    height: 300px;
+  .portrait-image {
+    max-height: 350px;
   }
   
   .hero-info {
@@ -438,6 +438,15 @@ body {
   
   .section-title {
     font-size: 1.5rem;
+  }
+  
+  .characteristics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .characteristics-image {
+    order: -1;
+    margin-bottom: 1.5rem;
   }
   
   .nav-buttons {
@@ -466,8 +475,8 @@ body {
     padding: 0 15px 30px 15px;
   }
   
-  .hero-image {
-    height: 250px;
+  .portrait-image {
+    max-height: 280px;
   }
   
   .hero-info {
@@ -481,7 +490,6 @@ body {
   
   .info-item {
     flex-direction: column;
-    align-items: flex-start;
     gap: 0.5rem;
   }
   
@@ -542,174 +550,25 @@ body {
   }
 }
 
-/* Animaciones adicionales */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.content-card {
-  animation: fadeInUp 0.6s ease forwards;
-}
-
-.content-card:nth-child(2) { animation-delay: 0.1s; }
-.content-card:nth-child(3) { animation-delay: 0.2s; }
-.content-card:nth-child(4) { animation-delay: 0.3s; }
-.content-card:nth-child(5) { animation-delay: 0.4s; }
-.content-card:nth-child(6) { animation-delay: 0.5s; }
-
 /* Mejoras de accesibilidad */
 @media (prefers-reduced-motion: reduce) {
   .content-card {
     animation: none;
   }
   
-  .main-image,
   .gallery-item img {
     transition: none;
   }
   
-  .hero-image:hover .main-image,
   .gallery-item:hover img {
     transform: none;
   }
 }
 
-/* Focus states */
-.btn-back:focus,
-.btn-nav:focus,
-.gallery-item:focus {
-  outline: 2px solid rgba(255, 255, 255, 0.6);
-  outline-offset: 2px;
-}
-
-/* Scroll suave */
-html {
-  scroll-behavior: smooth;
-}
-
 /* Mejoras para pantallas de alta densidad */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .main-image,
   .gallery-item img {
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
   }
-}
-
-/* Sección Hero con retrato */
-.hero-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 300px;
-  max-height: 400px;
-  align-items: center;
-  gap: 2rem;
-}
-
-.hero-portrait {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.portrait-image {
-  max-width: 100%;
-  max-height: 400px;
-  border-radius: 1rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease;
-}
-
-.portrait-image:hover {
-  transform: scale(1.03);
-}
-
-/* Sección de características con imagen */
-.characteristics-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  align-items: center;
-}
-
-.characteristics-image img {
-  width: 100%;
-  border-radius: 1rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-}
-
-/* Árbol genealógico */
-.genealogy-section .content-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.genealogy-image img {
-  width: 100%;
-  border-radius: 1rem;
-  margin-top: 1rem;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .hero-content {
-    grid-template-columns: 1fr;
-  }
-  
-  .characteristics-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .characteristics-image {
-    order: -1; /* Mover imagen arriba en móvil */
-    margin-bottom: 1.5rem;
-  }
-  
-  .portrait-image {
-    max-height: 350px;
-  }
-}
-
-@media (max-width: 576px) {
-  .portrait-image {
-    max-height: 280px;
-  }
-}
-
-img.error.broken-image {
-  position: relative;
-  min-height: 50px;
-}
-
-img.error.broken-image::after {
-  content: attr(alt);
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  padding: 10px;
-  background: rgba(255,0,0,0.1);
-  color: #ff6b6b;
-  font-style: italic;
-}
-
-/* Estilo para cuando no hay imagen en características */
-.characteristics-grid.single-column {
-    grid-template-columns: 1fr !important;
-}
-
-.characteristics-grid.single-column .characteristics-text {
-    grid-column: span 2;
-}
-
-/* Ocultar árbol genealógico si no hay imagen - ya manejado en PHP pero por seguridad */
-.genealogy-section:not(:has(img[src])) {
-    display: none;
 }

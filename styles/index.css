@@ -96,7 +96,7 @@
 
         /* Sección 2 - Gradiente coral */
         .section2 {
-            background: #1a1a1a;
+            background: #000000;
             position: relative;
         }
 
@@ -117,7 +117,7 @@
     display: block;
     width: 150%;
     height: 140%;
-    background: radial-gradient(ellipse at 50% 55%, transparent 10%, rgba(26,26,26,0.8) 50%);
+    background: radial-gradient(ellipse at 50% 55%, transparent 10%, rgba(0, 0, 0, 0.8) 40%);
     transform: translate3d(-50%, -50%, 0);
     content: "";
     pointer-events: none;
@@ -131,7 +131,7 @@
     display: block;
     width: 100%;
     height: 100%;
-    background: radial-gradient(ellipse at 50% 75%, #364c4e 20%, transparent 75%);
+    background: radial-gradient(ellipse at 50% 60%, #000000 5%, transparent 70%);
     mix-blend-mode: overlay;
     transform: translate3d(-50%, -50%, 0);
     content: "";

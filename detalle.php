@@ -26,7 +26,7 @@ try {
     $detalle = $stmt->fetch();
     
     // Obtener imágenes adicionales
-    $stmt = $pdo->prepare("SELECT * FROM seres_imagenes WHERE ser_id = ? ");
+    $stmt = $pdo->prepare("SELECT * FROM seres_imagenes WHERE ser_id = ?");
     $stmt->execute([$ser['id']]);
     $imagenes = $stmt->fetchAll();
     
@@ -56,21 +56,21 @@ try {
 </head>
 <body>
 
-    <!-- Header -->
-    <header class="header">
-        <a href="/index.php" class="logo">
-            <img src="/Img/logo.png" alt="">
-        </a>
-        <nav class="nav-menu">
-            <a href="/index.php" class="nav-link">Inicio</a>
-            <a href="/galeria.php" class="nav-link">Galería</a>
-            <a href="#" class="nav-link">Contacto</a>
-        </nav>
-        <a href="/iniciar.php" class="user-btn"><i class="fi fi-rr-user"></i></a>
-    </header>
+<!-- Header -->
+<header class="header">
+    <a href="/index.php" class="logo">
+        <img src="/Img/logo.png" alt="">
+    </a>
+    <nav class="nav-menu">
+        <a href="/index.php" class="nav-link">Inicio</a>
+        <a href="/galeria.php" class="nav-link">Galería</a>
+        <a href="#" class="nav-link">Contacto</a>
+    </nav>
+    <a href="/iniciar.php" class="user-btn"><i class="fi fi-rr-user"></i></a>
+</header>
 
-    <!-- Breadcrumb -->
-    <nav class="breadcrumb">
+<!-- Breadcrumb -->
+<nav class="breadcrumb">
     <a href="/index.php">Inicio</a>
     <span class="separator">></span>
     <a href="/galeria.php">Galería</a>
@@ -96,9 +96,9 @@ try {
                 </div>
             </div>
             <?php if ($detalle && !empty($detalle['ser_img'])): ?>
-                <div class="hero-portrait">
-                    <img src="<?= htmlspecialchars($detalle['ser_img']) ?>" alt="Retrato de <?= htmlspecialchars($ser['nombre']) ?>" class="portrait-image">
-                </div>
+            <div class="hero-portrait">
+                <img src="<?= htmlspecialchars($detalle['ser_img']) ?>" alt="Retrato de <?= htmlspecialchars($ser['nombre']) ?>" class="portrait-image">
+            </div>
             <?php endif; ?>
         </div>
     </section>
@@ -152,7 +152,7 @@ try {
         <div class="content-card">
             <h2 class="section-title">Árbol Genealógico</h2>
             <div class="genealogy-image">
-                <img src="<?= htmlspecialchars($detalle['arbolg_img']) ?>" alt="<?= htmlspecialchars($ser['nombre']) ?>" loading="lazy">
+                <img src="<?= htmlspecialchars($detalle['arbolg_img']) ?>" alt="Árbol genealógico de <?= htmlspecialchars($ser['nombre']) ?>" loading="lazy">
             </div>
         </div>
     </section>
@@ -196,16 +196,16 @@ try {
 
 </main>
 
-    <!-- Modal para imágenes -->
-    <div id="imageModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <img id="modalImage" src="" alt="">
-        </div>
+<!-- Modal para imágenes -->
+<div id="imageModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img id="modalImage" src="" alt="">
     </div>
+</div>
 
-    <script src="/JS/detalle.js"></script>
-    <script src="/JS/header.js"></script>
+<script src="/JS/detalle.js"></script>
+<script src="/JS/header.js"></script>
 
 </body>
 </html>
