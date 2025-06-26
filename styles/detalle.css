@@ -67,7 +67,8 @@ body {
 .hero-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  min-height: 500px;
+  min-height: 300px;
+  max-height: 400px;
   align-items: center;
 }
 
@@ -606,7 +607,8 @@ html {
 .hero-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  min-height: 500px;
+  min-height: 300px;
+  max-height: 400px;
   align-items: center;
   gap: 2rem;
 }
@@ -619,7 +621,7 @@ html {
 
 .portrait-image {
   max-width: 100%;
-  max-height: 500px;
+  max-height: 400px;
   border-radius: 1rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease;
