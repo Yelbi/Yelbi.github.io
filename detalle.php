@@ -115,14 +115,14 @@ try {
 
             <?php if (!empty($detalle['caracteristicas'])): ?>
             <div class="content-card characteristics-card">
-                <div class="characteristics-grid">
+                <div class="characteristics-grid <?= empty($detalle['caracteristicas_img']) ? 'single-column' : '' ?>">
                     <div class="characteristics-text">
                         <h2 class="section-title">Características</h2>
                         <div class="content-text"><?= nl2br(htmlspecialchars($detalle['caracteristicas'])) ?></div>
                     </div>
                     <?php if (!empty($detalle['caracteristicas_img'])): ?>
                     <div class="characteristics-image">
-                        <img src="<?= htmlspecialchars($detalle['caracteristicas_img']) ?>" alt="Características de <?= htmlspecialchars($ser['nombre']) ?>" loading="lazy">
+                        <img src="<?= htmlspecialchars($detalle['caracteristicas_img']) ?>" alt="<?= htmlspecialchars($ser['nombre']) ?>" loading="lazy">
                     </div>
                     <?php endif; ?>
                 </div>
@@ -146,13 +146,13 @@ try {
     </section>
     <?php endif; ?>
 
-    <!-- Árbol genealógico -->
+    <!-- Árbol genealógico - SOLO SI EXISTE IMAGEN -->
     <?php if ($detalle && !empty($detalle['arbolg_img'])): ?>
     <section class="genealogy-section">
         <div class="content-card">
             <h2 class="section-title">Árbol Genealógico</h2>
             <div class="genealogy-image">
-                <img src="<?= htmlspecialchars($detalle['arbolg_img']) ?>" alt="Árbol genealógico de <?= htmlspecialchars($ser['nombre']) ?>" loading="lazy">
+                <img src="<?= htmlspecialchars($detalle['arbolg_img']) ?>" alt="<?= htmlspecialchars($ser['nombre']) ?>" loading="lazy">
             </div>
         </div>
     </section>

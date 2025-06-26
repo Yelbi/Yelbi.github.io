@@ -680,3 +680,34 @@ html {
     max-height: 280px;
   }
 }
+
+img.error.broken-image {
+  position: relative;
+  min-height: 50px;
+}
+
+img.error.broken-image::after {
+  content: attr(alt);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px;
+  background: rgba(255,0,0,0.1);
+  color: #ff6b6b;
+  font-style: italic;
+}
+
+/* Estilo para cuando no hay imagen en características */
+.characteristics-grid.single-column {
+    grid-template-columns: 1fr !important;
+}
+
+.characteristics-grid.single-column .characteristics-text {
+    grid-column: span 2;
+}
+
+/* Ocultar árbol genealógico si no hay imagen - ya manejado en PHP pero por seguridad */
+.genealogy-section:not(:has(img[src])) {
+    display: none;
+}

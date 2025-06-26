@@ -104,7 +104,7 @@ body {
 /* Búsqueda responsiva */
 .search-wrapper {
   position: relative;
-  flex: 1 1 300px;
+  flex: 1 1 auto;
   min-width: 250px;
   max-width: 100%;
 }
@@ -202,7 +202,6 @@ body {
   display: flex;
   gap: clamp(1rem, 3vw, 2rem);
   flex-wrap: wrap;
-  align-items: end;
 }
 
 .filter-group {
@@ -422,6 +421,7 @@ body {
   font-weight: 600;
   flex: 1;
   text-align: center;
+  align-content: center;
   background: rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.4);
@@ -593,7 +593,7 @@ body {
   }
   
   .btn-toggle {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
     order: 2;
     align-self: stretch;
   }

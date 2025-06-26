@@ -1,9 +1,3 @@
-/**
- * Galería Responsiva Optimizada - Sistema de filtros y visualización adaptativa
- * @version 2.0.0
- * @description Sistema modular optimizado para rendimiento y accesibilidad
- */
-
 class ResponsiveGallery {
   constructor() {
     this.elements = this.initializeElements();
@@ -12,13 +6,12 @@ class ResponsiveGallery {
     this.state = this.initializeState();
     this.observers = new Map();
     this.timers = new Map();
+    this.loadedImages = new Set();
     
     this.init();
   }
 
-  // === INICIALIZACIÓN DE ELEMENTOS ===
   initializeElements() {
-    const elements = {};
     const selectors = {
       cards: '.card',
       images: 'img[loading="lazy"]',
@@ -33,86 +26,71 @@ class ResponsiveGallery {
       galeriaGrid: '#galeriaGrid'
     };
 
+    const elements = {};
     for (const [key, selector] of Object.entries(selectors)) {
-      if (key === 'cards' || key === 'images') {
-        elements[key] = document.querySelectorAll(selector);
-      } else {
-        elements[key] = document.getElementById(selector.slice(1)) || document.querySelector(selector);
-      }
+      elements[key] = (key === 'cards' || key === 'images') 
+        ? document.querySelectorAll(selector)
+        : document.getElementById(selector.slice(1)) || document.querySelector(selector);
     }
-
+    
     return elements;
   }
 
-  // === DETECCIÓN DE DISPOSITIVO OPTIMIZADA ===
   detectDevice() {
     const width = window.innerWidth;
     const connection = navigator.connection;
+    const isMobile = width <= 767;
+    const isTablet = width >= 768 && width <= 1199;
     
-    const deviceInfo = {
-      isMobile: width <= 767,
-      isTablet: width >= 768 && width <= 1199,
+    return {
+      isMobile,
+      isTablet,
       isDesktop: width >= 1200,
       isTouchDevice: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
-      supportsHover: window.matchMedia('(hover: hover)').matches,
-      prefersReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      supportsHover: matchMedia('(hover: hover)').matches,
+      prefersReducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
       isLowPerformance: this.detectLowPerformance(),
-      isSlowConnection: connection && (connection.saveData || 
-                       connection.effectiveType.includes('2g')),
+      isSlowConnection: connection?.saveData || connection?.effectiveType?.includes('2g'),
       viewport: { width, height: window.innerHeight }
     };
-
-    return deviceInfo;
   }
 
   detectLowPerformance() {
+    if (navigator.deviceMemory && navigator.deviceMemory < 4) return true;
+    
     try {
-      // Detectar GPU de bajo rendimiento
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
       
       if (gl) {
         const renderer = gl.getParameter(gl.RENDERER);
-        const isLowEndGPU = /Mali|PowerVR|Adreno [23]/.test(renderer);
         canvas.remove();
-        return isLowEndGPU;
+        return /Mali|PowerVR|Adreno [23]/.test(renderer);
       }
     } catch (e) {
       return true;
     }
     
-    // Heurística adicional basada en memoria
-    return navigator.deviceMemory && navigator.deviceMemory < 4;
+    return false;
   }
 
-  // === CONFIGURACIÓN ADAPTATIVA ===
   generateConfig() {
-    const { isMobile, isLowPerformance, prefersReducedMotion, isSlowConnection } = this.deviceInfo;
+    const { isMobile, isLowPerformance, prefersReducedMotion } = this.deviceInfo;
     
     return {
-      // Timeouts optimizados
       searchDebounce: isMobile ? 400 : 300,
       animationDelay: isLowPerformance ? 0 : (isMobile ? 30 : 50),
       resizeDebounce: 250,
-
-      // Thresholds de intersección
       intersectionThreshold: isMobile ? 0.05 : 0.1,
       lazyLoadMargin: isMobile ? '50px' : '100px',
-
-      // Configuración de características
       enableAnimations: !prefersReducedMotion && !isLowPerformance,
       enableHoverEffects: this.deviceInfo.supportsHover && !this.deviceInfo.isTouchDevice,
       enableParallax: this.deviceInfo.isDesktop && !isLowPerformance,
-      
-      // Preload adaptativo
-      preloadCount: isSlowConnection ? 2 : (isMobile ? 4 : 8),
-      
-      // Batch processing
+      preloadCount: this.deviceInfo.isSlowConnection ? 2 : (isMobile ? 4 : 8),
       filterBatchSize: isLowPerformance ? 5 : 10
     };
   }
 
-  // === ESTADO INICIAL ===
   initializeState() {
     return {
       filters: { search: '', tipo: '', region: '' },
@@ -123,14 +101,11 @@ class ResponsiveGallery {
     };
   }
 
-  // === SISTEMA DE FILTROS OPTIMIZADO ===
   async applyFilters() {
     if (this.state.isProcessing) return;
     
     this.state.isProcessing = true;
     let visibleCount = 0;
-
-    // Procesar en lotes para mejor rendimiento
     const cards = Array.from(this.elements.cards);
     const batchSize = this.config.filterBatchSize;
     
@@ -161,17 +136,11 @@ class ResponsiveGallery {
 
   evaluateCardFilters(card) {
     const { search, tipo, region } = this.state.filters;
-    const cardData = {
-      nombre: (card.dataset.nombre || '').toLowerCase(),
-      tipo: card.dataset.tipo || '',
-      region: card.dataset.region || ''
-    };
-
-    return (
-      (!search || cardData.nombre.includes(search.toLowerCase())) &&
-      (!tipo || cardData.tipo === tipo) &&
-      (!region || cardData.region === region)
-    );
+    const nombre = (card.dataset.nombre || '').toLowerCase();
+    
+    return (!search || nombre.includes(search.toLowerCase())) &&
+           (!tipo || card.dataset.tipo === tipo) &&
+           (!region || card.dataset.region === region);
   }
 
   showCard(card, index) {
@@ -196,10 +165,17 @@ class ResponsiveGallery {
     card.classList.add('filtering-hide');
 
     const hideTimeout = this.config.enableAnimations ? 300 : 0;
-    this.timers.set(`hide-${card.dataset.id}`, setTimeout(() => {
+    const timerId = `hide-${card.dataset.id}`;
+    
+    if (this.timers.has(timerId)) {
+      clearTimeout(this.timers.get(timerId));
+    }
+    
+    this.timers.set(timerId, setTimeout(() => {
       if (card.classList.contains('filtering-hide')) {
         card.style.display = 'none';
       }
+      this.timers.delete(timerId);
     }, hideTimeout));
   }
 
@@ -216,7 +192,6 @@ class ResponsiveGallery {
     }
   }
 
-  // === EVENT LISTENERS OPTIMIZADOS ===
   setupEventListeners() {
     this.setupSearchInput();
     this.setupFilterSelects();
@@ -239,7 +214,6 @@ class ResponsiveGallery {
       debouncedSearch(e.target.value);
     });
 
-    // Optimización para móviles
     if (this.deviceInfo.isMobile) {
       this.elements.searchInput.addEventListener('focus', () => {
         setTimeout(() => {
@@ -253,10 +227,7 @@ class ResponsiveGallery {
   }
 
   setupFilterSelects() {
-    const filterMap = {
-      tipoFilter: 'tipo',
-      regionFilter: 'region'
-    };
+    const filterMap = { tipoFilter: 'tipo', regionFilter: 'region' };
 
     Object.entries(filterMap).forEach(([elementKey, filterKey]) => {
       const element = this.elements[elementKey];
@@ -267,7 +238,6 @@ class ResponsiveGallery {
         this.applyFilters();
       });
 
-      // Efectos táctiles para móviles
       if (this.deviceInfo.isTouchDevice) {
         this.addTouchFeedback(element);
       }
@@ -293,13 +263,11 @@ class ResponsiveGallery {
 
   setupKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
-      // Ctrl/Cmd + K para búsqueda
       if ((e.ctrlKey || e.metaKey) && e.key === 'k' && this.elements.searchInput) {
         e.preventDefault();
         this.focusSearch();
       }
 
-      // Escape para limpiar o cerrar
       if (e.key === 'Escape') {
         if (document.activeElement === this.elements.searchInput) {
           this.elements.searchInput.blur();
@@ -326,48 +294,46 @@ class ResponsiveGallery {
 
     const throttledScroll = this.throttle(() => {
       this.handleScroll();
-    }, 16); // ~60fps
+    }, 16);
 
     window.addEventListener('scroll', throttledScroll, { passive: true });
   }
 
-  // === INTERACCIONES DE TARJETAS ===
   setupCardInteractions() {
     this.elements.cards.forEach((card, index) => {
-      // Accesibilidad
       card.setAttribute('tabindex', '0');
       card.setAttribute('role', 'button');
       card.setAttribute('aria-label', `Ver detalles de ${card.dataset.nombre}`);
 
-      // Efectos de hover
       if (this.config.enableHoverEffects) {
         this.addHoverEffects(card);
       }
 
-      // Efectos táctiles
       if (this.deviceInfo.isTouchDevice) {
         this.addTouchEffects(card);
       }
 
-      // Navegación por teclado
       this.addKeyboardNavigation(card);
     });
   }
 
   addHoverEffects(card) {
-    card.addEventListener('mouseenter', () => {
+    const onMouseEnter = () => {
       card.style.zIndex = '10';
       if (this.config.enableAnimations) {
         card.style.transform = 'translateY(-5px) scale(1.02)';
         card.style.filter = 'brightness(1.05)';
       }
-    });
+    };
 
-    card.addEventListener('mouseleave', () => {
+    const onMouseLeave = () => {
       card.style.zIndex = '1';
       card.style.transform = '';
       card.style.filter = '';
-    });
+    };
+
+    card.addEventListener('mouseenter', onMouseEnter);
+    card.addEventListener('mouseleave', onMouseLeave);
   }
 
   addTouchEffects(card) {
@@ -384,9 +350,7 @@ class ResponsiveGallery {
       const touchDuration = Date.now() - touchStart;
       
       if (touchDuration < 200 && this.config.enableAnimations) {
-        setTimeout(() => {
-          card.style.transform = '';
-        }, 150);
+        setTimeout(() => card.style.transform = '', 150);
       } else {
         card.style.transform = '';
       }
@@ -405,148 +369,115 @@ class ResponsiveGallery {
         
         if (this.config.enableAnimations) {
           card.style.transform = 'scale(0.98)';
-          setTimeout(() => {
-            card.style.transform = '';
-          }, 100);
+          setTimeout(() => card.style.transform = '', 100);
         }
       }
     });
   }
 
-  // === LAZY LOADING OPTIMIZADO ===
   setupLazyLoading() {
-  const imageObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        this.loadImage(entry.target);
-        imageObserver.unobserve(entry.target);
-      }
-    });
-  }, {
-    rootMargin: this.config.lazyLoadMargin,
-    threshold: 0.01
-  });
-
-  this.observers.set('images', imageObserver);
-
-  this.elements.images.forEach((img, index) => {
-    // Preload imágenes críticas
-    if (index < this.config.preloadCount) {
-      img.loading = 'eager';
-      this.loadImage(img);
-    } else {
-      imageObserver.observe(img);
-    }
-  });
-}
-
-loadImage(img) {
-  const card = img.closest('.card');
-  
-  // FIX 1: Verificar si la imagen ya está completamente cargada antes de agregar loading
-  if (img.complete && img.naturalHeight !== 0) {
-    this.handleImageLoaded(img, card);
-    return;
-  }
-
-  // FIX 2: Solo agregar loading si no está ya cargada
-  if (card && !img.classList.contains('loaded')) {
-    card.classList.add('loading');
-  }
-
-  // FIX 3: Usar un timeout como fallback para evitar estados colgados
-  const loadingTimeout = setTimeout(() => {
-    console.warn('Timeout de carga para imagen:', img.alt || img.src);
-    this.handleImageLoaded(img, card, true); // true indica que fue por timeout
-  }, 5000); // 5 segundos de timeout
-
-  const handleLoad = () => {
-    clearTimeout(loadingTimeout);
-    this.handleImageLoaded(img, card);
-  };
-
-  const handleError = () => {
-    clearTimeout(loadingTimeout);
-    this.handleImageError(img, card);
-  };
-
-  // FIX 4: Remover listeners existentes antes de agregar nuevos
-  img.removeEventListener('load', handleLoad);
-  img.removeEventListener('error', handleError);
-  
-  img.addEventListener('load', handleLoad, { once: true });
-  img.addEventListener('error', handleError, { once: true });
-}
-
-handleImageLoaded(img, card, wasTimeout = false) {
-  if (!img.classList.contains('loaded')) {
-    img.classList.add('loaded');
-    img.style.opacity = '1';
-  }
-  
-  if (card) {
-    card.classList.remove('loading');
-    // FIX 6: Forzar un reflow para asegurar que se apliquen los estilos
-    card.offsetHeight;
-  }
-  
-  if (wasTimeout) {
-    console.warn('Imagen cargada por timeout:', img.alt || img.src);
-  }
-}
-
-handleImageError(img, card) {
-  img.style.opacity = '0.5';
-  img.src = this.generatePlaceholderSVG();
-  img.classList.add('loaded'); // FIX 7: Marcar como loaded incluso en error
-  
-  if (card) {
-    card.classList.remove('loading');
-    card.offsetHeight; // Forzar reflow
-  }
-  
-  console.warn('Error cargando imagen:', img.alt || img.src);
-}
-
-// FIX 8: Método para verificar y limpiar estados colgados
-checkAndFixStuckLoadingStates() {
-  this.elements.cards.forEach(card => {
-    if (card.classList.contains('loading')) {
-      const img = card.querySelector('img');
-      
-      if (img && (img.complete && img.naturalHeight !== 0)) {
-        console.warn('Limpiando estado loading colgado para tarjeta:', card.dataset.nombre);
-        card.classList.remove('loading');
-        img.classList.add('loaded');
-        img.style.opacity = '1';
-      }
-    }
-  });
-}
-
-// FIX 9: Agregar método de diagnóstico
-diagnoseLoadingIssues() {
-  const stuckCards = Array.from(this.elements.cards).filter(card => 
-    card.classList.contains('loading')
-  );
-  
-  if (stuckCards.length > 0) {
-    console.group('🔍 Diagnóstico de tarjetas con loading colgado:');
-    stuckCards.forEach(card => {
-      const img = card.querySelector('img');
-      console.log({
-        card: card.dataset.nombre,
-        imageComplete: img ? img.complete : 'No image',
-        imageNaturalHeight: img ? img.naturalHeight : 'No image',
-        imageLoaded: img ? img.classList.contains('loaded') : 'No image',
-        imageSrc: img ? img.src : 'No image'
+    const imageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          this.loadImage(entry.target);
+          imageObserver.unobserve(entry.target);
+        }
       });
+    }, {
+      rootMargin: this.config.lazyLoadMargin,
+      threshold: 0.01
     });
-    console.groupEnd();
+
+    this.observers.set('images', imageObserver);
+
+    this.elements.images.forEach((img, index) => {
+      if (index < this.config.preloadCount) {
+        img.loading = 'eager';
+        this.loadImage(img);
+      } else {
+        imageObserver.observe(img);
+      }
+    });
   }
-  
-  return stuckCards.length;
-}
+
+  loadImage(img) {
+    const imageId = img.src || img.dataset.src;
+    if (this.loadedImages.has(imageId)) return;
+
+    const card = img.closest('.card');
+    
+    if (img.complete && img.naturalHeight !== 0) {
+      this.handleImageLoaded(img, card);
+      return;
+    }
+
+    if (card && !img.classList.contains('loaded')) {
+      card.classList.add('loading');
+    }
+
+    const loadingTimeout = setTimeout(() => {
+      this.handleImageLoaded(img, card, true);
+    }, 5000);
+
+    const handleLoad = () => {
+      clearTimeout(loadingTimeout);
+      this.handleImageLoaded(img, card);
+    };
+
+    const handleError = () => {
+      clearTimeout(loadingTimeout);
+      this.handleImageError(img, card);
+    };
+
+    img.removeEventListener('load', handleLoad);
+    img.removeEventListener('error', handleError);
+    
+    img.addEventListener('load', handleLoad, { once: true });
+    img.addEventListener('error', handleError, { once: true });
+  }
+
+  handleImageLoaded(img, card, wasTimeout = false) {
+    const imageId = img.src || img.dataset.src;
+    this.loadedImages.add(imageId);
+
+    if (!img.classList.contains('loaded')) {
+      img.classList.add('loaded');
+      img.style.opacity = '1';
+    }
+    
+    if (card) {
+      card.classList.remove('loading');
+      card.offsetHeight;
+    }
+  }
+
+  handleImageError(img, card) {
+    const imageId = img.src || img.dataset.src;
+    this.loadedImages.add(imageId);
+
+    img.style.opacity = '0.5';
+    img.src = this.generatePlaceholderSVG();
+    img.classList.add('loaded');
+    
+    if (card) {
+      card.classList.remove('loading');
+      card.offsetHeight;
+    }
+  }
+
+  checkAndFixStuckLoadingStates() {
+    this.elements.cards.forEach(card => {
+      if (card.classList.contains('loading')) {
+        const img = card.querySelector('img');
+        
+        if (img && img.complete && img.naturalHeight !== 0) {
+          card.classList.remove('loading');
+          img.classList.add('loaded');
+          img.style.opacity = '1';
+        }
+      }
+    });
+  }
 
   generatePlaceholderSVG() {
     return 'data:image/svg+xml;base64,' + btoa(`
@@ -560,7 +491,6 @@ diagnoseLoadingIssues() {
     `);
   }
 
-  // === GESTIÓN DE ESTADO Y UTILIDADES ===
   clearAllFilters() {
     this.state.filters = { search: '', tipo: '', region: '' };
     
@@ -592,7 +522,6 @@ diagnoseLoadingIssues() {
       icon.className = collapsed ? 'fi fi-rr-angle-down' : 'fi fi-rr-angle-up';
     }
     
-    // Actualizar texto preservando el ícono
     const textNode = Array.from(this.elements.toggleFiltersBtn.childNodes)
       .find(node => node.nodeType === Node.TEXT_NODE);
     if (textNode) {
@@ -604,7 +533,6 @@ diagnoseLoadingIssues() {
     const oldDeviceInfo = { ...this.deviceInfo };
     this.deviceInfo = this.detectDevice();
     
-    // Reconfigurar si cambió el tipo de dispositivo
     if (oldDeviceInfo.isMobile !== this.deviceInfo.isMobile) {
       this.config = this.generateConfig();
       
@@ -618,13 +546,11 @@ diagnoseLoadingIssues() {
     const scrollY = window.pageYOffset;
     const scrollingDown = scrollY > this.state.lastScrollY;
     
-    // Auto-colapsar filtros en móvil al hacer scroll
     if (this.deviceInfo.isMobile && scrollingDown && 
         this.state.isFilterPanelVisible && scrollY > 200) {
       this.collapseFilterPanel();
     }
 
-    // Efecto parallax en desktop
     if (this.config.enableParallax) {
       const rate = scrollY * -0.2;
       document.body.style.backgroundPosition = `center ${rate}px`;
@@ -633,7 +559,6 @@ diagnoseLoadingIssues() {
     this.state.lastScrollY = scrollY;
   }
 
-  // === URL STATE MANAGEMENT ===
   updateURL() {
     if (!window.history?.replaceState) return;
 
@@ -653,16 +578,11 @@ diagnoseLoadingIssues() {
   loadFiltersFromURL() {
     try {
       const params = new URLSearchParams(window.location.search);
+      const elementMap = { search: 'searchInput', tipo: 'tipoFilter', region: 'regionFilter' };
       
       ['search', 'tipo', 'region'].forEach(key => {
         if (params.has(key)) {
           this.state.filters[key] = params.get(key);
-          
-          const elementMap = {
-            search: 'searchInput',
-            tipo: 'tipoFilter',
-            region: 'regionFilter'
-          };
           
           const element = this.elements[elementMap[key]];
           if (element) {
@@ -671,7 +591,6 @@ diagnoseLoadingIssues() {
         }
       });
 
-      // Aplicar filtros si hay alguno activo
       if (Object.values(this.state.filters).some(value => value)) {
         this.applyFilters();
       }
@@ -680,7 +599,6 @@ diagnoseLoadingIssues() {
     }
   }
 
-  // === UTILIDADES DE FEEDBACK ===
   addTouchFeedback(element) {
     element.addEventListener('touchstart', () => {
       if (this.config.enableAnimations) {
@@ -689,18 +607,14 @@ diagnoseLoadingIssues() {
     }, { passive: true });
 
     element.addEventListener('touchend', () => {
-      setTimeout(() => {
-        element.style.transform = '';
-      }, 150);
+      setTimeout(() => element.style.transform = '', 150);
     }, { passive: true });
   }
 
   addClickFeedback(element) {
     if (this.config.enableAnimations) {
       element.style.transform = 'scale(0.95)';
-      setTimeout(() => {
-        element.style.transform = '';
-      }, 150);
+      setTimeout(() => element.style.transform = '', 150);
     }
     this.addHapticFeedback();
   }
@@ -711,7 +625,6 @@ diagnoseLoadingIssues() {
     }
   }
 
-  // === UTILIDADES GENERALES ===
   debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -735,7 +648,6 @@ diagnoseLoadingIssues() {
     };
   }
 
-  // === MÉTODOS DE UTILIDAD ===
   focusSearch() {
     if (this.elements.searchInput) {
       this.elements.searchInput.focus();
@@ -754,59 +666,18 @@ diagnoseLoadingIssues() {
     }
   }
 
-  // === CLEANUP Y GESTIÓN DE MEMORIA ===
   cleanup() {
-    // Limpiar observers
     this.observers.forEach(observer => observer.disconnect());
     this.observers.clear();
 
-    // Limpiar timers
     this.timers.forEach(timer => clearTimeout(timer));
     this.timers.clear();
 
-    // Remover transiciones para evitar animaciones en cleanup
     this.elements.cards.forEach(card => {
       card.style.transition = 'none';
     });
   }
 
-  // === INICIALIZACIÓN PRINCIPAL ===
-  init() {
-  try {
-    this.loadFiltersFromURL();
-    this.setupEventListeners();
-    this.setupCardInteractions();
-    this.setupLazyLoading();
-    
-    // FIX 10: Verificar estados después de la inicialización
-    setTimeout(() => {
-      this.checkAndFixStuckLoadingStates();
-    }, 1000);
-    
-    // FIX 11: Verificación periódica (solo en desarrollo)
-    if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')) {
-      setInterval(() => {
-        const stuckCount = this.diagnoseLoadingIssues();
-        if (stuckCount > 0) {
-          this.checkAndFixStuckLoadingStates();
-        }
-      }, 10000); // Cada 10 segundos en desarrollo
-    }
-    
-    // Setup de cleanup automático
-    window.addEventListener('beforeunload', () => this.cleanup());
-    
-    console.log('Galería responsiva inicializada:', {
-      cards: this.elements.cards.length,
-      device: this.deviceInfo,
-      config: this.config
-    });
-  } catch (error) {
-    console.error('Error inicializando galería:', error);
-  }
-}
-
-// FIX 12: Método para forzar recarga de imágenes problemáticas
   forceReloadStuckImages() {
     const stuckCards = Array.from(this.elements.cards).filter(card => 
       card.classList.contains('loading')
@@ -817,22 +688,39 @@ diagnoseLoadingIssues() {
       if (img) {
         const originalSrc = img.src;
         img.src = '';
-        setTimeout(() => {
-          img.src = originalSrc;
-        }, 100);
+        setTimeout(() => img.src = originalSrc, 100);
       }
     });
     
     return stuckCards.length;
   }
-} // <-- Cierre de la clase ResponsiveGallery
 
-// === INICIALIZACIÓN AUTOMÁTICA ===
+  init() {
+    try {
+      this.loadFiltersFromURL();
+      this.setupEventListeners();
+      this.setupCardInteractions();
+      this.setupLazyLoading();
+      
+      setTimeout(() => this.checkAndFixStuckLoadingStates(), 1000);
+      
+      window.addEventListener('beforeunload', () => this.cleanup());
+      
+      console.log('Galería responsiva inicializada:', {
+        cards: this.elements.cards.length,
+        device: this.deviceInfo,
+        config: this.config
+      });
+    } catch (error) {
+      console.error('Error inicializando galería:', error);
+    }
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   window.galleryInstance = new ResponsiveGallery();
 });
 
-// === FUNCIÓN PARA ACCESO EXTERNO ===
 window.GalleryAPI = {
   getInstance: () => window.galleryInstance,
   clearFilters: () => window.galleryInstance?.clearAllFilters(),
@@ -842,8 +730,6 @@ window.GalleryAPI = {
       window.galleryInstance.applyFilters();
     }
   },
-  // Métodos de debugging
-  diagnoseLoading: () => window.galleryInstance?.diagnoseLoadingIssues(),
   fixStuckCards: () => window.galleryInstance?.checkAndFixStuckLoadingStates(),
   forceReload: () => window.galleryInstance?.forceReloadStuckImages()
 };

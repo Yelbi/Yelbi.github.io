@@ -49,9 +49,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Error loading image fallback
   document.querySelectorAll('img').forEach(img => {
-    img.addEventListener('error', () => {
-      img.src = '/Img/placeholder.svg';
-      img.classList.add('error');
+    img.addEventListener('error', function() {
+      // Solo añade clases sin cambiar el src
+      this.classList.add('error', 'broken-image');
+    
+      // Opcional: añadir texto alternativo
+      const altText = this.alt || 'Imagen no disponible';
+      this.after(document.createTextNode(altText));
     });
   });
 
@@ -101,6 +105,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 200);
   });
 
+  document.querySelectorAll('.genealogy-image img').forEach(img => {
+    img.addEventListener('error', function() {
+        const section = this.closest('.genealogy-section');
+        if (section) {
+            section.remove();
+        }
+    });
+  });
+
   // Keyboard accessibility
   navButtons.forEach(btn => {
     btn.addEventListener('keydown', e => {
@@ -116,6 +129,16 @@ document.addEventListener('DOMContentLoaded', function() {
       if (["Enter", "Space", " "].includes(e.key)) {
         e.preventDefault(); openModal(item.querySelector('img'));
       }
+    });
+  });
+
+  document.querySelectorAll('.characteristics-image img').forEach(img => {
+    img.addEventListener('error', function() {
+        const grid = this.closest('.characteristics-grid');
+        if (grid) {
+            grid.classList.add('single-column');
+            this.remove();
+        }
     });
   });
 

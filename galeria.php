@@ -77,8 +77,8 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
 
           <!-- Botón para mostrar/ocultar filtros -->
           <button id="toggleFilters" class="btn-toggle">
-            <i class="fi fi-rr-angle-down"></i>
             Mostrar Filtros
+            <i class="fi fi-rr-angle-down"></i>
           </button>
         </div>
       </div>
