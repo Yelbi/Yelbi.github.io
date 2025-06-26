@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planeta Arenoso con Tormentas - Fondo Animado</title>
+    <title>Hole Animacion</title>
 <style>
     * {
         margin: 0;

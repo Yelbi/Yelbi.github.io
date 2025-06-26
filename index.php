@@ -39,13 +39,14 @@
 </section>
         
         <!-- Sección 2 -->
-        <section class="section section2" id="section2">
-            <div class="section-content">
-                <h1>Proximamente</h1>
-                <p>Espera a por mas</p>
-                <a href="/galeria.php" class="btn">Descubrir</a>
-            </div>
-        </section>
+<section class="section section2" id="section2">
+    <canvas id="holeCanvas"></canvas>
+    <div class="section-content">
+        <h1>Proximamente</h1>
+        <p>Espera a por mas</p>
+        <a href="/galeria.php" class="btn">Descubrir</a>
+    </div>
+</section>
 
         <!-- Sección 3 -->
         <section class="section section3" id="section3">
@@ -73,5 +74,6 @@
     <script src="/JS/header.js"></script>
     <script src="/JS/index.js"></script>
     <script src="/JS/backspace.js"></script>
+    <script src="/JS/backhole.js"></script>
 </body>
 </html>

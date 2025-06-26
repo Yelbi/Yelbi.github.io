@@ -96,10 +96,12 @@
 
         /* Sección 2 - Gradiente coral */
         .section2 {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: linear-gradient(135deg, #0a0a15 0%, #1a1a30 100%);
+    position: relative;
         }
 
         .section2::before {
+            display: none;
             content: '';
             position: absolute;
             top: 0;
@@ -109,6 +111,21 @@
             background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
                         radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
         }
+
+        #holeCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.section2 .section-content {
+    z-index: 10;
+    position: relative;
+}
 
         /* Sección 3 - Gradiente azul */
         .section3 {
