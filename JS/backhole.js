@@ -1,307 +1,409 @@
-// JS/hole-background.js - Animación de fondo para sección 2
-let holeCanvas, holeCtx, holeAnimationId;
-let holeStars = [];
-let holeTime = 0;
-let holeRotation = 0;
-let holeInitialized = false;
+// Crear este archivo como JS/hole-animation.js
 
-// Parámetros optimizados para fondo
-const holeParams = {
-    rotationSpeed: 0.2,
-    holeSize: 0.3,
-    starCount: 200
-};
+import easingUtils from "https://esm.sh/easing-utils";
 
-let holeLastTime = 0;
-const holeTargetFPS = 30; // Reducido para mejor performance como fondo
-const holeFrameTime = 1000 / holeTargetFPS;
+class AHoleSection2 extends HTMLElement {
+  connectedCallback() {
+    // Elements
+    this.canvas = this.querySelector(".js-canvas");
+    this.ctx = this.canvas.getContext("2d");
 
-// Inicializar canvas del holea
-function initholeCanvas() {
-    holeCanvas = document.getElementById('holeCanvas');
-    if (!holeCanvas) return false;
-    
-    holeCtx = holeCanvas.getContext('2d');
-    holeInitialized = true;
-    resizeholeCanvas();
-    createholeStars();
-    return true;
-}
+    this.discs = [];
+    this.lines = [];
+    this.isActive = false;
+    this.animationId = null;
 
-// Ajustar tamaño del canvas
-function resizeholeCanvas() {
-    if (!holeCanvas) return;
-    
-    holeCanvas.width = window.innerWidth;
-    holeCanvas.height = window.innerHeight;
-    
-    if (holeStars.length > 0) {
-        createholeStars();
-    }
-}
+    // Init
+    this.setSize();
+    this.setDiscs();
+    this.setLines();
+    this.setParticles();
 
-// Crear campo de estrellas
-function createholeStars() {
-    holeStars = [];
-    for (let i = 0; i < holeParams.starCount; i++) {
-        const brightness = Math.random();
-        let size, alpha;
-        
-        if (brightness < 0.8) {
-            size = Math.random() * 0.4 + 0.1;
-            alpha = Math.random() * 0.2 + 0.1;
-        } else {
-            size = Math.random() * 0.6 + 0.3;
-            alpha = Math.random() * 0.4 + 0.2;
-        }
-        
-        holeStars.push({
-            x: Math.random() * holeCanvas.width,
-            y: Math.random() * holeCanvas.height,
-            size: size,
-            twinkle: Math.random() * 0.01 + 0.003,
-            offset: Math.random() * Math.PI * 2,
-            alpha: alpha,
-            color: `rgba(255, ${240 + Math.random() * 15}, ${220 + Math.random() * 35}, ${alpha})`
+    this.bindEvents();
+
+    // Observer para optimización
+    this.setupIntersectionObserver();
+  }
+
+  setupIntersectionObserver() {
+    if ('IntersectionObserver' in window) {
+      this.observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            this.startAnimation();
+          } else {
+            this.stopAnimation();
+          }
         });
-    }
-}
+      }, { threshold: 0.1 });
 
-// Dibujar estrellas
-function drawholeStars(t) {
-    for (let star of holeStars) {
-        const twinkle = Math.sin(t * star.twinkle + star.offset) * 0.3 + 0.7;
-        const currentAlpha = star.alpha * twinkle;
-        holeCtx.fillStyle = star.color.replace(/[\d.]+\)$/, `${currentAlpha})`);
-        
-        holeCtx.beginPath();
-        holeCtx.arc(star.x, star.y, star.size * twinkle, 0, Math.PI * 2);
-        holeCtx.fill();
-    }
-}
-
-// Función de ruido simplificada
-function holeNoise(x, y, scale = 1) {
-    const X = Math.floor(x * scale) & 255;
-    const Y = Math.floor(y * scale) & 255;
-    
-    x *= scale;
-    y *= scale;
-    
-    const xf = x - Math.floor(x);
-    const yf = y - Math.floor(y);
-    
-    const u = holeFade(xf);
-    const v = holeFade(yf);
-    
-    const A = (X + Y * 57) * 0.017453292;
-    const B = ((X + 1) + Y * 57) * 0.017453292;
-    const C = (X + (Y + 1) * 57) * 0.017453292;
-    const D = ((X + 1) + (Y + 1) * 57) * 0.017453292;
-    
-    return holeLerp(v, 
-        holeLerp(u, Math.sin(A), Math.sin(B)),
-        holeLerp(u, Math.sin(C), Math.sin(D))
-    );
-}
-
-function holeFade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
-function holeLerp(t, a, b) { return a + t * (b - a); }
-
-// Generar superficie del holea
-function generateholeSurface(x, y, centerX, centerY, radius) {
-    const dx = x - centerX;
-    const dy = y - centerY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    if (distance > radius) return null;
-    
-    const normalizedX = dx / radius;
-    const normalizedY = dy / radius;
-    const normalizedDist = distance / radius;
-    
-    const z = Math.sqrt(Math.max(0, 1 - normalizedDist * normalizedDist));
-    const longitude = Math.atan2(normalizedX, z) + holeRotation;
-    const latitude = Math.asin(normalizedY);
-    
-    // Patrones del holea
-    const bandPattern = 
-        Math.sin(latitude * 15 + holeTime * 0.15) * 0.6 +
-        holeNoise(latitude * 10, longitude * 3, 0.4) * 0.3;
-    
-    const stormPattern = 
-        Math.sin(longitude * 8 + latitude * 16) * 0.4 +
-        holeNoise(longitude * 12, latitude * 12, 1.0) * 0.3;
-    
-    const bigStorm = 
-        Math.exp(-(Math.pow(longitude - 1.5, 2) * 10 + Math.pow(latitude + 0.2, 2) * 20)) * 0.6;
-    
-    const finalPattern = bandPattern * 0.7 + stormPattern * 0.3 + bigStorm * 0.4;
-    
-    // Colores más sutiles para fondo
-    let baseColor;
-    const elevation = finalPattern;
-    
-    if (elevation < -0.3) {
-        baseColor = { r: 100, g: 70, b: 45 };
-    } else if (elevation < -0.1) {
-        baseColor = { r: 130, g: 100, b: 60 };
-    } else if (elevation < 0.1) {
-        baseColor = { r: 150, g: 125, b: 80 };
-    } else if (elevation < 0.3) {
-        baseColor = { r: 180, g: 150, b: 100 };
+      this.observer.observe(this);
     } else {
-        if (bigStorm > 0.2) {
-            baseColor = { r: 160, g: 60, b: 50 };
-        } else {
-            baseColor = { r: 200, g: 170, b: 130 };
-        }
+      // Fallback para navegadores sin IntersectionObserver
+      this.startAnimation();
     }
-    
-    // Iluminación más suave
-    const lightDir = { x: -0.6, y: -0.2, z: 0.8 };
-    const normalX = normalizedX;
-    const normalY = normalizedY;
-    const normalZ = z;
-    
-    const diffuse = Math.max(0.2, 
-        normalX * lightDir.x + 
-        normalY * lightDir.y + 
-        normalZ * lightDir.z
-    );
-    
-    const surfaceLighting = Math.pow(diffuse, 0.8);
-    const edgeFactor = Math.min(1, (1 - normalizedDist) / 0.04);
-    const edgeSmooth = edgeFactor < 1 ? Math.pow(edgeFactor, 1.2) : 1;
-    
-    return {
-        r: Math.min(255, Math.max(0, baseColor.r * surfaceLighting * 0.8)),
-        g: Math.min(255, Math.max(0, baseColor.g * surfaceLighting * 0.8)),
-        b: Math.min(255, Math.max(0, baseColor.b * surfaceLighting * 0.8)),
-        a: edgeSmooth * 0.9 // Hacer el holea más transparente como fondo
+  }
+
+  startAnimation() {
+    if (!this.isActive) {
+      this.isActive = true;
+      this.tick();
+    }
+  }
+
+  stopAnimation() {
+    this.isActive = false;
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
+  }
+
+  bindEvents() {
+    window.addEventListener("resize", this.onResize.bind(this));
+  }
+
+  onResize() {
+    this.setSize();
+    this.setDiscs();
+    this.setLines();
+    this.setParticles();
+  }
+
+  setSize() {
+    this.rect = this.getBoundingClientRect();
+
+    this.render = {
+      width: this.rect.width,
+      height: this.rect.height,
+      dpi: window.devicePixelRatio
     };
-}
 
-// Dibujar holea
-function drawhole() {
-    if (!holeCanvas || !holeCtx) return;
-    
-    const centerX = holeCanvas.width / 2;
-    const centerY = holeCanvas.height / 2;
-    const radius = Math.min(holeCanvas.width, holeCanvas.height) * holeParams.holeSize;
-    
-    if (!holeCanvas.width || !holeCanvas.height || radius <= 0) return;
-    
-    const diameter = Math.ceil(radius * 2);
-    const imageData = holeCtx.createImageData(diameter, diameter);
-    const data = imageData.data;
-    
-    for (let y = 0; y < diameter; y++) {
-        for (let x = 0; x < diameter; x++) {
-            const pixelX = centerX - radius + x;
-            const pixelY = centerY - radius + y;
-            const surface = generateholeSurface(pixelX, pixelY, centerX, centerY, radius);
-            
-            if (surface) {
-                const index = (y * diameter + x) * 4;
-                data[index] = surface.r;
-                data[index + 1] = surface.g;
-                data[index + 2] = surface.b;
-                data[index + 3] = surface.a * 255;
-            }
-        }
+    this.canvas.width = this.render.width * this.render.dpi;
+    this.canvas.height = this.render.height * this.render.dpi;
+  }
+
+  setDiscs() {
+    const { width, height } = this.rect;
+
+    this.discs = [];
+
+    this.startDisc = {
+      x: width * 0.5,
+      y: height * 0.45,
+      w: width * 0.75,
+      h: height * 0.7
+    };
+
+    this.endDisc = {
+      x: width * 0.5,
+      y: height * 0.95,
+      w: 0,
+      h: 0
+    };
+
+    const totalDiscs = 100;
+
+    let prevBottom = height;
+    this.clip = {};
+
+    for (let i = 0; i < totalDiscs; i++) {
+      const p = i / totalDiscs;
+
+      const disc = this.tweenDisc({
+        p
+      });
+
+      const bottom = disc.y + disc.h;
+
+      if (bottom <= prevBottom) {
+        this.clip = {
+          disc: { ...disc },
+          i
+        };
+      }
+
+      prevBottom = bottom;
+
+      this.discs.push(disc);
     }
-    
-    holeCtx.putImageData(imageData, centerX - radius, centerY - radius);
-}
 
-// Animación del holea
-function animatehole(currentTime = 0) {
-    if (!holeInitialized || !holeCanvas) return;
-    
-    const deltaTime = currentTime - holeLastTime;
-    if (deltaTime < holeFrameTime) {
-        holeAnimationId = requestAnimationFrame(animatehole);
-        return;
+    this.clip.path = new Path2D();
+    this.clip.path.ellipse(
+      this.clip.disc.x,
+      this.clip.disc.y,
+      this.clip.disc.w,
+      this.clip.disc.h,
+      0,
+      0,
+      Math.PI * 2
+    );
+
+    this.clip.path.rect(
+      this.clip.disc.x - this.clip.disc.w,
+      0,
+      this.clip.disc.w * 2,
+      this.clip.disc.y
+    );
+  }
+
+  setLines() {
+    const { width, height } = this.rect;
+
+    this.lines = [];
+
+    const totalLines = 100;
+    const linesAngle = Math.PI * 2 / totalLines;
+
+    for (let i = 0; i < totalLines; i++) {
+      this.lines.push([]);
     }
-    
-    holeLastTime = currentTime;
-    holeTime += 0.008;
-    
-    holeCtx.clearRect(0, 0, holeCanvas.width, holeCanvas.height);
-    
-    drawholeStars(holeTime);
-    
-    holeRotation += holeParams.rotationSpeed * 0.006;
-    if (holeRotation > Math.PI * 2) holeRotation -= Math.PI * 2;
-    
-    drawhole();
-    
-    holeAnimationId = requestAnimationFrame(animatehole);
-}
 
-// Iniciar animación del holea
-function startholeAnimation() {
-    if (window.innerWidth <= 768) return; // No animar en móviles
-    
-    if (initholeCanvas()) {
-        animatehole();
-    }
-}
+    this.discs.forEach(disc => {
+      for (let i = 0; i < totalLines; i++) {
+        const angle = i * linesAngle;
 
-// Detener animación del holea
-function stopholeAnimation() {
-    if (holeAnimationId) {
-        cancelAnimationFrame(holeAnimationId);
-        holeAnimationId = null;
-    }
-}
+        const p = {
+          x: disc.x + Math.cos(angle) * disc.w,
+          y: disc.y + Math.sin(angle) * disc.h
+        };
 
-// Controlar animación basada en la sección visible
-function handleholeVisibility() {
-    if (!window.navigationControls) return;
-    
-    const currentState = window.navigationControls.getCurrentState();
-    
-    if (currentState.currentSection === 1) { // Sección 2 (índice 1)
-        startholeAnimation();
-    } else {
-        stopholeAnimation();
-    }
-}
-
-// Event listeners
-window.addEventListener('resize', () => {
-    if (holeInitialized) {
-        resizeholeCanvas();
-    }
-});
-
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        stopholeAnimation();
-    } else if (window.navigationControls?.getCurrentState().currentSection === 1) {
-        startholeAnimation();
-    }
-});
-
-// Callback personalizado para cambios de sección
-window.onSectionChange = function(newIndex, previousIndex) {
-    handleholeVisibility();
-};
-
-// Inicialización cuando el DOM esté listo
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(handleholeVisibility, 100);
+        this.lines[i].push(p);
+      }
     });
-} else {
-    setTimeout(handleholeVisibility, 100);
+
+    this.linesCanvas = new OffscreenCanvas(width, height);
+    const ctx = this.linesCanvas.getContext("2d");
+
+    this.lines.forEach((line, i) => {
+      ctx.save();
+
+      let lineIsIn = false;
+      line.forEach((p1, j) => {
+        if (j === 0) {
+          return;
+        }
+
+        const p0 = line[j - 1];
+
+        if (
+          !lineIsIn && (
+            ctx.isPointInPath(this.clip.path, p1.x, p1.y) ||
+            ctx.isPointInStroke(this.clip.path, p1.x, p1.y)
+          )
+        ) {
+          lineIsIn = true;
+        } else if (lineIsIn) {
+          ctx.clip(this.clip.path);
+        }
+
+        ctx.beginPath();
+
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+
+        ctx.strokeStyle = "#666";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.closePath();
+      });
+
+      ctx.restore();
+    });
+
+    this.linesCtx = ctx;
+  }
+
+  setParticles() {
+    const { width, height } = this.rect;
+
+    this.particles = [];
+
+    this.particleArea = {
+      sw: this.clip.disc.w * 0.5,
+      ew: this.clip.disc.w * 2,
+      h: height * 0.85
+    };
+
+    this.particleArea.sx = (width - this.particleArea.sw) / 2;
+    this.particleArea.ex = (width - this.particleArea.ew) / 2;
+
+    const totalParticles = 80;
+
+    for (let i = 0; i < totalParticles; i++) {
+      const particle = this.initParticle(true);
+      this.particles.push(particle);
+    }
+  }
+
+  initParticle(start = false) {
+    const sx = this.particleArea.sx + this.particleArea.sw * Math.random();
+    const ex = this.particleArea.ex + this.particleArea.ew * Math.random();
+    const dx = ex - sx;
+    const vx = 0.1 + Math.random() * 0.5;
+    const y = start ? this.particleArea.h * Math.random() : this.particleArea.h;
+    const r = 0.5 + Math.random() * 3;
+    const vy = 0.5 + Math.random();
+
+    return {
+      x: sx,
+      sx,
+      dx,
+      y,
+      vy,
+      p: 0,
+      r,
+      c: `rgba(255, 255, 255, ${Math.random() * 0.8 + 0.2})`
+    };
+  }
+
+  tweenValue(start, end, p, ease = false) {
+    const delta = end - start;
+
+    const easeFn =
+      easingUtils[
+        ease ? "ease" + ease.charAt(0).toUpperCase() + ease.slice(1) : "linear"
+      ];
+
+    return start + delta * easeFn(p);
+  }
+
+  drawDiscs() {
+    const { ctx } = this;
+
+    ctx.strokeStyle = "#888";
+    ctx.lineWidth = 1.5;
+
+    // Outer disc
+    const outerDisc = this.startDisc;
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+      outerDisc.x,
+      outerDisc.y,
+      outerDisc.w,
+      outerDisc.h,
+      0,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.stroke();
+    ctx.closePath();
+
+    // Discs
+    this.discs.forEach((disc, i) => {
+      if (i % 5 !== 0) {
+        return;
+      }
+
+      if (disc.w < this.clip.disc.w - 5) {
+        ctx.save();
+        ctx.clip(this.clip.path);
+      }
+
+      ctx.beginPath();
+      ctx.ellipse(disc.x, disc.y, disc.w, disc.h, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.closePath();
+
+      if (disc.w < this.clip.disc.w - 5) {
+        ctx.restore();
+      }
+    });
+  }
+
+  drawLines() {
+    const { ctx, linesCanvas } = this;
+    ctx.drawImage(linesCanvas, 0, 0);
+  }
+
+  drawParticles() {
+    const { ctx } = this;
+
+    ctx.save();
+    ctx.clip(this.clip.path);
+
+    this.particles.forEach(particle => {
+      ctx.fillStyle = particle.c;
+      ctx.beginPath();
+      ctx.arc(particle.x, particle.y, particle.r, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.fill();
+    });
+
+    ctx.restore();
+  }
+
+  moveDiscs() {
+    this.discs.forEach(disc => {
+      disc.p = (disc.p + 0.001) % 1;
+      this.tweenDisc(disc);
+    });
+  }
+
+  moveParticles() {
+    this.particles.forEach(particle => {
+      particle.p = 1 - particle.y / this.particleArea.h;
+      particle.x = particle.sx + particle.dx * particle.p;
+      particle.y -= particle.vy;
+
+      if (particle.y < 0) {
+        const newParticle = this.initParticle();
+        particle.y = newParticle.y;
+        particle.x = newParticle.sx;
+        particle.sx = newParticle.sx;
+        particle.dx = newParticle.dx;
+      }
+    });
+  }
+
+  tweenDisc(disc) {
+    disc.x = this.tweenValue(this.startDisc.x, this.endDisc.x, disc.p);
+    disc.y = this.tweenValue(
+      this.startDisc.y,
+      this.endDisc.y,
+      disc.p,
+      "inExpo"
+    );
+
+    disc.w = this.tweenValue(this.startDisc.w, this.endDisc.w, disc.p);
+    disc.h = this.tweenValue(this.startDisc.h, this.endDisc.h, disc.p);
+
+    return disc;
+  }
+
+  tick() {
+    if (!this.isActive) return;
+
+    const { ctx } = this;
+
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    ctx.save();
+    ctx.scale(this.render.dpi, this.render.dpi);
+
+    this.moveDiscs();
+    this.moveParticles();
+
+    this.drawDiscs();
+    this.drawLines();
+    this.drawParticles();
+
+    ctx.restore();
+
+    this.animationId = requestAnimationFrame(this.tick.bind(this));
+  }
+
+  disconnectedCallback() {
+    this.stopAnimation();
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+    window.removeEventListener("resize", this.onResize.bind(this));
+  }
 }
 
-// API para control externo
-window.holeControls = {
-    start: startholeAnimation,
-    stop: stopholeAnimation,
-    isActive: () => !!holeAnimationId
-};
+customElements.define("a-hole-section2", AHoleSection2);

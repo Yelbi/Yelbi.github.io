@@ -96,19 +96,58 @@
 
         /* Sección 2 - Gradiente coral */
         .section2 {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: #1a1a1a;
+            position: relative;
         }
 
-        .section2::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
-        }
+        .section2 a-hole-section2 {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.section2 a-hole-section2:before {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 2;
+    display: block;
+    width: 150%;
+    height: 140%;
+    background: radial-gradient(ellipse at 50% 55%, transparent 10%, rgba(26,26,26,0.8) 50%);
+    transform: translate3d(-50%, -50%, 0);
+    content: "";
+    pointer-events: none;
+}
+
+.section2 a-hole-section2:after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 3;
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at 50% 75%, #364c4e 20%, transparent 75%);
+    mix-blend-mode: overlay;
+    transform: translate3d(-50%, -50%, 0);
+    content: "";
+    pointer-events: none;
+}
+
+.section2 .js-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.section2 .section-content {
+    z-index: 10;
+    position: relative;
+}
 
         /* Sección 3 - Gradiente azul */
         .section3 {
