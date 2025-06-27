@@ -14,16 +14,18 @@ async function loadProfile() {
         } else {
             throw new Error('No se pudo cargar el perfil');
         }
-        } catch (error) {
+    } catch (error) {
+        console.error('Profile load error:', error);
+        
+        // Redirigir inmediatamente si hay error de token
         if (error.message.includes('401') || error.message.includes('token')) {
-            // Token inválido o expirado
             localStorage.removeItem('jwt_token');
             window.location.href = '/iniciar.php';
         } else {
             showAlert('profileAlert', error.message, 'error');
             setTimeout(() => {
                 window.location.href = '/iniciar.php';
-            }, 2000);
+            }, 1000); // Reducir a 1 segundo
         }
     }
 }

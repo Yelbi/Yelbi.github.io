@@ -325,12 +325,14 @@ async function login(email, password) {
 
         showAlert('loginAlert', '¡Inicio de sesión exitoso!', 'success');
         
-        // Redirigir según el rol
-        if (userRole === 'admin') {
-            window.location.href = '/admin-panel.php';
-        } else {
-            window.location.href = '/user-panel.php';
-        }
+        // Redirigir según el rol después de breve pausa
+setTimeout(() => {
+    if (userRole === 'admin') {
+        window.location.href = '/admin-panel.php';
+    } else {
+        window.location.href = '/user-panel.php';
+    }
+}, 1500); // 1.5 segundos
         
         return true;
     } catch (error) {
@@ -370,7 +372,7 @@ window.showResetPassword = showResetPassword;
 window.backToLogin = backToLogin;
 
 // Al cargar la página, verificar si hay token
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const jwtToken = localStorage.getItem('jwt_token');
     const urlParams = new URLSearchParams(window.location.search);
     const resetToken = urlParams.get('token');
@@ -382,8 +384,30 @@ document.addEventListener('DOMContentLoaded', () => {
         tokenInput.style.backgroundColor = '#f8f9fa';
         showResetPassword();
     } else if (jwtToken) {
-        // Redirigir directamente a los paneles
-        window.location.href = '/user-panel.php';
+        // Verificar el token antes de redirigir
+        try {
+            const response = await fetch(`${API_BASE_URL}?action=verify-token`, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`
+                }
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                if (result.role === 'admin') {
+                    window.location.href = '/admin-panel.php';
+                } else {
+                    window.location.href = '/user-panel.php';
+                }
+            } else {
+                // Token inválido
+                localStorage.removeItem('jwt_token');
+                showLogin();
+            }
+        } catch (error) {
+            console.error('Error verifying token:', error);
+            showLogin();
+        }
     } else {
         showLogin();
     }
