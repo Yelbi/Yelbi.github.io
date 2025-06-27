@@ -44,7 +44,10 @@
         <canvas class="js-canvas"></canvas>
     </a-hole-section2>
     <div class="section-content">
-        
+        <!-- Botón para ser aleatorio -->
+        <a href="/random_ser.php" class="btn random-btn">
+            <i class="fi fi-rr-shuffle"></i> Descubrir un ser al azar
+        </a>
     </div>
 </section>
 
