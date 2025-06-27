@@ -251,8 +251,14 @@ function login($user, $security, $input) {
             jsonResponse([
                 'success' => true,
                 'message' => 'Login exitoso',
-                'user' => $userData,
-                'token' => $jwt
+                'token' => $jwt,
+                'user' => [
+                    'id' => $userData['id'],
+                    'name' => $userData['name'],
+                    'email' => $userData['email'],
+                    'role' => $userData['role'] // Asegurar que el rol se envía
+                ],
+                'is_admin' => ($userData['role'] === 'admin') // Para compatibilidad
             ]);
         } else {
             $security->logLoginAttempt($email, $ip, false);
@@ -297,12 +303,14 @@ function getProfile($user) {
         
         $userData = $user->getById($userId);
         if ($userData) {
-            // Convertir role a is_admin para compatibilidad
-            $userData['is_admin'] = ($userData['role'] === 'admin');
-            
             jsonResponse([
                 'success' => true,
-                'user' => $userData
+                'user' => [
+                    'id' => $userData['id'],
+                    'name' => $userData['name'],
+                    'email' => $userData['email'],
+                    'role' => $userData['role'] // Asegurar que role está incluido
+                ]
             ]);
         } else {
             jsonResponse(['error' => 'Usuario no encontrado'], 404);

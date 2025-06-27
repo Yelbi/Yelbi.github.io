@@ -12,27 +12,28 @@ class User {
         $this->conn = $db;
     }
 
-    public function create() {
-        $query = "INSERT INTO users 
-                 SET name=:name, email=:email, password=:password, 
-                     email_verification_token=:token";
+public function create() {
+    $query = "INSERT INTO users 
+             SET name=:name, email=:email, password=:password, 
+                 email_verification_token=:token, 
+                 role='user'";
 
-        $stmt = $this->conn->prepare($query);
+    $stmt = $this->conn->prepare($query);
 
-        $password_hash = password_hash($this->password, PASSWORD_DEFAULT);
-        $verification_token = bin2hex(random_bytes(32));
+    $password_hash = password_hash($this->password, PASSWORD_DEFAULT);
+    $verification_token = bin2hex(random_bytes(32));
 
-        $stmt->bindParam(":name", $this->name);
-        $stmt->bindParam(":email", $this->email);
-        $stmt->bindParam(":password", $password_hash);
-        $stmt->bindParam(":token", $verification_token);
+    $stmt->bindParam(":name", $this->name);
+    $stmt->bindParam(":email", $this->email);
+    $stmt->bindParam(":password", $password_hash);
+    $stmt->bindParam(":token", $verification_token);
 
-        if($stmt->execute()) {
-            $this->id = $this->conn->lastInsertId();
-            return $verification_token;
-        }
-        return false;
+    if($stmt->execute()) {
+        $this->id = $this->conn->lastInsertId();
+        return $verification_token;
     }
+    return false;
+}
 
     public function verifyEmail($token) {
         $query = "UPDATE " . $this->table_name . " 

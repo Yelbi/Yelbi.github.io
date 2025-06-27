@@ -17,15 +17,12 @@ async function loadProfile() {
     } catch (error) {
         console.error('Profile load error:', error);
         
-        // SOLUCIÓN: Manejar específicamente errores 401
-        if (error.message.includes('401') || error.message.includes('token')) {
+        // Manejar específicamente errores 401 y 403
+        if (error.message.includes('401') || error.message.includes('403')) {
             localStorage.removeItem('jwt_token');
             window.location.href = '/iniciar.php';
         } else {
-            showAlert('profileAlert', error.message, 'error');
-            setTimeout(() => {
-                window.location.href = '/iniciar.php';
-            }, 3000); // Aumentar tiempo para leer el error
+            showAlert('profileAlert', 'Error cargando perfil: ' + error.message, 'error');
         }
     }
 }
