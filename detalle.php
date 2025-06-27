@@ -146,26 +146,17 @@ try {
     </section>
     <?php endif; ?>
 
-    <!-- Árbol genealógico - SOLO SI EXISTE IMAGEN -->
-    <?php if ($detalle && !empty($detalle['arbolg_img'])): ?>
-    <section class="genealogy-section">
-        <div class="content-card">
-            <h2 class="section-title">Árbol Genealógico</h2>
-            <div class="genealogy-image">
-                <img src="<?= htmlspecialchars($detalle['arbolg_img']) ?>" alt="Árbol genealógico de <?= htmlspecialchars($ser['nombre']) ?>" loading="lazy">
-            </div>
-        </div>
-    </section>
-    <?php endif; ?>
-
-    <!-- Galería de imágenes -->
+    <!-- Galería de imágenes estilo Pinterest -->
     <?php if (!empty($imagenes)): ?>
     <section class="gallery-section">
         <h2 class="section-title">Galería de Imágenes</h2>
-        <div class="image-gallery">
+        <div class="masonry-gallery">
             <?php foreach ($imagenes as $img): ?>
-            <div class="gallery-item">
-                <img src="<?= htmlspecialchars($img['imagen_url']) ?>" alt="<?= htmlspecialchars($ser['nombre']) ?>" loading="lazy" onclick="openModal(this)">
+            <div class="masonry-item">
+                <img src="<?= htmlspecialchars($img['imagen_url']) ?>" 
+                     alt="<?= htmlspecialchars($ser['nombre']) ?>" 
+                     loading="lazy" 
+                     onclick="openModal(this)">
             </div>
             <?php endforeach; ?>
         </div>

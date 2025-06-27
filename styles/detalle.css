@@ -88,6 +88,12 @@ html {
   max-height: 400px;
   border-radius: 1rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.portrait-image:hover {
+  transform: scale(1.02);
 }
 
 .hero-info {
@@ -209,21 +215,15 @@ html {
   width: 100%;
   border-radius: 1rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.3s ease;
 }
 
-/* Árbol genealógico */
-.genealogy-section .content-card {
-  display: flex;
-  flex-direction: column;
+.characteristics-image img:hover {
+  transform: scale(1.02);
 }
 
-.genealogy-image img {
-  width: 100%;
-  border-radius: 1rem;
-  margin-top: 1rem;
-}
-
-/* Galería de imágenes */
+/* GALERÍA ESTILO PINTEREST (MASONRY) */
 .gallery-section {
   margin-bottom: 3rem;
 }
@@ -234,14 +234,17 @@ html {
   font-size: 2rem;
 }
 
-.image-gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+.masonry-gallery {
+  columns: 250px;
+  column-gap: 1.5rem;
+  margin-top: 2rem;
 }
 
-.gallery-item {
-  position: relative;
+.masonry-item {
+  display: inline-block;
+  width: 100%;
+  margin-bottom: 1.5rem;
+  break-inside: avoid;
   border-radius: 1rem;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.1);
@@ -251,20 +254,19 @@ html {
   cursor: pointer;
 }
 
-.gallery-item:hover {
+.masonry-item:hover {
   transform: translateY(-5px);
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
 }
 
-.gallery-item img {
+.masonry-item img {
   width: 100%;
-  height: 200px;
-  object-fit: cover;
+  display: block;
   transition: transform 0.3s ease;
 }
 
-.gallery-item:hover img {
-  transform: scale(1.05);
+.masonry-item:hover img {
+  transform: scale(1.03);
 }
 
 /* Navegación */
@@ -333,7 +335,7 @@ html {
   text-overflow: ellipsis;
 }
 
-/* Modal para imágenes */
+/* Modal para imágenes - MEJORADO */
 .modal {
   display: none;
   position: fixed;
@@ -344,44 +346,61 @@ html {
   height: 100%;
   background-color: rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(5px);
+  padding: 20px;
+  overflow: auto;
 }
 
 .modal-content {
   position: relative;
   margin: auto;
-  display: block;
-  width: 90%;
-  max-width: 1000px;
-  top: 50%;
-  transform: translateY(-50%);
-  animation: modalFadeIn 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: calc(100vh - 40px);
 }
 
 .modal-content img {
-  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
   height: auto;
   border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  object-fit: contain;
+  animation: modalFadeIn 0.3s ease;
 }
 
 .close {
-  position: absolute;
-  top: -40px;
-  right: 0;
+  position: fixed;
+  top: 20px;
+  right: 30px;
   color: #fff;
   font-size: 2rem;
-  font-weight: bold;
   cursor: pointer;
-  transition: color 0.3s ease;
-}
-
-.close:hover {
-  color: #ccc;
+  transition: all 0.3s ease;
+  z-index: 1001;
+  background: rgba(0, 0, 0, 0.5);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
 }
 
 /* Animaciones */
 @keyframes modalFadeIn {
-  from { opacity: 0; transform: translateY(-50%) scale(0.8); }
-  to { opacity: 1; transform: translateY(-50%) scale(1); }
+  from { 
+    opacity: 0; 
+    transform: scale(0.8);
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1);
+  }
 }
 
 @keyframes fadeInUp {
@@ -398,9 +417,39 @@ html {
 /* Focus states */
 .btn-back:focus,
 .btn-nav:focus,
-.gallery-item:focus {
+.masonry-item:focus {
   outline: 2px solid rgba(255, 255, 255, 0.6);
   outline-offset: 2px;
+}
+
+/* Indicador visual para imágenes clickeables */
+.portrait-image::after,
+.characteristics-image img::after {
+  content: "🔍";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 5px 8px;
+  border-radius: 15px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.hero-portrait {
+  position: relative;
+}
+
+.characteristics-image {
+  position: relative;
+}
+
+.hero-portrait:hover .portrait-image::after,
+.characteristics-image:hover img::after {
+  opacity: 1;
 }
 
 /* Responsive Design */
@@ -462,6 +511,19 @@ html {
     flex: 1;
     max-width: none;
   }
+
+  .close {
+    top: 15px;
+    right: 15px;
+    font-size: 2rem;
+    width: 40px;
+    height: 40px;
+  }
+  
+  /* Galería en tablet */
+  .masonry-gallery {
+    columns: 200px;
+  }
 }
 
 /* Móvil */
@@ -517,13 +579,9 @@ html {
     line-height: 1.6;
   }
   
-  .image-gallery {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .gallery-item img {
-    height: 180px;
+  /* Galería en móvil */
+  .masonry-gallery {
+    columns: 1;
   }
   
   .nav-buttons {
@@ -539,14 +597,16 @@ html {
     font-size: 0.8rem;
   }
   
-  .modal-content {
-    width: 95%;
-    padding: 0 10px;
+  .modal {
+    padding: 10px;
   }
   
   .close {
-    top: -30px;
-    font-size: 1.5rem;
+    top: 10px;
+    right: 10px;
+    font-size: 1.8rem;
+    width: 35px;
+    height: 35px;
   }
 }
 
@@ -556,18 +616,28 @@ html {
     animation: none;
   }
   
-  .gallery-item img {
+  .masonry-item img {
     transition: none;
   }
   
-  .gallery-item:hover img {
+  .masonry-item:hover img {
+    transform: none;
+  }
+
+  .portrait-image,
+  .characteristics-image img {
+    transition: none;
+  }
+
+  .portrait-image:hover,
+  .characteristics-image img:hover {
     transform: none;
   }
 }
 
 /* Mejoras para pantallas de alta densidad */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .gallery-item img {
+  .masonry-item img {
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
   }

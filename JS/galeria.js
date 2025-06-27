@@ -94,7 +94,7 @@ class ResponsiveGallery {
   initializeState() {
     return {
       filters: { search: '', tipo: '', region: '' },
-      isFilterPanelVisible: !this.deviceInfo.isMobile,
+      isFilterPanelVisible: false,
       lastScrollY: 0,
       visibleCards: 0,
       isProcessing: false
@@ -144,6 +144,13 @@ class ResponsiveGallery {
   }
 
   showCard(card, index) {
+    // Cancelar temporizador de ocultación pendiente
+    const timerKey = card;
+    if (this.timers.has(timerKey)) {
+      clearTimeout(this.timers.get(timerKey));
+      this.timers.delete(timerKey);
+    }
+    
     card.style.display = 'block';
     card.classList.remove('filtering-hide');
     card.classList.add('filtering-show');
@@ -165,17 +172,17 @@ class ResponsiveGallery {
     card.classList.add('filtering-hide');
 
     const hideTimeout = this.config.enableAnimations ? 300 : 0;
-    const timerId = `hide-${card.dataset.id}`;
+    const timerKey = card;  // Usar la referencia DOM como clave única
     
-    if (this.timers.has(timerId)) {
-      clearTimeout(this.timers.get(timerId));
+    if (this.timers.has(timerKey)) {
+      clearTimeout(this.timers.get(timerKey));
     }
     
-    this.timers.set(timerId, setTimeout(() => {
+    this.timers.set(timerKey, setTimeout(() => {
       if (card.classList.contains('filtering-hide')) {
         card.style.display = 'none';
       }
-      this.timers.delete(timerId);
+      this.timers.delete(timerKey);
     }, hideTimeout));
   }
 
@@ -504,11 +511,11 @@ class ResponsiveGallery {
   toggleFilterPanel() {
     if (!this.elements.filterPanel) return;
 
-    const isCollapsed = this.elements.filterPanel.classList.contains('collapsed');
+    const wasCollapsed = this.elements.filterPanel.classList.contains('collapsed');
     this.elements.filterPanel.classList.toggle('collapsed');
-    this.state.isFilterPanelVisible = isCollapsed;
+    this.state.isFilterPanelVisible = !wasCollapsed; // Corregido para reflejar el nuevo estado
     
-    this.updateToggleButton(!isCollapsed);
+    this.updateToggleButton(wasCollapsed);
     this.addHapticFeedback();
   }
 
@@ -591,9 +598,8 @@ class ResponsiveGallery {
         }
       });
 
-      if (Object.values(this.state.filters).some(value => value)) {
-        this.applyFilters();
-      }
+      // Aplicar filtros siempre, incluso si no hay parámetros
+      this.applyFilters();
     } catch (error) {
       console.warn('Error loading filters from URL:', error);
     }
@@ -701,6 +707,14 @@ class ResponsiveGallery {
       this.setupEventListeners();
       this.setupCardInteractions();
       this.setupLazyLoading();
+      
+      // Sincronizar estado del panel de filtros
+      if (this.elements.filterPanel) {
+        if (this.state.isFilterPanelVisible) {
+          this.elements.filterPanel.classList.remove('collapsed');
+        }
+        this.updateToggleButton(!this.state.isFilterPanelVisible);
+      }
       
       setTimeout(() => this.checkAndFixStuckLoadingStates(), 1000);
       
