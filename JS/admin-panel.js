@@ -329,6 +329,62 @@ async function deleteMessage(event, messageId) {
     }
 }
 
+function formatMessageDate(dateString) {
+    const messageDate = new Date(dateString);
+    const now = new Date();
+    const diffTime = now - messageDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+        // Hoy - mostrar hora
+        return messageDate.toLocaleTimeString('es-ES', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    } else if (diffDays === 1) {
+        return 'Ayer';
+    } else if (diffDays < 7) {
+        return messageDate.toLocaleDateString('es-ES', { weekday: 'short' });
+    } else if (diffDays < 365) {
+        return messageDate.toLocaleDateString('es-ES', { 
+            day: 'numeric', 
+            month: 'short' 
+        });
+    } else {
+        return messageDate.toLocaleDateString('es-ES', { 
+            day: 'numeric', 
+            month: 'short', 
+            year: 'numeric' 
+        });
+    }
+}
+
+function getAvatarColor(email) {
+    // Generar color basado en el email
+    const colors = [
+        'linear-gradient(135deg, #1a73e8, #4285f4)',
+        'linear-gradient(135deg, #34a853, #0f9d58)',
+        'linear-gradient(135deg, #ea4335, #d93025)',
+        'linear-gradient(135deg, #fbbc04, #f9ab00)',
+        'linear-gradient(135deg, #9aa0a6, #5f6368)',
+        'linear-gradient(135deg, #ff6d01, #e8710a)',
+        'linear-gradient(135deg, #9c27b0, #7b1fa2)',
+        'linear-gradient(135deg, #00bcd4, #0097a7)'
+    ];
+    
+    let hash = 0;
+    for (let i = 0; i < email.length; i++) {
+        hash = email.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+}
+
+function truncateText(text, maxLength) {
+    if (text.length <= maxLength) return text;
+    return text.substr(0, maxLength) + '...';
+}
+
 // Hacer funciones accesibles globalmente
 window.toggleMessageDetail = toggleMessageDetail;
 window.deleteMessage = deleteMessage;

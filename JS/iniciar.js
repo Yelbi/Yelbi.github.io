@@ -255,6 +255,45 @@ async function register(name, email, password, confirmPassword) {
     }
 }
 
+// API Request
+async function apiRequest(action, data = {}, method = 'POST') {
+    try {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        const token = localStorage.getItem('jwt_token');
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const options = {
+            method: method,
+            headers: headers,
+            body: method !== 'GET' ? JSON.stringify(data) : null
+        };
+
+        const url = `${API_BASE_URL}?action=${action}`;
+        const response = await fetch(url, options);
+        const textResponse = await response.text();
+        
+        try {
+            const result = JSON.parse(textResponse);
+            if (!response.ok) {
+                throw new Error(result.error || `Error ${response.status}`);
+            }
+            return result;
+        } catch (e) {
+            console.error('Respuesta no JSON:', textResponse);
+            throw new Error(`Respuesta inválida: ${textResponse.slice(0, 200)}`);
+        }
+        
+    } catch (error) {
+        console.error('API Error:', error);
+        throw new Error(error.message || 'Error en la conexión');
+    }
+}
+
 // Login
 async function login(email, password) {
     if (!email || !password) {
@@ -341,64 +380,6 @@ async function submitComplaint(subject, description) {
     }
 }
 
-
-
-function formatMessageDate(dateString) {
-    const messageDate = new Date(dateString);
-    const now = new Date();
-    const diffTime = now - messageDate;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) {
-        // Hoy - mostrar hora
-        return messageDate.toLocaleTimeString('es-ES', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-        });
-    } else if (diffDays === 1) {
-        return 'Ayer';
-    } else if (diffDays < 7) {
-        return messageDate.toLocaleDateString('es-ES', { weekday: 'short' });
-    } else if (diffDays < 365) {
-        return messageDate.toLocaleDateString('es-ES', { 
-            day: 'numeric', 
-            month: 'short' 
-        });
-    } else {
-        return messageDate.toLocaleDateString('es-ES', { 
-            day: 'numeric', 
-            month: 'short', 
-            year: 'numeric' 
-        });
-    }
-}
-
-function getAvatarColor(email) {
-    // Generar color basado en el email
-    const colors = [
-        'linear-gradient(135deg, #1a73e8, #4285f4)',
-        'linear-gradient(135deg, #34a853, #0f9d58)',
-        'linear-gradient(135deg, #ea4335, #d93025)',
-        'linear-gradient(135deg, #fbbc04, #f9ab00)',
-        'linear-gradient(135deg, #9aa0a6, #5f6368)',
-        'linear-gradient(135deg, #ff6d01, #e8710a)',
-        'linear-gradient(135deg, #9c27b0, #7b1fa2)',
-        'linear-gradient(135deg, #00bcd4, #0097a7)'
-    ];
-    
-    let hash = 0;
-    for (let i = 0; i < email.length; i++) {
-        hash = email.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    return colors[Math.abs(hash) % colors.length];
-}
-
-function truncateText(text, maxLength) {
-    if (text.length <= maxLength) return text;
-    return text.substr(0, maxLength) + '...';
-}
-
 // Hacer las funciones globales para que funcionen desde el HTML
 window.toggleMessageDetail = toggleMessageDetail;
 window.deleteMessage = deleteMessage;
@@ -420,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tokenInput.style.backgroundColor = '#f8f9fa';  // Estilo visual para indicar que no es editable
         showResetPassword();
     } else if (jwtToken) {
-        loadProfile();
+        window.location.href = '/user-panel.php';
     } else {
         showLogin();
     }
