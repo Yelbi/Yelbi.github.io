@@ -255,45 +255,6 @@ async function register(name, email, password, confirmPassword) {
     }
 }
 
-// API Request
-async function apiRequest(action, data = {}, method = 'POST') {
-    try {
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-        
-        const token = localStorage.getItem('jwt_token');
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-
-        const options = {
-            method: method,
-            headers: headers,
-            body: method !== 'GET' ? JSON.stringify(data) : null
-        };
-
-        const url = `${API_BASE_URL}?action=${action}`;
-        const response = await fetch(url, options);
-        const textResponse = await response.text();
-        
-        try {
-            const result = JSON.parse(textResponse);
-            if (!response.ok) {
-                throw new Error(result.error || `Error ${response.status}`);
-            }
-            return result;
-        } catch (e) {
-            console.error('Respuesta no JSON:', textResponse);
-            throw new Error(`Respuesta inválida: ${textResponse.slice(0, 200)}`);
-        }
-        
-    } catch (error) {
-        console.error('API Error:', error);
-        throw new Error(error.message || 'Error en la conexión');
-    }
-}
-
 // Login
 async function login(email, password) {
     if (!email || !password) {
@@ -316,7 +277,12 @@ async function login(email, password) {
         localStorage.setItem('jwt_token', result.token);
         showAlert('loginAlert', '¡Inicio de sesión exitoso!', 'success');
         
-        await loadProfile();
+        // Redirigir según el rol
+        if (result.user && result.user.role === 'admin') {
+            window.location.href = '/admin-panel.php';
+        } else {
+            window.location.href = '/user-panel.php';
+        }
         
         return true;
     } catch (error) {
@@ -375,122 +341,7 @@ async function submitComplaint(subject, description) {
     }
 }
 
-// Cargar mensajes para admin
-async function loadAdminMessages() {
-    try {
-        const container = document.getElementById('messagesContainer');
-        const messageCountElement = document.getElementById('messageCount');
-        
-        // Mostrar loading
-        container.innerHTML = `
-            <div class="loading-container">
-                <div class="loading-spinner"></div>
-                <span>Cargando mensajes...</span>
-            </div>
-        `;
-        
-        const result = await apiRequest('get-complaints', {}, 'GET');
-        
-        const totalMessages = result.complaints ? result.complaints.length : 0;
-        
-        // Actualizar contador
-        if (messageCountElement) {
-            if (totalMessages > 0) {
-                messageCountElement.textContent = totalMessages;
-                messageCountElement.style.display = 'inline-block';
-            } else {
-                messageCountElement.style.display = 'none';
-            }
-        }
-        
-        if (totalMessages === 0) {
-            container.innerHTML = `
-                <div class="empty-mailbox">
-                    <div class="empty-icon">📭</div>
-                    <h3>No hay mensajes</h3>
-                    <p>Cuando los usuarios envíen mensajes, aparecerán aquí organizados como en Gmail.</p>
-                </div>
-            `;
-            return;
-        }
-        
-        container.innerHTML = '';
-        
-        // Ordenar mensajes por fecha (más recientes primero)
-        const sortedComplaints = result.complaints.sort((a, b) => 
-            new Date(b.created_at) - new Date(a.created_at)
-        );
-        
-        sortedComplaints.forEach((complaint, index) => {
-            const messageElement = document.createElement('div');
-            messageElement.className = 'message-item';
-            messageElement.dataset.id = complaint.id;
-            
-            // Marcar como no leído si es reciente (opcional)
-            const isRecent = (Date.now() - new Date(complaint.created_at).getTime()) < 24 * 60 * 60 * 1000;
-            if (isRecent) {
-                messageElement.classList.add('unread');
-            }
-            
-            const formattedDate = formatMessageDate(complaint.created_at);
-            const avatar = complaint.user_email.charAt(0).toUpperCase();
-            
-            messageElement.innerHTML = `
-                <div class="message-header" onclick="toggleMessageDetail(${complaint.id})">
-                    <div class="sender-info">
-                        <div class="sender-avatar" style="background: ${getAvatarColor(complaint.user_email)}">${avatar}</div>
-                        <div class="sender-details">
-                            <div class="sender-name">${complaint.user_email}</div>
-                            <div class="message-subject">${truncateText(complaint.subject, 60)}</div>
-                        </div>
-                    </div>
-                    <div class="message-meta">
-                        <span class="message-date">${formattedDate}</span>
-                        <button class="btn-delete" onclick="deleteMessage(event, ${complaint.id})" title="Eliminar mensaje">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                <line x1="10" y1="11" x2="10" y2="17"></line>
-                                <line x1="14" y1="11" x2="14" y2="17"></line>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="message-body" id="messageBody-${complaint.id}" style="display:none;">
-                    <div class="message-content">
-                        <p>${complaint.description}</p>
-                    </div>
-                    <div class="message-footer">
-                        <small>
-                            📅 Enviado el: ${new Date(complaint.created_at).toLocaleString('es-ES', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            })}
-                        </small>
-                    </div>
-                </div>
-            `;
-            
-            container.appendChild(messageElement);
-        });
-        
-    } catch (error) {
-        console.error('Error loading messages:', error);
-        const container = document.getElementById('messagesContainer');
-        container.innerHTML = `
-            <div class="error-state">
-                <div class="error-icon">⚠️</div>
-                <h3>Error al cargar mensajes</h3>
-                <p>${error.message}</p>
-                <button class="btn-retry" onclick="loadAdminMessages()">Reintentar</button>
-            </div>
-        `;
-        showAlert('profileAlert', 'Error cargando mensajes', 'error');
-    }
-}
+
 
 function formatMessageDate(dateString) {
     const messageDate = new Date(dateString);
@@ -546,128 +397,6 @@ function getAvatarColor(email) {
 function truncateText(text, maxLength) {
     if (text.length <= maxLength) return text;
     return text.substr(0, maxLength) + '...';
-}
-
-// Alternar vista detallada del mensaje
-function toggleMessageDetail(messageId) {
-    const messageBody = document.getElementById(`messageBody-${messageId}`);
-    const messageItem = document.querySelector(`[data-id="${messageId}"]`);
-    
-    if (messageBody && messageItem) {
-        const isVisible = messageBody.style.display === 'block';
-        
-        // Cerrar otros mensajes abiertos
-        document.querySelectorAll('.message-item.expanded').forEach(item => {
-            if (item !== messageItem) {
-                item.classList.remove('expanded');
-                const bodyElement = item.querySelector('.message-body');
-                if (bodyElement) bodyElement.style.display = 'none';
-            }
-        });
-        
-        if (isVisible) {
-            messageBody.style.display = 'none';
-            messageItem.classList.remove('expanded');
-        } else {
-            messageBody.style.display = 'block';
-            messageItem.classList.add('expanded');
-            
-            // Marcar como leído
-            messageItem.classList.remove('unread');
-            
-            // Scroll suave al mensaje
-            messageItem.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'nearest' 
-            });
-        }
-    }
-}
-
-// Eliminar mensaje
-async function deleteMessage(event, messageId) {
-    event.stopPropagation();
-    
-    if (!confirm('¿Estás seguro de que deseas eliminar este mensaje? Esta acción no se puede deshacer.')) {
-        return;
-    }
-    
-    const messageElement = document.querySelector(`[data-id="${messageId}"]`);
-    if (!messageElement) {
-        console.error('Elemento de mensaje no encontrado');
-        return;
-    }
-    
-    const deleteBtn = event.target.closest('.btn-delete');
-    const originalHTML = deleteBtn.innerHTML;
-    
-    try {
-        // Mostrar loading en el botón
-        deleteBtn.innerHTML = '<div class="loading-spinner small"></div>';
-        deleteBtn.disabled = true;
-        
-        // Animación de eliminación
-        messageElement.style.opacity = '0.5';
-        messageElement.style.pointerEvents = 'none';
-        messageElement.style.transform = 'scale(0.98)';
-        
-        await apiRequest('delete-complaint', { 
-            id: messageId  
-        }, 'POST'); 
-        
-        // Animación de salida
-        messageElement.style.transition = 'all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)';
-        messageElement.style.transform = 'translateX(-100%) scale(0.9)';
-        messageElement.style.opacity = '0';
-        messageElement.style.maxHeight = '0';
-        messageElement.style.marginBottom = '0';
-        messageElement.style.paddingTop = '0';
-        messageElement.style.paddingBottom = '0';
-        
-        setTimeout(() => {
-            messageElement.remove();
-            
-            // Actualizar contador
-            const remainingMessages = document.querySelectorAll('.message-item');
-            const messageCountElement = document.getElementById('messageCount');
-            
-            if (remainingMessages.length === 0) {
-                const container = document.getElementById('messagesContainer');
-                container.innerHTML = `
-                    <div class="empty-mailbox">
-                        <div class="empty-icon">📭</div>
-                        <h3>No hay mensajes</h3>
-                        <p>Todos los mensajes han sido eliminados.</p>
-                    </div>
-                `;
-                if (messageCountElement) {
-                    messageCountElement.style.display = 'none';
-                }
-            } else {
-                if (messageCountElement) {
-                    messageCountElement.textContent = remainingMessages.length;
-                }
-            }
-        }, 400);
-        
-        // Mostrar confirmación
-        showAlert('profileAlert', 'Mensaje eliminado correctamente', 'success');
-        setTimeout(() => {
-            document.getElementById('profileAlert').innerHTML = '';
-        }, 3000);
-        
-    } catch (error) {
-        console.error('Error al eliminar mensaje:', error);
-        
-        // Restaurar estado
-        messageElement.style.opacity = '1';
-        messageElement.style.pointerEvents = 'auto';
-        messageElement.style.transform = 'scale(1)';
-        deleteBtn.innerHTML = originalHTML;
-        deleteBtn.disabled = false;
-        
-        showAlert('profileAlert', error.message || 'Error al eliminar el mensaje', 'error');
-    }
 }
 
 // Hacer las funciones globales para que funcionen desde el HTML

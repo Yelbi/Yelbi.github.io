@@ -110,63 +110,6 @@
             </form>
             <a href="#" class="link-btn" onclick="backToLogin()">Volver al inicio de sesión</a>
         </div>
-
-        <!-- Panel de Perfil -->
-        <div id="profilePanel" class="form-container">
-            <h2>Mi Perfil</h2>
-            <div id="profileAlert"></div>
-            <div class="user-info">
-                <p><strong>Nombre:</strong> <span id="profileName"></span></p>
-                <p><strong>Email:</strong> <span id="profileEmail"></span></p>
-                
-                <!-- Sección para usuarios normales -->
-                <div id="userSection" style="display: none;">
-                    <h3>Buzón de Quejas y Sugerencias</h3>
-                    <form id="complaintForm">
-                        <div class="form-group">
-                            <label for="complaintSubject">Asunto *</label>
-                            <input type="text" id="complaintSubject" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="complaintDescription">Descripción *</label>
-                            <textarea id="complaintDescription" rows="4" required></textarea>
-                        </div>
-                        <button type="submit" class="btn">Enviar Mensaje</button>
-                    </form>
-                </div>
-                
-                <!-- Sección para administradores -->
-                <div id="adminSection" style="display: none;">
-                    <h3>Panel de Administración</h3>
-                    <div class="mailbox-header">
-                        <div class="mailbox-title">
-                            Bandeja de entrada
-                            <span class="message-count" id="messageCount" style="display: none;">0</span>
-                        </div>
-                        <button class="btn-refresh" onclick="loadAdminMessages()">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M23 4v6h-6M1 20v-6h6"></path>
-                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                            </svg>
-                            Actualizar
-                        </button>
-                    </div>
-    
-    <!-- Toolbar -->
-    <div class="mailbox-toolbar" style="display: none;">
-        <button class="toolbar-btn active">Todos</button>
-        <button class="toolbar-btn">No leídos</button>
-        <button class="toolbar-btn">Importantes</button>
-    </div>
-    
-    <div id="messagesContainer" class="mailbox-container">
-        <!-- Mensajes se cargarán aquí -->
-    </div>
-</div>
-                
-                <button class="btn" onclick="logout()">Cerrar Sesión</button>
-            </div>
-        </div>
     </div>
     <script src="/JS/iniciar.js"></script>
     <script src="/JS/header.js"></script>
