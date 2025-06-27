@@ -314,10 +314,19 @@ async function login(email, password) {
         }
 
         localStorage.setItem('jwt_token', result.token);
+        
+        // Obtener el rol del usuario
+        let userRole = 'user';
+        if (result.role) {
+            userRole = result.role;
+        } else if (result.user && result.user.role) {
+            userRole = result.user.role;
+        }
+
         showAlert('loginAlert', '¡Inicio de sesión exitoso!', 'success');
         
         // Redirigir según el rol
-        if (result.user && result.user.role === 'admin') {
+        if (userRole === 'admin') {
             window.location.href = '/admin-panel.php';
         } else {
             window.location.href = '/user-panel.php';
@@ -332,38 +341,10 @@ async function login(email, password) {
     }
 }
 
-// Cargar perfil
-async function loadProfile() {
-    try {
-        const result = await apiRequest('profile', {}, 'GET');
-        if (result.user) {
-            document.getElementById('profileName').textContent = result.user.name;
-            document.getElementById('profileEmail').textContent = result.user.email;
-            
-            if (result.user.role === 'admin') {
-                document.getElementById('adminSection').style.display = 'block';
-                document.getElementById('userSection').style.display = 'none';
-                await loadAdminMessages();
-            } else {
-                document.getElementById('adminSection').style.display = 'none';
-                document.getElementById('userSection').style.display = 'block';
-            }
-            
-            showProfile();
-        } else {
-            throw new Error('No se pudo cargar el perfil');
-        }
-    } catch (error) {
-        showAlert('profileAlert', error.message, 'error');
-        showLogin();
-    }
-}
-
 // Cerrar sesión
 function logout() {
     localStorage.removeItem('jwt_token');
-    showLogin();
-    showAlert('loginAlert', 'Sesión cerrada correctamente', 'success');
+    window.location.href = '/iniciar.php';  // Redirigir en lugar de mostrar
 }
 
 // Enviar queja/sugerencia
@@ -397,10 +378,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (resetToken) {
         const tokenInput = document.getElementById('resetToken');
         tokenInput.value = resetToken;
-        tokenInput.readOnly = true;  // Hacer el campo de solo lectura
-        tokenInput.style.backgroundColor = '#f8f9fa';  // Estilo visual para indicar que no es editable
+        tokenInput.readOnly = true;
+        tokenInput.style.backgroundColor = '#f8f9fa';
         showResetPassword();
     } else if (jwtToken) {
+        // Redirigir directamente a los paneles
         window.location.href = '/user-panel.php';
     } else {
         showLogin();

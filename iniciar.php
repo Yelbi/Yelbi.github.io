@@ -28,7 +28,7 @@
     </header>
 <div class="container">
         <!-- Formulario de Inicio de Sesión -->
-        <div id="loginForm" class="form-container">
+        <div id="loginForm" class="form-container active">
             <h2>Iniciar Sesión</h2>
             <div id="loginAlert"></div>
             <form id="loginFormElement">
@@ -47,7 +47,7 @@
         </div>
 
         <!-- Formulario de Registro -->
-        <div id="registerForm" class="form-container active">
+        <div id="registerForm" class="form-container">
             <h2>Crear Cuenta</h2>
             <div id="registerAlert"></div>
             <form id="registerFormElement">
