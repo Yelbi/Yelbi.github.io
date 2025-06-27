@@ -384,28 +384,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         tokenInput.style.backgroundColor = '#f8f9fa';
         showResetPassword();
     } else if (jwtToken) {
-        // Verificar el token antes de redirigir
         try {
-            const response = await fetch(`${API_BASE_URL}?action=verify-token`, {
-                headers: {
-                    'Authorization': `Bearer ${jwtToken}`
-                }
-            });
+            // Verificar el rol usando el endpoint de perfil existente
+            const result = await apiRequest('profile', {}, 'GET');
             
-            if (response.ok) {
-                const result = await response.json();
-                if (result.role === 'admin') {
+            if (result.user && result.user.role) {
+                if (result.user.role === 'admin') {
                     window.location.href = '/admin-panel.php';
                 } else {
                     window.location.href = '/user-panel.php';
                 }
             } else {
-                // Token inválido
-                localStorage.removeItem('jwt_token');
-                showLogin();
+                throw new Error('Rol de usuario no definido');
             }
         } catch (error) {
-            console.error('Error verifying token:', error);
+            console.error('Error verificando token:', error);
+            localStorage.removeItem('jwt_token');
             showLogin();
         }
     } else {

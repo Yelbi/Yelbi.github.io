@@ -17,7 +17,7 @@ async function loadProfile() {
     } catch (error) {
         console.error('Profile load error:', error);
         
-        // Redirigir inmediatamente si hay error de token
+        // SOLUCIÓN: Manejar específicamente errores 401
         if (error.message.includes('401') || error.message.includes('token')) {
             localStorage.removeItem('jwt_token');
             window.location.href = '/iniciar.php';
@@ -25,7 +25,7 @@ async function loadProfile() {
             showAlert('profileAlert', error.message, 'error');
             setTimeout(() => {
                 window.location.href = '/iniciar.php';
-            }, 1000); // Reducir a 1 segundo
+            }, 3000); // Aumentar tiempo para leer el error
         }
     }
 }
