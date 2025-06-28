@@ -3,220 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galería de Imágenes - Solución</title>
+    <title>Infinity Starfield Background</title>
     <style>
-        /* Reset básico */
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
-        
         body {
-            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
-            color: #fff;
-            line-height: 1.6;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-        }
-        
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.5rem;
-            background: linear-gradient(135deg, #ffd700, #ff8c00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            padding-bottom: 10px;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .solution-explanation {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .solution-explanation h2 {
-            margin-bottom: 15px;
-            color: #ffd700;
-        }
-        
-        .solution-explanation ul {
-            margin-left: 20px;
-            margin-bottom: 15px;
-        }
-        
-        .solution-explanation li {
-            margin-bottom: 8px;
-        }
-        
-        .solution-explanation code {
-            background: rgba(0, 0, 0, 0.4);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-        }
-        
-        .gallery-section {
-            margin-bottom: 2rem;
-        }
-        
-        .gallery-section .section-title {
-            text-align: center;
-            margin-bottom: 1.5rem;
-            font-size: 1.8rem;
-            color: #ffd700;
-        }
-        
-        /* SOLUCIÓN: Cambiar a Flexbox en lugar de columns */
-        .masonry-gallery {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.5rem;
-        }
-        
-        .masonry-item {
-            flex: 1 1 calc(33.333% - 1.5rem);
-            min-width: 250px;
-            border-radius: 1rem;
+            background: #000;
             overflow: hidden;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-            cursor: pointer;
         }
-        
-        .masonry-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-        
-        .masonry-item img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
+        #canvas {
             display: block;
-            transition: transform 0.3s ease;
-        }
-        
-        .masonry-item:hover img {
-            transform: scale(1.05);
-        }
-        
-        .image-title {
-            padding: 12px;
-            text-align: center;
-            font-weight: 500;
-        }
-        
-        /* Responsive */
-        @media (max-width: 900px) {
-            .masonry-item {
-                flex: 1 1 calc(50% - 1.5rem);
-            }
-        }
-        
-        @media (max-width: 576px) {
-            .masonry-item {
-                flex: 1 1 100%;
-            }
-            
-            h1 {
-                font-size: 2rem;
-            }
-        }
-        
-        .success-message {
-            text-align: center;
-            margin-top: 30px;
-            padding: 15px;
-            background: rgba(40, 167, 69, 0.2);
-            border: 1px solid rgba(40, 167, 69, 0.5);
-            border-radius: 10px;
-            font-size: 1.1rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Solución al Problema de la Galería</h1>
-        
-        <div class="solution-explanation">
-            <h2>¿Qué estaba pasando?</h2>
-            <p>El diseño original usaba la propiedad <code>columns</code> para crear un efecto de mampostería (masonry), pero esto causaba que las imágenes se apilaran verticalmente en lugar de mostrarse en columnas paralelas.</p>
-            
-            <h2>Solución Implementada:</h2>
-            <ul>
-                <li>Reemplazamos <code>columns: 250px;</code> con un diseño Flexbox</li>
-                <li>Ajustamos los elementos para que se muestren en 3 columnas (33.33% de ancho)</li>
-                <li>Agregamos <code>gap</code> para mantener el espacio entre elementos</li>
-                <li>Implementamos un diseño responsivo que se adapta a diferentes tamaños de pantalla</li>
-            </ul>
-            
-            <p>Código clave:</p>
-            <pre><code>.masonry-gallery {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-}
+    <canvas id="canvas"></canvas>
 
-.masonry-item {
-    flex: 1 1 calc(33.333% - 1.5rem);
-    min-width: 250px;
-}</code></pre>
-        </div>
-        
-        <section class="gallery-section">
-            <h2 class="section-title">Galería de Imágenes (Solución)</h2>
-            <div class="masonry-gallery">
-                <div class="masonry-item">
-                    <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Automóvil deportivo">
-                    <div class="image-title">Deportivo Clásico</div>
-                </div>
-                <div class="masonry-item">
-                    <img src="https://images.unsplash.com/photo-1494976388531-d1058494cdd8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Automóvil deportivo">
-                    <div class="image-title">Muscle Car</div>
-                </div>
-                <div class="masonry-item">
-                    <img src="https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Automóvil familiar">
-                    <div class="image-title">Familiar Elegante</div>
-                </div>
-                <div class="masonry-item">
-                    <img src="https://images.unsplash.com/photo-1542362567-b07e54358753?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Automóvil todoterreno">
-                    <div class="image-title">4x4 Aventurero</div>
-                </div>
-                <div class="masonry-item">
-                    <img src="https://images.unsplash.com/photo-1583121274602-3e2820c69888?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Automóvil eléctrico">
-                    <div class="image-title">Eléctrico Futurista</div>
-                </div>
-                <div class="masonry-item">
-                    <img src="https://images.unsplash.com/photo-1553440569-bcc63803a83d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Automóvil clásico">
-                    <div class="image-title">Clásico Restaurado</div>
-                </div>
-            </div>
-        </section>
-        
-        <div class="success-message">
-            ¡Problema resuelto! Ahora las imágenes se muestran correctamente en columnas paralelas.
-        </div>
-    </div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        let animationId;
+        let time = 0;
+
+        // Parámetros optimizados
+        const params = {
+            starCount: 1000,
+            speed: 1.8,
+            twinkle: 0.4,
+            size: 1.5,
+            infinityScale: 0, // Se calculará dinámicamente
+            infinitySpeed: 0.015
+        };
+
+        let lastTime = 0;
+        const targetFPS = 60;
+        const frameTime = 1000 / targetFPS;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // Calcular escala del infinito basada en el tamaño de pantalla
+            const minDimension = Math.min(canvas.width, canvas.height);
+            params.infinityScale = minDimension * 0.25; // 25% de la dimensión menor
+            
+            createStars();
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        function getInfinityPoint(t, scale = 1) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            const x = centerX + (scale * Math.cos(t)) / (1 + Math.sin(t) * Math.sin(t));
+            const y = centerY + (scale * Math.sin(t) * Math.cos(t)) / (1 + Math.sin(t) * Math.sin(t));
+            
+            return { x, y };
+        }
+
+        function createStars() {
+            stars = [];
+            
+            for (let i = 0; i < params.starCount; i++) {
+                const starType = Math.random();
+                let size, speed, color, twinkleRate, behavior;
+                
+                if (starType < 0.65) {
+                    // Estrellas del infinito (65%)
+                    size = Math.random() * 1.8 + 0.6;
+                    speed = Math.random() * 0.4 + 0.1;
+                    color = `rgba(255, 255, 255, ${Math.random() * 0.9 + 0.1})`;
+                    twinkleRate = Math.random() * 0.04 + 0.01;
+                    behavior = 'infinity';
+                } else if (starType < 0.85) {
+                    // Estrellas de fondo (20%)
+                    size = Math.random() * 0.9 + 0.3;
+                    speed = Math.random() * 0.6 + 0.3;
+                    color = `rgba(200, 220, 255, ${Math.random() * 0.7 + 0.1})`;
+                    twinkleRate = Math.random() * 0.025;
+                    behavior = 'background';
+                } else {
+                    // Estrellas destacadas (15%)
+                    size = Math.random() * 3 + 1.8;
+                    speed = Math.random() * 0.5 + 0.2;
+                    const colorType = Math.random();
+                    if (colorType < 0.4) {
+                        color = `rgba(255, 200, 100, ${Math.random() * 0.95 + 0.05})`;
+                    } else if (colorType < 0.7) {
+                        color = `rgba(100, 200, 255, ${Math.random() * 0.95 + 0.05})`;
+                    } else {
+                        color = `rgba(255, 150, 200, ${Math.random() * 0.95 + 0.05})`;
+                    }
+                    twinkleRate = Math.random() * 0.06 + 0.02;
+                    behavior = 'highlight';
+                }
+                
+                const star = {
+                    baseSize: size,
+                    speed: speed,
+                    color: color,
+                    twinkleRate: twinkleRate,
+                    twinkleOffset: Math.random() * Math.PI * 2,
+                    size: size,
+                    behavior: behavior,
+                    t: Math.random() * Math.PI * 2,
+                    offset: Math.random() * 80 - 40,
+                    opacity: Math.random() * 0.9 + 0.1,
+                    trail: []
+                };
+
+                if (behavior === 'infinity' || behavior === 'highlight') {
+                    const pos = getInfinityPoint(star.t, params.infinityScale + star.offset);
+                    star.x = pos.x;
+                    star.y = pos.y;
+                } else {
+                    star.x = Math.random() * canvas.width;
+                    star.y = Math.random() * canvas.height;
+                    star.z = Math.random() * canvas.width;
+                }
+
+                stars.push(star);
+            }
+        }
+
+        function pauseAnimation() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+
+        function resumeAnimation() {
+            if (!animationId) {
+                animate();
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                pauseAnimation();
+            } else {
+                resumeAnimation();
+            }
+        });
+
+        createStars();
+
+        function animate(currentTime = 0) {
+            const deltaTime = currentTime - lastTime;
+            if (deltaTime < frameTime) {
+                animationId = requestAnimationFrame(animate);
+                return;
+            }
+            lastTime = currentTime;
+            
+            time += 0.016;
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const now = Date.now();
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            for (let i = 0; i < stars.length; i++) {
+                const s = stars[i];
+                
+                if (s.behavior === 'infinity' || s.behavior === 'highlight') {
+                    s.t += s.speed * params.speed * params.infinitySpeed;
+                    const pos = getInfinityPoint(s.t, params.infinityScale + s.offset);
+                    s.x = pos.x;
+                    s.y = pos.y;
+                    
+                    s.trail.push({ x: s.x, y: s.y, opacity: s.opacity });
+                    if (s.trail.length > 10) {
+                        s.trail.shift();
+                    }
+                } else {
+                    s.z -= s.speed * params.speed;
+                    
+                    if (s.z <= 0) {
+                        s.z = canvas.width;
+                        s.x = Math.random() * canvas.width;
+                        s.y = Math.random() * canvas.height;
+                    }
+                    
+                    const k = 128.0 / s.z;
+                    s.x = (s.x - centerX) * k + centerX;
+                    s.y = (s.y - centerY) * k + centerY;
+                }
+                
+                if (s.behavior === 'background' && (s.x < -50 || s.x > canvas.width + 50 || s.y < -50 || s.y > canvas.height + 50)) {
+                    continue;
+                }
+                
+                const twinkle = Math.sin(now * s.twinkleRate + s.twinkleOffset) * params.twinkle * 0.6 + 0.4;
+                s.size = s.baseSize * (twinkle * 0.6 + 0.4) * params.size;
+                
+                if (s.behavior === 'infinity' || s.behavior === 'highlight') {
+                    s.trail.forEach((point, index) => {
+                        const trailOpacity = (index / s.trail.length) * s.opacity * 0.25;
+                        ctx.globalAlpha = trailOpacity;
+                        ctx.fillStyle = s.color;
+                        ctx.beginPath();
+                        ctx.arc(point.x, point.y, s.size * 0.4, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                }
+                
+                ctx.globalAlpha = s.opacity * twinkle;
+                ctx.fillStyle = s.color;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                if (s.behavior === 'highlight' && s.size > 2.5) {
+                    ctx.globalAlpha = (s.opacity * twinkle) * 0.2;
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.size * 2.8, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = s.color;
+                    ctx.lineWidth = 0.8;
+                    ctx.globalAlpha = (s.opacity * twinkle) * 0.4;
+                    ctx.beginPath();
+                    ctx.moveTo(s.x - s.size * 3.5, s.y);
+                    ctx.lineTo(s.x + s.size * 3.5, s.y);
+                    ctx.moveTo(s.x, s.y - s.size * 3.5);
+                    ctx.lineTo(s.x, s.y + s.size * 3.5);
+                    ctx.stroke();
+                }
+                
+                ctx.globalAlpha = 1;
+            }
+            
+            animationId = requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
 </body>
 </html>

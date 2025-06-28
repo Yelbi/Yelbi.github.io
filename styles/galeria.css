@@ -422,18 +422,30 @@ body {
   flex: 1;
   text-align: center;
   align-content: center;
-  background: rgba(255, 255, 255, 0.25);
+  background: transparent;
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: none;
   transition: all var(--transition-medium);
   text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-family: inherit;
 }
 
 .badge:hover {
   background: rgba(255, 255, 255, 0.35);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.badge:active {
+  transform: scale(0.95);
+}
+
+.badge.active {
+  box-shadow: 0 0 0 2px var(--color-primary);
+  transform: scale(1.05);
 }
 
 .badge.tipo {
@@ -444,6 +456,11 @@ body {
 .badge.region {
   background: rgba(16, 185, 129, 0.4);
   border-color: rgba(16, 185, 129, 0.6);
+}
+
+.badge:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* === MENSAJE SIN RESULTADOS === */

@@ -701,12 +701,39 @@ class ResponsiveGallery {
     return stuckCards.length;
   }
 
+setupBadgeFilters() {
+  document.querySelectorAll('.badge').forEach(badge => {
+    badge.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+            const filterType = badge.dataset.filter;
+            const filterValue = badge.dataset.value;
+            
+            // Actualizar estado y controles UI
+            this.state.filters[filterType] = filterValue;
+            
+            if (filterType === 'tipo' && this.elements.tipoFilter) {
+                this.elements.tipoFilter.value = filterValue;
+            } else if (filterType === 'region' && this.elements.regionFilter) {
+                this.elements.regionFilter.value = filterValue;
+            }
+            
+            // Aplicar filtros
+            this.applyFilters();
+            
+            // Feedback visual
+            this.addClickFeedback(badge);
+        });
+    });
+  }
+
   init() {
     try {
       this.loadFiltersFromURL();
       this.setupEventListeners();
       this.setupCardInteractions();
       this.setupLazyLoading();
+      this.setupBadgeFilters();
       
       // Sincronizar estado del panel de filtros
       if (this.elements.filterPanel) {

@@ -138,10 +138,18 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
              loading="lazy">
         <div class="card-info">
           <div class="nombre"><?= htmlspecialchars($s['nombre']) ?></div>
-          <div class="info-badges">
-            <span class="badge tipo"><?= htmlspecialchars($s['tipo']) ?></span>
-            <span class="badge region"><?= htmlspecialchars($s['region']) ?></span>
-          </div>
+<div class="info-badges">
+  <button class="badge tipo" 
+          data-filter="tipo" 
+          data-value="<?= htmlspecialchars($s['tipo']) ?>">
+    <?= htmlspecialchars($s['tipo']) ?>
+  </button>
+  <button class="badge region" 
+          data-filter="region" 
+          data-value="<?= htmlspecialchars($s['region']) ?>">
+    <?= htmlspecialchars($s['region']) ?>
+  </button>
+</div>
         </div>
       </a>
     <?php endforeach; ?>
