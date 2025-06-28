@@ -388,6 +388,10 @@ async function checkAuthAndRedirect() {
     
     try {
         console.log('🔍 Verificando token existente...'); // Debug
+        
+        // Mostrar mensaje de verificación
+        showAlert('loginAlert', 'Verificando sesión...', 'info');
+        
         const result = await apiRequest('profile', {}, 'GET');
         
         if (result.user && result.user.role) {
@@ -398,12 +402,12 @@ async function checkAuthAndRedirect() {
             console.log('🚀 Redirigiendo usuario autenticado a:', targetUrl); // Debug
             
             // Mostrar mensaje informativo
-            showAlert('loginAlert', 'Ya tienes una sesión activa. Redirigiendo...', 'success');
+            showAlert('loginAlert', 'Sesión activa detectada. Redirigiendo a tu panel...', 'success');
             
             // Redirigir después de un breve delay
             setTimeout(() => {
                 window.location.replace(targetUrl);
-            }, 1000);
+            }, 1500);
             
             return true; // Usuario autenticado, se está redirigiendo
         }
@@ -412,9 +416,29 @@ async function checkAuthAndRedirect() {
         // Token inválido, limpiarlo
         localStorage.removeItem('jwt_token');
         sessionStorage.removeItem('just_logged_in');
+        
+        // Limpiar mensaje de verificación
+        const alertDiv = document.getElementById('loginAlert');
+        if (alertDiv) {
+            alertDiv.innerHTML = '';
+        }
     }
     
     return false; // No autenticado o token inválido
+}
+
+function startAuthCheck() {
+    // Verificar cada 30 segundos si hay un token nuevo
+    setInterval(async () => {
+        const currentToken = localStorage.getItem('jwt_token');
+        if (currentToken && !sessionStorage.getItem('auth_checked')) {
+            sessionStorage.setItem('auth_checked', 'true');
+            const isAuthenticated = await checkAuthAndRedirect();
+            if (!isAuthenticated) {
+                sessionStorage.removeItem('auth_checked');
+            }
+        }
+    }, 30000);
 }
 
 // Hacer las funciones globales para que funcionen desde el HTML
@@ -454,16 +478,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (justLoggedIn) {
         console.log('🚫 Acabamos de hacer login, evitando verificación'); // Debug
         sessionStorage.removeItem('just_logged_in');
-        showLogin(); // Mostrar formulario mientras redirige
         return;
     }
     
-    // 3. Verificar si el usuario ya está autenticado
-    const isAuthenticated = await checkAuthAndRedirect();
-    
-    // 4. Si no está autenticado o no se está redirigiendo, mostrar formulario de login
-    if (!isAuthenticated) {
-        console.log('📝 Mostrando formulario de login'); // Debug
+    // 3. Verificar si el usuario ya está autenticado - MEJORADO
+    try {
+        const isAuthenticated = await checkAuthAndRedirect();
+        
+        // 4. Si no está autenticado o no se está redirigiendo, mostrar formulario de login
+        if (!isAuthenticated) {
+            console.log('📝 Mostrando formulario de login'); // Debug
+            showLogin();
+        }
+    } catch (error) {
+        console.error('❌ Error verificando autenticación:', error);
+        // En caso de error, mostrar el formulario de login
         showLogin();
     }
 });
