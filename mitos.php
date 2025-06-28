@@ -2,13 +2,13 @@
 // galeria.php - Con sistema de filtros
 require 'config/connection.php';
 
-// Obtener todos los seres
-$stmt = $pdo->query("SELECT * FROM seres ORDER BY nombre ASC");
-$seres = $stmt->fetchAll();
+// Obtener todos los mitos
+$stmt = $pdo->query("SELECT * FROM mitos ORDER BY nombre ASC");
+$mitos = $stmt->fetchAll();
 
-// Obtener tipos únicos (dinámicamente desde la base de datos)
-$stmt_tipos = $pdo->query("SELECT DISTINCT tipo FROM seres WHERE tipo IS NOT NULL AND tipo != '' ORDER BY tipo ASC");
-$tipos = $stmt_tipos->fetchAll(PDO::FETCH_COLUMN);
+// Obtener paises únicos (dinámicamente desde la base de datos)
+$stmt_paises = $pdo->query("SELECT DISTINCT pais FROM mitos WHERE pais IS NOT NULL AND pais != '' ORDER BY pais ASC");
+$paises = $stmt_paises->fetchAll(PDO::FETCH_COLUMN);
 
 // Optimización para móvil: limitar campos innecesarios
 // Detectar si es móvil (fallback si $device no está definido)
@@ -18,12 +18,12 @@ if (isset($device) && is_object($device) && property_exists($device, 'isMobile')
 } elseif (preg_match('/Mobile|Android|iPhone|iPad|iPod/i', $_SERVER['HTTP_USER_AGENT'])) {
     $isMobile = true;
 }
-$fields = $isMobile ? 'id, nombre, slug, imagen, tipo, region' : '*';
-$stmt = $pdo->query("SELECT $fields FROM seres ORDER BY nombre ASC");
-$seres = $stmt->fetchAll();
+$fields = $isMobile ? 'id, nombre, slug, imagen, pais, region' : '*';
+$stmt = $pdo->query("SELECT $fields FROM mitos ORDER BY nombre ASC");
+$mitos = $stmt->fetchAll();
 
 // Obtener regiones únicas (dinámicamente desde la base de datos)
-$stmt_regiones = $pdo->query("SELECT DISTINCT region FROM seres WHERE region IS NOT NULL AND region != '' ORDER BY region ASC");
+$stmt_regiones = $pdo->query("SELECT DISTINCT region FROM mitos WHERE region IS NOT NULL AND region != '' ORDER BY region ASC");
 $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
 ?>
 <!DOCTYPE html>
@@ -31,8 +31,8 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Galería de Seres Místicos</title>
-  <link rel="stylesheet" href="/styles/galeria.css">
+  <title>Galería</title>
+  <link rel="stylesheet" href="/styles/mitos.css">
   <link rel="stylesheet" href="/styles/header.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,7 +45,7 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
 <!-- Header -->
     <header class="header">
         <a href="/index.php" class="logo">
-            <img src="/Img/logo.png" alt="Logo de Seres">
+            <img src="/Img/logo.png" alt="Logo de seres">
         </a>
         <nav class="nav-menu" id="navMenu">
             <a href="/index.php" class="nav-link">Inicio</a>
@@ -86,13 +86,13 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
       <!-- Contenido colapsable -->
       <div class="filter-content">
         <div class="filter-groups">
-          <!-- Filtro por Tipo -->
+          <!-- Filtro por pais -->
           <div class="filter-group">
-            <label class="filter-label">Tipo:</label>
-            <select id="tipoFilter" class="filter-select">
-              <option value="">Todos los tipos</option>
-              <?php foreach ($tipos as $tipo): ?>
-                <option value="<?= htmlspecialchars($tipo) ?>"><?= htmlspecialchars($tipo) ?></option>
+            <label class="filter-label">Pais:</label>
+            <select id="paisFilter" class="filter-select">
+              <option value="">Todos los paises</option>
+              <?php foreach ($paises as $pais): ?>
+                <option value="<?= htmlspecialchars($pais) ?>"><?= htmlspecialchars($pais) ?></option>
               <?php endforeach; ?>
             </select>
           </div>
@@ -121,16 +121,16 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
 
     <!-- Contador de resultados -->
     <div class="results-counter">
-      <span id="resultsCount"><?= count($seres) ?></span> seres encontrados
+      <span id="resultsCount"><?= count($mitos) ?></span> mitos encontrados
     </div>
   </section>
 
   <!-- Grid de la galería -->
   <main class="grid-container" id="galeriaGrid">
-    <?php foreach ($seres as $index => $s): ?>
+    <?php foreach ($mitos as $index => $s): ?>
       <a href="/detalle.php?ser=<?= urlencode($s['slug']) ?>" 
          class="card" 
-         data-tipo="<?= htmlspecialchars($s['tipo']) ?>" 
+         data-pais="<?= htmlspecialchars($s['pais']) ?>" 
          data-region="<?= htmlspecialchars($s['region']) ?>"
          data-nombre="<?= strtolower(htmlspecialchars($s['nombre'])) ?>">
         <img src="<?= htmlspecialchars($s['imagen']) ?>" 
@@ -139,10 +139,10 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
         <div class="card-info">
           <div class="nombre"><?= htmlspecialchars($s['nombre']) ?></div>
 <div class="info-badges">
-  <button class="badge tipo" 
-          data-filter="tipo" 
-          data-value="<?= htmlspecialchars($s['tipo']) ?>">
-    <?= htmlspecialchars($s['tipo']) ?>
+  <button class="badge pais" 
+          data-filter="pais" 
+          data-value="<?= htmlspecialchars($s['pais']) ?>">
+    <?= htmlspecialchars($s['pais']) ?>
   </button>
   <button class="badge region" 
           data-filter="region" 
@@ -164,7 +164,7 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
     </div>
   </div>
 
-  <script src="/JS/galeria.js"></script>
+  <script src="/JS/mitos.js"></script>
   <script src="/JS/header.js"></script>
 
 </body>

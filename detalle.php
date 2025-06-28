@@ -64,7 +64,7 @@ try {
     <nav class="nav-menu">
         <a href="/index.php" class="nav-link">Inicio</a>
         <a href="/galeria.php" class="nav-link">Galería</a>
-        <a href="#" class="nav-link">Contacto</a>
+        <a href="/mitos.php" class="nav-link">Mitologías</a>
     </nav>
     <a href="/iniciar.php" class="user-btn"><i class="fi fi-rr-user"></i></a>
 </header>
