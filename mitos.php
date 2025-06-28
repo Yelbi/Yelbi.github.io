@@ -31,7 +31,7 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Galería</title>
+  <title>Mitologías</title>
   <link rel="stylesheet" href="/styles/mitos.css">
   <link rel="stylesheet" href="/styles/header.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -121,7 +121,7 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
 
     <!-- Contador de resultados -->
     <div class="results-counter">
-      <span id="resultsCount"><?= count($mitos) ?></span> mitos encontrados
+      <span id="resultsCount"><?= count($mitos) ?></span> Mitos encontrados
     </div>
   </section>
 
