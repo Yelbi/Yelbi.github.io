@@ -1,6 +1,19 @@
 // Configuración
 const API_BASE_URL = 'https://seres.blog/api/auth.php';
 
+// Variable global para controlar el estado de autenticación
+let authState = {
+    checking: false,
+    authenticated: false,
+    userRole: null,
+    lastCheck: 0
+};
+
+// Constantes de tiempo
+const AUTH_CHECK_INTERVAL = 5000; // 5 segundos
+const AUTH_CACHE_DURATION = 30000; // 30 segundos
+const REDIRECT_DELAY = 200; // Delay mínimo para redirección
+
 // Funciones para cambiar entre formularios
 function showForm(formId) {
     // Ocultar todos los formularios
@@ -43,6 +56,8 @@ function backToLogin() {
 // Función para mostrar alertas
 function showAlert(elementId, message, type = 'error') {
     const alertDiv = document.getElementById(elementId);
+    if (!alertDiv) return;
+    
     alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
     
     // Limpiar alerta después de 5 segundos (excepto para info)
@@ -100,6 +115,216 @@ function showPasswordRequirements(strengthDiv, password) {
     html += '</div>';
     
     strengthDiv.innerHTML = html;
+}
+
+// ============= FUNCIONES DE AUTENTICACIÓN MEJORADAS =============
+
+// Función para verificar si hay token válido localmente (sin hacer petición al servidor)
+function hasValidTokenLocally() {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) return false;
+    
+    try {
+        // Decodificar JWT para verificar expiración
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const now = Math.floor(Date.now() / 1000);
+        
+        // Verificar si el token ha expirado
+        if (payload.exp && payload.exp < now) {
+            console.log('🚫 Token expirado localmente');
+            localStorage.removeItem('jwt_token');
+            return false;
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('❌ Error decodificando token:', error);
+        localStorage.removeItem('jwt_token');
+        return false;
+    }
+}
+
+// Función optimizada para obtener información del usuario del token
+function getUserInfoFromToken() {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) return null;
+    
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return {
+            role: payload.role || 'user',
+            userId: payload.user_id,
+            email: payload.email,
+            exp: payload.exp
+        };
+    } catch (error) {
+        console.error('❌ Error obteniendo info del token:', error);
+        return null;
+    }
+}
+
+// Función para redirigir inmediatamente basado en el token local
+function immediateRedirectIfAuthenticated() {
+    const now = Date.now();
+    
+    // Evitar verificaciones muy frecuentes
+    if (authState.checking || (now - authState.lastCheck < 1000)) {
+        return false;
+    }
+    
+    // Verificar si acabamos de hacer login
+    if (sessionStorage.getItem('just_logged_in')) {
+        console.log('🚫 Acabamos de hacer login, evitando verificación');
+        sessionStorage.removeItem('just_logged_in');
+        return false;
+    }
+    
+    // Verificar token localmente primero
+    if (!hasValidTokenLocally()) {
+        console.log('📝 No hay token válido, mostrando login');
+        authState.authenticated = false;
+        authState.userRole = null;
+        return false;
+    }
+    
+    // Obtener información del usuario del token
+    const userInfo = getUserInfoFromToken();
+    if (!userInfo) {
+        console.log('❌ No se pudo obtener info del usuario');
+        return false;
+    }
+    
+    console.log('✅ Token válido encontrado, redirigiendo inmediatamente');
+    
+    // Actualizar estado
+    authState.authenticated = true;
+    authState.userRole = userInfo.role;
+    authState.lastCheck = now;
+    
+    // Mostrar mensaje de redirección
+    showAlert('loginAlert', 'Sesión activa. Redirigiendo...', 'success');
+    
+    // Redirigir inmediatamente
+    const targetUrl = userInfo.role === 'admin' ? '/admin-panel.php' : '/user-panel.php';
+    console.log('🚀 Redirigiendo a:', targetUrl);
+    
+    setTimeout(() => {
+        window.location.replace(targetUrl);
+    }, REDIRECT_DELAY);
+    
+    return true;
+}
+
+// Función para verificar autenticación con el servidor (verificación completa)
+async function verifyAuthWithServer() {
+    if (authState.checking) return false;
+    
+    const token = localStorage.getItem('jwt_token');
+    if (!token) return false;
+    
+    authState.checking = true;
+    
+    try {
+        console.log('🔍 Verificando autenticación con servidor...');
+        
+        const result = await apiRequest('profile', {}, 'GET');
+        
+        if (result.user && result.user.role) {
+            authState.authenticated = true;
+            authState.userRole = result.user.role;
+            authState.lastCheck = Date.now();
+            
+            console.log('✅ Usuario verificado con servidor:', result.user.role);
+            return true;
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('❌ Error verificando con servidor:', error);
+        
+        // Limpiar token inválido
+        localStorage.removeItem('jwt_token');
+        sessionStorage.removeItem('just_logged_in');
+        authState.authenticated = false;
+        authState.userRole = null;
+        
+        return false;
+    } finally {
+        authState.checking = false;
+    }
+}
+
+// Función principal de verificación de autenticación
+async function checkAuthAndRedirect() {
+    // Primero: verificación inmediata con token local
+    if (immediateRedirectIfAuthenticated()) {
+        return true;
+    }
+    
+    // Si no hay token válido, no continuar
+    if (!hasValidTokenLocally()) {
+        return false;
+    }
+    
+    // Segundo: verificación con servidor para tokens válidos localmente
+    const isServerAuth = await verifyAuthWithServer();
+    
+    if (isServerAuth && authState.userRole) {
+        const targetUrl = authState.userRole === 'admin' ? '/admin-panel.php' : '/user-panel.php';
+        console.log('🚀 Redirigiendo después de verificación del servidor:', targetUrl);
+        
+        showAlert('loginAlert', 'Autenticación verificada. Redirigiendo...', 'success');
+        
+        setTimeout(() => {
+            window.location.replace(targetUrl);
+        }, REDIRECT_DELAY);
+        
+        return true;
+    }
+    
+    return false;
+}
+
+// Función para monitoreo continuo de autenticación
+function startAuthMonitoring() {
+    // Verificación inicial inmediata
+    immediateRedirectIfAuthenticated();
+    
+    // Monitoreo periódico más eficiente
+    setInterval(() => {
+        // Solo verificar si no estamos ya verificando y ha pasado suficiente tiempo
+        const now = Date.now();
+        if (!authState.checking && (now - authState.lastCheck > AUTH_CACHE_DURATION)) {
+            
+            // Verificación rápida local primero
+            if (hasValidTokenLocally() && !authState.authenticated) {
+                console.log('🔄 Verificación periódica detectó token');
+                checkAuthAndRedirect();
+            }
+        }
+    }, AUTH_CHECK_INTERVAL);
+    
+    // Listener para cambios en localStorage (útil para múltiples pestañas)
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'jwt_token') {
+            if (e.newValue) {
+                console.log('🔄 Token detectado en otra pestaña');
+                setTimeout(() => immediateRedirectIfAuthenticated(), 100);
+            } else {
+                console.log('🚫 Token removido en otra pestaña');
+                authState.authenticated = false;
+                authState.userRole = null;
+            }
+        }
+    });
+    
+    // Listener para visibilidad de la página
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && hasValidTokenLocally() && !authState.authenticated) {
+            console.log('🔄 Página visible, verificando autenticación');
+            setTimeout(() => immediateRedirectIfAuthenticated(), 100);
+        }
+    });
 }
 
 // NUEVA FUNCIÓN: Solicitar recuperación de contraseña
@@ -229,7 +454,7 @@ async function register(name, email, password, confirmPassword) {
         // Limpiar formulario
         document.getElementById('registerFormElement').reset();
         const strengthEl = document.getElementById('passwordStrength');
-        if (strengthEl) strengthEl.textContent = '';
+        if (strengthEl) strengthEl.innerHTML = '';
 
         setTimeout(() => {
             if (result.verification_token) {
@@ -255,7 +480,7 @@ async function register(name, email, password, confirmPassword) {
     }
 }
 
-// API Request
+// API Request optimizado
 async function apiRequest(action, data = {}, method = 'POST') {
     try {
         const headers = {
@@ -294,14 +519,14 @@ async function apiRequest(action, data = {}, method = 'POST') {
     }
 }
 
-// Login - VERSIÓN CORREGIDA
+// Login optimizado
 async function login(email, password) {
     if (!email || !password) {
         showAlert('loginAlert', 'Por favor, completa todos los campos.');
         return false;
     }
 
-    console.log('🔄 Iniciando login para:', email); // Debug
+    console.log('🔄 Iniciando login para:', email);
 
     setButtonLoading('loginBtn', true);
 
@@ -311,7 +536,7 @@ async function login(email, password) {
             password: password
         });
 
-        console.log('✅ Resultado del login:', result); // Debug
+        console.log('✅ Resultado del login:', result);
 
         if (!result.token) {
             throw new Error('No se recibió token de autenticación');
@@ -323,8 +548,9 @@ async function login(email, password) {
         // Marcar que acabamos de hacer login exitoso
         sessionStorage.setItem('just_logged_in', 'true');
         
-        console.log('💾 Token guardado:', result.token.substring(0, 20) + '...'); // Debug
+        console.log('💾 Token guardado');
 
+        // Determinar rol del usuario
         let userRole = 'user';
         if (result.user && result.user.role) {
             userRole = result.user.role;
@@ -332,23 +558,27 @@ async function login(email, password) {
             userRole = 'admin';
         }
 
-        console.log('👤 Role detectado:', userRole); // Debug
+        // Actualizar estado de autenticación
+        authState.authenticated = true;
+        authState.userRole = userRole;
+        authState.lastCheck = Date.now();
 
-        // Mostrar mensaje de éxito brevemente
+        console.log('👤 Role detectado:', userRole);
+
+        // Mostrar mensaje de éxito
         showAlert('loginAlert', 'Iniciando sesión...', 'success');
         
-        // Redirigir después de un breve delay para asegurar que el token se guarde
+        // Redirigir inmediatamente
+        const targetUrl = userRole === 'admin' ? '/admin-panel.php' : '/user-panel.php';
+        console.log('🚀 Redirigiendo a:', targetUrl);
+        
         setTimeout(() => {
-            const targetUrl = userRole === 'admin' ? '/admin-panel.php' : '/user-panel.php';
-            console.log('🚀 Redirigiendo a:', targetUrl); // Debug
-            
-            // Forzar redirección
             window.location.replace(targetUrl);
-        }, 500);
+        }, REDIRECT_DELAY);
         
         return true;
     } catch (error) {
-        console.error('❌ Error en login:', error); // Debug
+        console.error('❌ Error en login:', error);
         showAlert('loginAlert', error.message || 'Error en el inicio de sesión');
         return false;
     } finally {
@@ -356,10 +586,20 @@ async function login(email, password) {
     }
 }
 
-// Cerrar sesión
+// Cerrar sesión mejorado
 function logout() {
+    // Limpiar todo el estado
     localStorage.removeItem('jwt_token');
     sessionStorage.removeItem('just_logged_in');
+    sessionStorage.removeItem('auth_checked');
+    
+    // Resetear estado de autenticación
+    authState.authenticated = false;
+    authState.userRole = null;
+    authState.checking = false;
+    authState.lastCheck = 0;
+    
+    // Redirigir
     window.location.href = '/iniciar.php';
 }
 
@@ -377,78 +617,14 @@ async function submitComplaint(subject, description) {
     }
 }
 
-// NUEVA FUNCIÓN: Verificar autenticación y redirigir si es necesario
-async function checkAuthAndRedirect() {
-    const jwtToken = localStorage.getItem('jwt_token');
-    
-    if (!jwtToken) {
-        console.log('📝 No hay token, mostrando login'); // Debug
-        return false; // No hay token, mostrar login
-    }
-    
-    try {
-        console.log('🔍 Verificando token existente...'); // Debug
-        
-        // Mostrar mensaje de verificación
-        showAlert('loginAlert', 'Verificando sesión...', 'info');
-        
-        const result = await apiRequest('profile', {}, 'GET');
-        
-        if (result.user && result.user.role) {
-            console.log('✅ Usuario autenticado:', result.user.role); // Debug
-            
-            // El usuario está autenticado, redirigir al panel correspondiente
-            const targetUrl = result.user.role === 'admin' ? '/admin-panel.php' : '/user-panel.php';
-            console.log('🚀 Redirigiendo usuario autenticado a:', targetUrl); // Debug
-            
-            // Mostrar mensaje informativo
-            showAlert('loginAlert', 'Sesión activa detectada. Redirigiendo a tu panel...', 'success');
-            
-            // Redirigir después de un breve delay
-            setTimeout(() => {
-                window.location.replace(targetUrl);
-            }, 1500);
-            
-            return true; // Usuario autenticado, se está redirigiendo
-        }
-    } catch (error) {
-        console.error('❌ Token inválido o expirado:', error); // Debug
-        // Token inválido, limpiarlo
-        localStorage.removeItem('jwt_token');
-        sessionStorage.removeItem('just_logged_in');
-        
-        // Limpiar mensaje de verificación
-        const alertDiv = document.getElementById('loginAlert');
-        if (alertDiv) {
-            alertDiv.innerHTML = '';
-        }
-    }
-    
-    return false; // No autenticado o token inválido
-}
-
-function startAuthCheck() {
-    // Verificar cada 30 segundos si hay un token nuevo
-    setInterval(async () => {
-        const currentToken = localStorage.getItem('jwt_token');
-        if (currentToken && !sessionStorage.getItem('auth_checked')) {
-            sessionStorage.setItem('auth_checked', 'true');
-            const isAuthenticated = await checkAuthAndRedirect();
-            if (!isAuthenticated) {
-                sessionStorage.removeItem('auth_checked');
-            }
-        }
-    }, 30000);
-}
-
 // Hacer las funciones globales para que funcionen desde el HTML
 window.showForgotPassword = showForgotPassword;
 window.showResetPassword = showResetPassword;
 window.backToLogin = backToLogin;
 
-// Al cargar la página - VERSIÓN MEJORADA
+// Al cargar la página - VERSIÓN ULTRA OPTIMIZADA
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🔄 DOMContentLoaded ejecutándose...'); // Debug
+    console.log('🔄 DOMContentLoaded ejecutándose...');
     
     const urlParams = new URLSearchParams(window.location.search);
     const resetToken = urlParams.get('token');
@@ -459,11 +635,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         hasResetToken: !!resetToken, 
         justLoggedIn: !!justLoggedIn,
         currentPath: window.location.pathname
-    }); // Debug
+    });
     
     // 1. Manejar reset password primero (tiene prioridad)
     if (resetToken) {
-        console.log('🔑 Manejando reset token'); // Debug
+        console.log('🔑 Manejando reset token');
         const tokenInput = document.getElementById('resetToken');
         if (tokenInput) {
             tokenInput.value = resetToken;
@@ -476,29 +652,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // 2. Si acabamos de hacer login, NO verificar el token (evitar bucle)
     if (justLoggedIn) {
-        console.log('🚫 Acabamos de hacer login, evitando verificación'); // Debug
+        console.log('🚫 Acabamos de hacer login, evitando verificación');
         sessionStorage.removeItem('just_logged_in');
+        showLogin(); // Mostrar formulario mientras se procesa la redirección
         return;
     }
     
-    // 3. Verificar si el usuario ya está autenticado - MEJORADO
-    try {
-        const isAuthenticated = await checkAuthAndRedirect();
-        
-        // 4. Si no está autenticado o no se está redirigiendo, mostrar formulario de login
-        if (!isAuthenticated) {
-            console.log('📝 Mostrando formulario de login'); // Debug
-            showLogin();
-        }
-    } catch (error) {
-        console.error('❌ Error verificando autenticación:', error);
-        // En caso de error, mostrar el formulario de login
+    // 3. Verificación ultra rápida de autenticación
+    const isAuthenticated = await checkAuthAndRedirect();
+    
+    // 4. Si no está autenticado, mostrar formulario de login
+    if (!isAuthenticated) {
+        console.log('📝 Mostrando formulario de login');
         showLogin();
     }
+    
+    // 5. Iniciar monitoreo continuo
+    startAuthMonitoring();
 });
 
 // Event Listeners
-document.getElementById('registerFormElement').addEventListener('submit', async (e) => {
+document.getElementById('registerFormElement')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('registerName').value;
     const email = document.getElementById('registerEmail').value;
@@ -508,7 +682,7 @@ document.getElementById('registerFormElement').addEventListener('submit', async 
     await register(name, email, password, confirmPassword);
 });
 
-document.getElementById('loginFormElement').addEventListener('submit', async (e) => {
+document.getElementById('loginFormElement')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
@@ -516,14 +690,14 @@ document.getElementById('loginFormElement').addEventListener('submit', async (e)
     await login(email, password);
 });
 
-// NUEVOS EVENT LISTENERS PARA RECUPERACIÓN DE CONTRASEÑAS
-document.getElementById('forgotPasswordFormElement').addEventListener('submit', function(e) {
+// Event listeners para recuperación de contraseñas
+document.getElementById('forgotPasswordFormElement')?.addEventListener('submit', function(e) {
     e.preventDefault();
     const email = document.getElementById('forgotEmail').value;
     requestPasswordReset(email);
 });
 
-document.getElementById('resetPasswordFormElement').addEventListener('submit', function(e) {
+document.getElementById('resetPasswordFormElement')?.addEventListener('submit', function(e) {
     e.preventDefault();
     const token = document.getElementById('resetToken').value;
     const newPassword = document.getElementById('resetNewPassword').value;
@@ -533,7 +707,7 @@ document.getElementById('resetPasswordFormElement').addEventListener('submit', f
 });
 
 // Evento para enviar queja/sugerencia
-document.getElementById('complaintForm').addEventListener('submit', async (e) => {
+document.getElementById('complaintForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const subject = document.getElementById('complaintSubject').value;
     const description = document.getElementById('complaintDescription').value;
@@ -548,7 +722,7 @@ document.getElementById('registerPassword')?.addEventListener('input', function(
     }
 });
 
-// NUEVO: Verificación de contraseña en tiempo real para reset
+// Verificación de contraseña en tiempo real para reset
 document.getElementById('resetNewPassword')?.addEventListener('input', function() {
     const strengthDiv = document.getElementById('resetPasswordStrength');
     if (strengthDiv) {
