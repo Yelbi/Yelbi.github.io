@@ -28,7 +28,6 @@
 
     <div class="container">
         <div class="form-container active">
-            <h2>Mi Perfil</h2>
             <div id="profileAlert"></div>
             <div class="user-info">
                 <p><strong>Nombre:</strong> <span id="profileName"></span></p>
