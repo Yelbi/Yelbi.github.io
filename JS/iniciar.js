@@ -377,27 +377,67 @@ async function submitComplaint(subject, description) {
     }
 }
 
+// NUEVA FUNCIÓN: Verificar autenticación y redirigir si es necesario
+async function checkAuthAndRedirect() {
+    const jwtToken = localStorage.getItem('jwt_token');
+    
+    if (!jwtToken) {
+        console.log('📝 No hay token, mostrando login'); // Debug
+        return false; // No hay token, mostrar login
+    }
+    
+    try {
+        console.log('🔍 Verificando token existente...'); // Debug
+        const result = await apiRequest('profile', {}, 'GET');
+        
+        if (result.user && result.user.role) {
+            console.log('✅ Usuario autenticado:', result.user.role); // Debug
+            
+            // El usuario está autenticado, redirigir al panel correspondiente
+            const targetUrl = result.user.role === 'admin' ? '/admin-panel.php' : '/user-panel.php';
+            console.log('🚀 Redirigiendo usuario autenticado a:', targetUrl); // Debug
+            
+            // Mostrar mensaje informativo
+            showAlert('loginAlert', 'Ya tienes una sesión activa. Redirigiendo...', 'success');
+            
+            // Redirigir después de un breve delay
+            setTimeout(() => {
+                window.location.replace(targetUrl);
+            }, 1000);
+            
+            return true; // Usuario autenticado, se está redirigiendo
+        }
+    } catch (error) {
+        console.error('❌ Token inválido o expirado:', error); // Debug
+        // Token inválido, limpiarlo
+        localStorage.removeItem('jwt_token');
+        sessionStorage.removeItem('just_logged_in');
+    }
+    
+    return false; // No autenticado o token inválido
+}
+
 // Hacer las funciones globales para que funcionen desde el HTML
 window.showForgotPassword = showForgotPassword;
 window.showResetPassword = showResetPassword;
 window.backToLogin = backToLogin;
 
-// Al cargar la página - VERSIÓN CORREGIDA
+// Al cargar la página - VERSIÓN MEJORADA
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🔄 DOMContentLoaded ejecutándose...'); // Debug
     
-    const jwtToken = localStorage.getItem('jwt_token');
     const urlParams = new URLSearchParams(window.location.search);
     const resetToken = urlParams.get('token');
     const justLoggedIn = sessionStorage.getItem('just_logged_in');
     
-    console.log('📊 Estado actual:', { 
-        hasToken: !!jwtToken, 
+    console.log('📊 Estado inicial:', { 
+        hasToken: !!localStorage.getItem('jwt_token'), 
         hasResetToken: !!resetToken, 
-        justLoggedIn: !!justLoggedIn 
+        justLoggedIn: !!justLoggedIn,
+        currentPath: window.location.pathname
     }); // Debug
     
-    // 1. Manejar reset password primero
+    // 1. Manejar reset password primero (tiene prioridad)
     if (resetToken) {
         console.log('🔑 Manejando reset token'); // Debug
         const tokenInput = document.getElementById('resetToken');
@@ -418,28 +458,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
-    // 3. Solo verificar token si NO acabamos de hacer login
-    if (jwtToken && window.location.pathname.endsWith('iniciar.php')) {
-        console.log('🔍 Verificando token existente...'); // Debug
-        try {
-            const result = await apiRequest('profile', {}, 'GET');
-            
-            if (result.user && result.user.role) {
-                console.log('✅ Token válido, redirigiendo...'); // Debug
-                const targetUrl = result.user.role === 'admin' ? '/admin-panel.php' : '/user-panel.php';
-                window.location.replace(targetUrl);
-                return;
-            }
-        } catch (error) {
-            console.error('❌ Token inválido:', error); // Debug
-            localStorage.removeItem('jwt_token');
-            sessionStorage.removeItem('just_logged_in');
-        }
-    }
+    // 3. Verificar si el usuario ya está autenticado
+    const isAuthenticated = await checkAuthAndRedirect();
     
-    // 4. Mostrar formulario de login por defecto
-    console.log('📝 Mostrando formulario de login'); // Debug
-    showLogin();
+    // 4. Si no está autenticado o no se está redirigiendo, mostrar formulario de login
+    if (!isAuthenticated) {
+        console.log('📝 Mostrando formulario de login'); // Debug
+        showLogin();
+    }
 });
 
 // Event Listeners
