@@ -52,14 +52,14 @@
 </section>
 
         <!-- Sección 3 -->
-        <section class="section section3" id="section3">
-            <div class="section-content">
-                <h1>Contactar</h1>
-                <p>Para quejas y sugerencias dirígete a tu perfil y escríbeme.</p>
-                <a href="/iniciar.php" class="btn">Aqui</a>
-            </div>
-        </section>
+<section class="section section3" id="section3">
+    <canvas id="infinity-canvas"></canvas>
+    <div class="section-content">
+        <h1>Contactar</h1>
+        <p>Para quejas y sugerencias dirígete a tu perfil y escríbeme.</p>
+        <a href="/iniciar.php" class="btn">Aqui</a>
     </div>
+</section>
 
     <!-- Navegación por puntos -->
     <div class="nav-dots">
@@ -78,5 +78,6 @@
     <script src="/JS/index.js"></script>
     <script src="/JS/backspace.js"></script>
     <script type="module" src="/JS/backhole.js"></script>
+    <script src="/JS/infinity.js"></script>
 </body>
 </html>
