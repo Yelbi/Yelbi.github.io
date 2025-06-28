@@ -294,12 +294,14 @@ async function apiRequest(action, data = {}, method = 'POST') {
     }
 }
 
-// Login
+// Login - VERSIÓN CORREGIDA
 async function login(email, password) {
     if (!email || !password) {
         showAlert('loginAlert', 'Por favor, completa todos los campos.');
         return false;
     }
+
+    console.log('🔄 Iniciando login para:', email); // Debug
 
     setButtonLoading('loginBtn', true);
 
@@ -309,12 +311,20 @@ async function login(email, password) {
             password: password
         });
 
+        console.log('✅ Resultado del login:', result); // Debug
+
         if (!result.token) {
             throw new Error('No se recibió token de autenticación');
         }
 
+        // Guardar token
         localStorage.setItem('jwt_token', result.token);
         
+        // Marcar que acabamos de hacer login exitoso
+        sessionStorage.setItem('just_logged_in', 'true');
+        
+        console.log('💾 Token guardado:', result.token.substring(0, 20) + '...'); // Debug
+
         let userRole = 'user';
         if (result.user && result.user.role) {
             userRole = result.user.role;
@@ -322,15 +332,23 @@ async function login(email, password) {
             userRole = 'admin';
         }
 
-        // Redirigir inmediatamente SIN mostrar alerta
-        if (userRole === 'admin') {
-            window.location.href = '/admin-panel.php';
-        } else {
-            window.location.href = '/user-panel.php';
-        }
+        console.log('👤 Role detectado:', userRole); // Debug
+
+        // Mostrar mensaje de éxito brevemente
+        showAlert('loginAlert', 'Iniciando sesión...', 'success');
+        
+        // Redirigir después de un breve delay para asegurar que el token se guarde
+        setTimeout(() => {
+            const targetUrl = userRole === 'admin' ? '/admin-panel.php' : '/user-panel.php';
+            console.log('🚀 Redirigiendo a:', targetUrl); // Debug
+            
+            // Forzar redirección
+            window.location.replace(targetUrl);
+        }, 500);
         
         return true;
     } catch (error) {
+        console.error('❌ Error en login:', error); // Debug
         showAlert('loginAlert', error.message || 'Error en el inicio de sesión');
         return false;
     } finally {
@@ -341,7 +359,8 @@ async function login(email, password) {
 // Cerrar sesión
 function logout() {
     localStorage.removeItem('jwt_token');
-    window.location.href = '/iniciar.php';  // Redirigir en lugar de mostrar
+    sessionStorage.removeItem('just_logged_in');
+    window.location.href = '/iniciar.php';
 }
 
 // Enviar queja/sugerencia
@@ -359,20 +378,28 @@ async function submitComplaint(subject, description) {
 }
 
 // Hacer las funciones globales para que funcionen desde el HTML
-window.toggleMessageDetail = toggleMessageDetail;
-window.deleteMessage = deleteMessage;
-window.loadAdminMessages = loadAdminMessages;
 window.showForgotPassword = showForgotPassword;
 window.showResetPassword = showResetPassword;
 window.backToLogin = backToLogin;
 
-// Al cargar la página, verificar si hay token
+// Al cargar la página - VERSIÓN CORREGIDA
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🔄 DOMContentLoaded ejecutándose...'); // Debug
+    
     const jwtToken = localStorage.getItem('jwt_token');
     const urlParams = new URLSearchParams(window.location.search);
     const resetToken = urlParams.get('token');
+    const justLoggedIn = sessionStorage.getItem('just_logged_in');
     
+    console.log('📊 Estado actual:', { 
+        hasToken: !!jwtToken, 
+        hasResetToken: !!resetToken, 
+        justLoggedIn: !!justLoggedIn 
+    }); // Debug
+    
+    // 1. Manejar reset password primero
     if (resetToken) {
+        console.log('🔑 Manejando reset token'); // Debug
         const tokenInput = document.getElementById('resetToken');
         if (tokenInput) {
             tokenInput.value = resetToken;
@@ -383,29 +410,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
-    // Solo verificar token si estamos en iniciar.php
-    if (window.location.pathname.endsWith('iniciar.php') || window.location.pathname === '/') {
-        if (jwtToken) {
-            try {
-                const result = await apiRequest('profile', {}, 'GET');
-                
-                if (result.user && result.user.role) {
-                    // Redirigir SIN setTimeout
-                    if (result.user.role === 'admin') {
-                        window.location.href = '/admin-panel.php';
-                    } else {
-                        window.location.href = '/user-panel.php';
-                    }
-                }
-            } catch (error) {
-                console.error('Error verificando token:', error);
-                localStorage.removeItem('jwt_token');
-                showLogin();
+    // 2. Si acabamos de hacer login, NO verificar el token (evitar bucle)
+    if (justLoggedIn) {
+        console.log('🚫 Acabamos de hacer login, evitando verificación'); // Debug
+        sessionStorage.removeItem('just_logged_in');
+        showLogin(); // Mostrar formulario mientras redirige
+        return;
+    }
+    
+    // 3. Solo verificar token si NO acabamos de hacer login
+    if (jwtToken && window.location.pathname.endsWith('iniciar.php')) {
+        console.log('🔍 Verificando token existente...'); // Debug
+        try {
+            const result = await apiRequest('profile', {}, 'GET');
+            
+            if (result.user && result.user.role) {
+                console.log('✅ Token válido, redirigiendo...'); // Debug
+                const targetUrl = result.user.role === 'admin' ? '/admin-panel.php' : '/user-panel.php';
+                window.location.replace(targetUrl);
+                return;
             }
-        } else {
-            showLogin();
+        } catch (error) {
+            console.error('❌ Token inválido:', error); // Debug
+            localStorage.removeItem('jwt_token');
+            sessionStorage.removeItem('just_logged_in');
         }
     }
+    
+    // 4. Mostrar formulario de login por defecto
+    console.log('📝 Mostrando formulario de login'); // Debug
+    showLogin();
 });
 
 // Event Listeners
@@ -431,14 +465,14 @@ document.getElementById('loginFormElement').addEventListener('submit', async (e)
 document.getElementById('forgotPasswordFormElement').addEventListener('submit', function(e) {
     e.preventDefault();
     const email = document.getElementById('forgotEmail').value;
-    requestPasswordReset(email); // Usar la función existente
+    requestPasswordReset(email);
 });
 
 document.getElementById('resetPasswordFormElement').addEventListener('submit', function(e) {
     e.preventDefault();
     const token = document.getElementById('resetToken').value;
     const newPassword = document.getElementById('resetNewPassword').value;
-    const confirmPassword = document.getElementById('resetConfirmPassword').value; // Capturar valor real
+    const confirmPassword = document.getElementById('resetConfirmPassword').value;
     
     resetPassword(token, newPassword, confirmPassword);
 });
@@ -466,11 +500,3 @@ document.getElementById('resetNewPassword')?.addEventListener('input', function(
         showPasswordRequirements(strengthDiv, this.value);
     }
 });
-
-// Función para mostrar formulario reset
-function showResetPassword() {
-    document.querySelectorAll('.form-container').forEach(el => {
-        el.classList.remove('active');
-    });
-    document.getElementById('resetPasswordForm').classList.add('active');
-}

@@ -20,37 +20,69 @@
             <a href="/galeria.php" class="nav-link">Galería</a>
             <a href="#" class="nav-link">Contacto</a>
         </nav>
-        <div class="menu-toggle" id="menuToggle">
-            <i class="fi fi-rr-menu-burger"></i>
-        </div>
+        <div class="menu-toggle" id="menuToggle">☰</div>
         <a href="/iniciar.php" class="user-btn"><i class="fi fi-rr-user"></i></a>
     </header>
 
     <div class="container">
-        <div class="form-container active">
-            <h2>Mi Perfil</h2>
+        <!-- Header del perfil -->
+        <div class="profile-header">
             <div id="profileAlert"></div>
             <div class="user-info">
-                <p><strong>Nombre:</strong> <span id="profileName"></span></p>
-                <p><strong>Email:</strong> <span id="profileEmail"></span></p>
-                
-                <!-- Sección para usuarios normales -->
-                <div id="userSection">
-                    <h3>Buzón de Quejas y Sugerencias</h3>
-                    <form id="complaintForm">
-                        <div class="form-group">
-                            <label for="complaintSubject">Asunto *</label>
-                            <input type="text" id="complaintSubject" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="complaintDescription">Descripción *</label>
-                            <textarea id="complaintDescription" rows="4" required></textarea>
-                        </div>
-                        <button type="submit" class="btn">Enviar Mensaje</button>
-                    </form>
+                <div class="user-details">
+                    <p><strong>Nombre:</strong> <span id="profileName">Cargando...</span></p>
+                    <p><strong>Email:</strong> <span id="profileEmail">Cargando...</span></p>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fi fi-rr-sign-out-alt"></i>
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+
+        <!-- Grid de secciones -->
+        <div class="sections-grid">
+            <!-- Sección de Quejas y Sugerencias -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fi fi-rr-comment-alt"></i>
+                    </div>
+                    <h2 class="section-title">Buzón de Quejas y Sugerencias</h2>
                 </div>
                 
-                <button class="btn" onclick="logout()">Cerrar Sesión</button>
+                <form id="complaintForm">
+                    <div class="form-group">
+                        <label for="complaintSubject">Asunto *</label>
+                        <input type="text" id="complaintSubject" placeholder="Escribe el asunto de tu mensaje" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="complaintDescription">Descripción *</label>
+                        <textarea id="complaintDescription" rows="4" placeholder="Describe tu queja o sugerencia en detalle" required></textarea>
+                    </div>
+                    <button type="submit" class="btn">
+                        <i class="fi fi-rr-paper-plane"></i>
+                        Enviar Mensaje
+                    </button>
+                </form>
+            </div>
+
+            <!-- Sección de Favoritos -->
+            <div class="section favorites-section">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fi fi-rr-heart"></i>
+                    </div>
+                    <h2 class="section-title">Mis Favoritos</h2>
+                </div>
+                
+                <div class="empty-state">
+                    <div>
+                        <i class="fi fi-rr-heart"></i>
+                    </div>
+                    <p>Aún no tienes elementos favoritos</p>
+                    <p>Cuando marques contenido como favorito, aparecerá aquí</p>
+                </div>
             </div>
         </div>
     </div>
