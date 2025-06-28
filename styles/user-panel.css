@@ -23,7 +23,7 @@ body {
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(10px);
     border-radius: 20px;
-    padding: 15px;
+    padding: 20px;
     margin-bottom: 30px;
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
@@ -48,7 +48,6 @@ body {
 }
 
 .user-details p {
-    margin-bottom: 10px;
     font-size: 1.1rem;
 }
 

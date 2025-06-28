@@ -523,7 +523,7 @@ class ResponsiveGallery {
     if (!this.elements.toggleFiltersBtn) return;
 
     const icon = this.elements.toggleFiltersBtn.querySelector('i');
-    const textContent = collapsed ? ' Mostrar Filtros' : ' Ocultar Filtros';
+    const textContent = collapsed ? 'Mostrar Filtros' : 'Ocultar Filtros';
     
     if (icon) {
       icon.className = collapsed ? 'fi fi-rr-angle-down' : 'fi fi-rr-angle-up';
