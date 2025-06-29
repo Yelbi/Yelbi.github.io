@@ -1,5 +1,5 @@
 <?php
-// galeria.php - Con sistema de filtros
+// mitos.php - Con sistema de filtros
 require 'config/connection.php';
 
 // Obtener todos los mitos
@@ -126,9 +126,9 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
   </section>
 
   <!-- Grid de la galería -->
-  <main class="grid-container" id="galeriaGrid">
+  <main class="grid-container" id="mitosGrid">
     <?php foreach ($mitos as $index => $s): ?>
-      <a href="/detalle.php?ser=<?= urlencode($s['slug']) ?>" 
+      <a href="/detallem.php?mito=<?= urlencode($s['slug']) ?>" 
          class="card" 
          data-pais="<?= htmlspecialchars($s['pais']) ?>" 
          data-region="<?= htmlspecialchars($s['region']) ?>"

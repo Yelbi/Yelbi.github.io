@@ -69,15 +69,6 @@ try {
     <a href="/iniciar.php" class="user-btn"><i class="fi fi-rr-user"></i></a>
 </header>
 
-<!-- Breadcrumb -->
-<nav class="breadcrumb">
-    <a href="/index.php">Inicio</a>
-    <span class="separator">></span>
-    <a href="/galeria.php">Galería</a>
-    <span class="separator">></span>
-    <span class="current"><?= htmlspecialchars($ser['nombre']) ?></span>
-</nav>
-
 <main class="detail-container">
     <!-- Sección Hero con retrato -->
     <section class="hero-section">
