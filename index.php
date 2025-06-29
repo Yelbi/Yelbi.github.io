@@ -54,19 +54,10 @@
         <!-- Sección 3 -->
 <section class="section section3" id="section3">
     <canvas id="infinity-canvas"></canvas>
-    
-    <!-- Container con los 4 divs -->
-    <div class="infinity-container">
-        <div class="inv-border">
-                <div class="section-content">
+    <div class="section-content">
         <h1>Contactar</h1>
         <p>Para quejas y sugerencias dirígete a tu perfil y escríbeme.</p>
-        <a href="/iniciar.php" class="btn">Aquí</a>
-    </div>
-        </div>
-        <div class="inc-border"></div>
-        <div class="inf-border"></div>
-        <div class="ing-border"></div>
+        <a href="/iniciar.php" class="btn">Aqui</a>
     </div>
 </section>
 
