@@ -142,27 +142,29 @@ try {
     </section>
     <?php endif; ?>
 
-    <section class="navigation-section">
-        <div class="nav-buttons">
-            <a href="/mitos.php" class="btn-back">Volver a la Galería</a>
-            <?php
-            $prev = $pdo->prepare("SELECT slug, nombre FROM mitos WHERE id < ? ORDER BY id DESC LIMIT 1");
-            $prev->execute([$mito['id']]);
-            $prevItem = $prev->fetch();
-            $next = $pdo->prepare("SELECT slug, nombre FROM mitos WHERE id > ? ORDER BY id ASC LIMIT 1");
-            $next->execute([$mito['id']]);
-            $nextItem = $next->fetch();
-            ?>
-            <div class="nav-arrows">
-                <?php if ($prevItem): ?>
-                <a href="/detallem.php?mito=<?= urlencode($prevItem['slug']) ?>" class="btn-nav prev">&larr; <?= htmlspecialchars($prevItem['nombre']) ?></a>
-                <?php endif; ?>
-                <?php if ($nextItem): ?>
-                <a href="/detallem.php?mito=<?= urlencode($nextItem['slug']) ?>" class="btn-nav next"><?= htmlspecialchars($nextItem['nombre']) ?> &rarr;</a>
-                <?php endif; ?>
-            </div>
+<section class="navigation-section">
+    <div class="nav-buttons">
+        <a href="/mitos.php" class="btn-back">Volver a la Galería</a>
+        <?php
+        // CONSULTAS MODIFICADAS PARA ORDEN ALFABÉTICO
+        $prev = $pdo->prepare("SELECT slug, nombre FROM mitos WHERE nombre < ? ORDER BY nombre DESC LIMIT 1");
+        $prev->execute([$mito['nombre']]);
+        $prevItem = $prev->fetch();
+
+        $next = $pdo->prepare("SELECT slug, nombre FROM mitos WHERE nombre > ? ORDER BY nombre ASC LIMIT 1");
+        $next->execute([$mito['nombre']]);
+        $nextItem = $next->fetch();
+        ?>
+        <div class="nav-arrows">
+            <?php if ($prevItem): ?>
+            <a href="/detallem.php?mito=<?= urlencode($prevItem['slug']) ?>" class="btn-nav prev">&larr; <?= htmlspecialchars($prevItem['nombre']) ?></a>
+            <?php endif; ?>
+            <?php if ($nextItem): ?>
+            <a href="/detallem.php?mito=<?= urlencode($nextItem['slug']) ?>" class="btn-nav next"><?= htmlspecialchars($nextItem['nombre']) ?> &rarr;</a>
+            <?php endif; ?>
         </div>
-    </section>
+    </div>
+</section>
 
 </main>
 
