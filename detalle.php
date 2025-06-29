@@ -1,9 +1,9 @@
 <?php
-// detalle.php
 require 'config/connection.php';
 require 'config/i18n.php';
 
 $slug = $_GET['ser'] ?? '';
+$lang = $current_lang; // Idioma actual desde i18n.php
 
 if (empty($slug)) {
     header('Location: /galeria.php');
@@ -11,9 +11,14 @@ if (empty($slug)) {
 }
 
 try {
-    // Obtener información básica del ser
-    $stmt = $pdo->prepare("SELECT * FROM seres WHERE slug = ?");
-    $stmt->execute([$slug]);
+    // Obtener información básica del ser con traducción
+    $stmt = $pdo->prepare("
+        SELECT s.*, st.nombre, st.tipo, st.region 
+        FROM seres s
+        JOIN seres_translations st ON s.id = st.ser_id
+        WHERE s.slug = ? AND st.language_code = ?
+    ");
+    $stmt->execute([$slug, $lang]);
     $ser = $stmt->fetch();
     
     if (!$ser) {
@@ -21,9 +26,14 @@ try {
         exit;
     }
     
-    // Obtener información detallada
-    $stmt = $pdo->prepare("SELECT * FROM seres_detalle WHERE ser_id = ?");
-    $stmt->execute([$ser['id']]);
+    // Obtener información detallada con traducción
+    $stmt = $pdo->prepare("
+        SELECT sd.*, dt.descripcion, dt.caracteristicas, dt.etimologia, dt.historia 
+        FROM seres_detalle sd
+        JOIN detalle_translations dt ON sd.id = dt.detalle_id
+        WHERE sd.ser_id = ? AND dt.language_code = ?
+    ");
+    $stmt->execute([$ser['id'], $lang]);
     $detalle = $stmt->fetch();
     
     // Obtener imágenes adicionales
@@ -79,6 +89,7 @@ try {
 </header>
 
 <main class="detail-container">
+    <!-- Sección Hero con retrato -->
     <section class="hero-section">
         <div class="hero-content">
             <div class="hero-info">
@@ -145,6 +156,7 @@ try {
     </section>
     <?php endif; ?>
 
+    <!-- Galería de imágenes estilo Pinterest -->
     <?php if (!empty($imagenes)): ?>
     <section class="gallery-section">
         <h2 class="section-title"><?= __('image_gallery') ?></h2>
@@ -165,13 +177,27 @@ try {
     <div class="nav-buttons">
         <a href="/galeria.php" class="btn-back"><?= __('back_to_gallery') ?></a>
         <?php
-        // CONSULTAS MODIFICADAS PARA ORDEN ALFABÉTICO
-        $prev = $pdo->prepare("SELECT slug, nombre FROM seres WHERE nombre < ? ORDER BY nombre DESC LIMIT 1");
-        $prev->execute([$ser['nombre']]);
+        // CONSULTAS MODIFICADAS PARA ORDEN ALFABÉTICO (en el idioma actual)
+        $prev = $pdo->prepare("
+            SELECT s.slug, st.nombre 
+            FROM seres s
+            JOIN seres_translations st ON s.id = st.ser_id
+            WHERE st.language_code = ? AND st.nombre < ? 
+            ORDER BY st.nombre DESC 
+            LIMIT 1
+        ");
+        $prev->execute([$lang, $ser['nombre']]);
         $prevItem = $prev->fetch();
         
-        $next = $pdo->prepare("SELECT slug, nombre FROM seres WHERE nombre > ? ORDER BY nombre ASC LIMIT 1");
-        $next->execute([$ser['nombre']]);
+        $next = $pdo->prepare("
+            SELECT s.slug, st.nombre 
+            FROM seres s
+            JOIN seres_translations st ON s.id = st.ser_id
+            WHERE st.language_code = ? AND st.nombre > ? 
+            ORDER BY st.nombre ASC 
+            LIMIT 1
+        ");
+        $next->execute([$lang, $ser['nombre']]);
         $nextItem = $next->fetch();
         ?>
         <div class="nav-arrows">
@@ -195,20 +221,6 @@ try {
     </div>
 </div>
 
-<script>
-    // Pasar traducciones a JavaScript
-    const TRANSLATIONS = {
-        image_not_available: "<?= __('image_not_available') ?>",
-        view_details: "<?= __('view_details') ?>",
-        enlarge_image: "<?= __('enlarge_image') ?>",
-        enlarged_image: "<?= __('enlarged_image') ?>",
-        gallery_initialized: "<?= __('gallery_initialized') ?>",
-        gallery_init_error: "<?= __('gallery_init_error') ?>",
-        detail_js_loaded: "<?= __('detail_js_loaded') ?>",
-        modal_not_found: "<?= __('modal_not_found') ?>",
-        menu_elements_not_found: "<?= __('menu_elements_not_found') ?>"
-    };
-</script>
 <script src="/JS/detalle.js"></script>
 <script src="/JS/header.js"></script>
 

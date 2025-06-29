@@ -136,12 +136,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Analytics stub
+  // Analytics stub  
   if (typeof gtag === 'function') {
     gtag('event', 'page_view', { page_title: document.title, page_location: location.href });
   }
-
-  console.log(TRANSLATIONS.detail_js_loaded);
 });
 
 // Función para configurar el modal de imágenes
@@ -182,7 +180,6 @@ function openModal(img) {
   const modalImg = document.getElementById('modalImage');
   
   if (!modal || !modalImg) {
-    console.error(TRANSLATIONS.modal_not_found);
     return;
   }
 
