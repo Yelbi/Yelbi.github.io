@@ -1,6 +1,7 @@
 <?php
 // detalle.php
 require 'config/connection.php';
+require 'config/i18n.php';
 
 $slug = $_GET['ser'] ?? '';
 
@@ -35,11 +36,11 @@ try {
 }
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= $current_lang ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($ser['nombre']) ?> - Seres Místicos</title>
+    <title><?= htmlspecialchars($ser['nombre']) ?> - <?= __('site_title') ?></title>
     <link rel="stylesheet" href="/styles/detalle.css">
     <link rel="stylesheet" href="/styles/header.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,46 +50,53 @@ try {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Meta tags para SEO -->
-    <meta name="description" content="Información completa sobre <?= htmlspecialchars($ser['nombre']) ?>, <?= htmlspecialchars($ser['tipo']) ?> de <?= htmlspecialchars($ser['region']) ?>">
-    <meta property="og:title" content="<?= htmlspecialchars($ser['nombre']) ?> - Seres Místicos">
-    <meta property="og:description" content="Descubre todo sobre <?= htmlspecialchars($ser['nombre']) ?>">
+    <meta name="description" content="<?= __('description') ?> <?= htmlspecialchars($ser['nombre']) ?>, <?= htmlspecialchars($ser['tipo']) ?> de <?= htmlspecialchars($ser['region']) ?>">
+    <meta property="og:title" content="<?= htmlspecialchars($ser['nombre']) ?> - <?= __('site_title') ?>">
+    <meta property="og:description" content="<?= __('discover') ?> <?= htmlspecialchars($ser['nombre']) ?>">
     <meta property="og:image" content="<?= htmlspecialchars($ser['imagen']) ?>">
 </head>
 <body>
 
-<!-- Header -->
+<!-- Header con selector de idioma -->
 <header class="header">
     <a href="/index.php" class="logo">
-        <img src="/Img/logo.png" alt="">
+        <img src="/Img/logo.png" alt="<?= __('site_title') ?>">
     </a>
     <nav class="nav-menu">
-        <a href="/index.php" class="nav-link">Inicio</a>
-        <a href="/galeria.php" class="nav-link">Galería</a>
-        <a href="/mitos.php" class="nav-link">Mitologías</a>
+        <a href="/index.php" class="nav-link"><?= __('home') ?></a>
+        <a href="/galeria.php" class="nav-link"><?= __('gallery') ?></a>
+        <a href="/mitos.php" class="nav-link"><?= __('mythologies') ?></a>
     </nav>
+    
+    <!-- Selector de idioma -->
+    <div class="language-switcher">
+        <a href="?lang=es" class="<?= $current_lang === 'es' ? 'active' : '' ?>">ES</a> 
+        <span>|</span>
+        <a href="?lang=en" class="<?= $current_lang === 'en' ? 'active' : '' ?>">EN</a>
+    </div>
+    
     <a href="/iniciar.php" class="user-btn"><i class="fi fi-rr-user"></i></a>
 </header>
 
 <main class="detail-container">
-    <!-- Sección Hero con retrato -->
     <section class="hero-section">
         <div class="hero-content">
             <div class="hero-info">
                 <h1 class="ser-title"><?= htmlspecialchars($ser['nombre']) ?></h1>
                 <div class="basic-info">
                     <div class="info-item">
-                        <span class="label">Tipo:</span>
+                        <span class="label"><?= __('type') ?>:</span>
                         <span class="value tipo"><?= htmlspecialchars($ser['tipo']) ?></span>
                     </div>
                     <div class="info-item">
-                        <span class="label">Región:</span>
+                        <span class="label"><?= __('region') ?>:</span>
                         <span class="value region"><?= htmlspecialchars($ser['region']) ?></span>
                     </div>
                 </div>
             </div>
             <?php if ($detalle && !empty($detalle['ser_img'])): ?>
             <div class="hero-portrait">
-                <img src="<?= htmlspecialchars($detalle['ser_img']) ?>" alt="Retrato de <?= htmlspecialchars($ser['nombre']) ?>" class="portrait-image">
+                <img src="<?= htmlspecialchars($detalle['ser_img']) ?>" alt="<?= __('portrait_of') ?> <?= htmlspecialchars($ser['nombre']) ?>" class="portrait-image">
             </div>
             <?php endif; ?>
         </div>
@@ -99,7 +107,7 @@ try {
         <div class="content-grid">
             <?php if (!empty($detalle['descripcion'])): ?>
             <div class="content-card description-card">
-                <h2 class="section-title">Descripción</h2>
+                <h2 class="section-title"><?= __('description') ?></h2>
                 <div class="content-text"><?= nl2br(htmlspecialchars($detalle['descripcion'])) ?></div>
             </div>
             <?php endif; ?>
@@ -108,7 +116,7 @@ try {
             <div class="content-card characteristics-card">
                 <div class="characteristics-grid <?= empty($detalle['caracteristicas_img']) ? 'single-column' : '' ?>">
                     <div class="characteristics-text">
-                        <h2 class="section-title">Características</h2>
+                        <h2 class="section-title"><?= __('characteristics') ?></h2>
                         <div class="content-text"><?= nl2br(htmlspecialchars($detalle['caracteristicas'])) ?></div>
                     </div>
                     <?php if (!empty($detalle['caracteristicas_img'])): ?>
@@ -122,14 +130,14 @@ try {
 
             <?php if (!empty($detalle['etimologia'])): ?>
             <div class="content-card etymology-card">
-                <h2 class="section-title">Etimología</h2>
+                <h2 class="section-title"><?= __('etymology') ?></h2>
                 <div class="content-text"><?= nl2br(htmlspecialchars($detalle['etimologia'])) ?></div>
             </div>
             <?php endif; ?>
 
             <?php if (!empty($detalle['historia'])): ?>
             <div class="content-card history-card">
-                <h2 class="section-title">Historia</h2>
+                <h2 class="section-title"><?= __('history') ?></h2>
                 <div class="content-text"><?= nl2br(htmlspecialchars($detalle['historia'])) ?></div>
             </div>
             <?php endif; ?>
@@ -137,10 +145,9 @@ try {
     </section>
     <?php endif; ?>
 
-    <!-- Galería de imágenes estilo Pinterest -->
     <?php if (!empty($imagenes)): ?>
     <section class="gallery-section">
-        <h2 class="section-title">Galería de Imágenes</h2>
+        <h2 class="section-title"><?= __('image_gallery') ?></h2>
         <div class="masonry-gallery">
             <?php foreach ($imagenes as $img): ?>
             <div class="masonry-item">
@@ -156,7 +163,7 @@ try {
 
 <section class="navigation-section">
     <div class="nav-buttons">
-        <a href="/galeria.php" class="btn-back">Volver a la Galería</a>
+        <a href="/galeria.php" class="btn-back"><?= __('back_to_gallery') ?></a>
         <?php
         // CONSULTAS MODIFICADAS PARA ORDEN ALFABÉTICO
         $prev = $pdo->prepare("SELECT slug, nombre FROM seres WHERE nombre < ? ORDER BY nombre DESC LIMIT 1");
@@ -188,6 +195,20 @@ try {
     </div>
 </div>
 
+<script>
+    // Pasar traducciones a JavaScript
+    const TRANSLATIONS = {
+        image_not_available: "<?= __('image_not_available') ?>",
+        view_details: "<?= __('view_details') ?>",
+        enlarge_image: "<?= __('enlarge_image') ?>",
+        enlarged_image: "<?= __('enlarged_image') ?>",
+        gallery_initialized: "<?= __('gallery_initialized') ?>",
+        gallery_init_error: "<?= __('gallery_init_error') ?>",
+        detail_js_loaded: "<?= __('detail_js_loaded') ?>",
+        modal_not_found: "<?= __('modal_not_found') ?>",
+        menu_elements_not_found: "<?= __('menu_elements_not_found') ?>"
+    };
+</script>
 <script src="/JS/detalle.js"></script>
 <script src="/JS/header.js"></script>
 

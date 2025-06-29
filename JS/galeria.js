@@ -306,11 +306,11 @@ class ResponsiveGallery {
     window.addEventListener('scroll', throttledScroll, { passive: true });
   }
 
-  setupCardInteractions() {
-    this.elements.cards.forEach((card, index) => {
-      card.setAttribute('tabindex', '0');
-      card.setAttribute('role', 'button');
-      card.setAttribute('aria-label', `Ver detalles de ${card.dataset.nombre}`);
+    setupCardInteractions() {
+        this.elements.cards.forEach((card, index) => {
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('role', 'button');
+            card.setAttribute('aria-label', `${TRANSLATIONS.view_details} ${card.dataset.nombre}`);
 
       if (this.config.enableHoverEffects) {
         this.addHoverEffects(card);
@@ -486,17 +486,17 @@ class ResponsiveGallery {
     });
   }
 
-  generatePlaceholderSVG() {
-    return 'data:image/svg+xml;base64,' + btoa(`
-      <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="200" height="200" fill="#f3f4f6"/>
-        <path d="M85 85h30v30H85z" fill="#d1d5db"/>
-        <text x="100" y="130" text-anchor="middle" fill="#6b7280" font-family="Arial" font-size="12">
-          Imagen no disponible
-        </text>
-      </svg>
-    `);
-  }
+    generatePlaceholderSVG() {
+        return 'data:image/svg+xml;base64,' + btoa(`
+            <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="200" height="200" fill="#f3f4f6"/>
+                <path d="M85 85h30v30H85z" fill="#d1d5db"/>
+                <text x="100" y="130" text-anchor="middle" fill="#6b7280" font-family="Arial" font-size="12">
+                    ${TRANSLATIONS.image_not_available}
+                </text>
+            </svg>
+        `);
+    }
 
   clearAllFilters() {
     this.state.filters = { search: '', tipo: '', region: '' };

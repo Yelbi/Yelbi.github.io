@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
     gtag('event', 'page_view', { page_title: document.title, page_location: location.href });
   }
 
-  console.log('Detalle.js cargado correctamente.');
+  console.log(TRANSLATIONS.detail_js_loaded);
 });
 
 // Función para configurar el modal de imágenes
@@ -165,7 +165,7 @@ function setupImageModal() {
     // Añadir accessibility
     img.setAttribute('tabindex', '0');
     img.setAttribute('role', 'button');
-    img.setAttribute('aria-label', `Ampliar imagen: ${img.alt || 'Imagen'}`);
+    img.setAttribute('aria-label', `${TRANSLATIONS.enlarge_image}: ${img.alt || 'Imagen'}`);
     
     // Keyboard support
     img.addEventListener('keydown', function(e) {
@@ -182,13 +182,13 @@ function openModal(img) {
   const modalImg = document.getElementById('modalImage');
   
   if (!modal || !modalImg) {
-    console.error('Modal elements not found');
+    console.error(TRANSLATIONS.modal_not_found);
     return;
   }
 
   // Configurar la imagen del modal
   modalImg.src = img.src;
-  modalImg.alt = img.alt || 'Imagen ampliada';
+  modalImg.alt = img.alt || TRANSLATIONS.enlarged_image;
   
   // Mostrar el modal
   modal.style.display = 'block';

@@ -1,6 +1,7 @@
 <?php
 // galeria.php - Con sistema de filtros
 require 'config/connection.php';
+require 'config/i18n.php';
 
 // Obtener todos los seres
 $stmt = $pdo->query("SELECT * FROM seres ORDER BY nombre ASC");
@@ -27,11 +28,11 @@ $stmt_regiones = $pdo->query("SELECT DISTINCT region FROM seres WHERE region IS 
 $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= $current_lang ?>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Galería de Seres Místicos</title>
+  <title><?= __('gallery') ?> - <?= __('site_title') ?></title>
   <link rel="stylesheet" href="/styles/galeria.css">
   <link rel="stylesheet" href="/styles/header.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -43,65 +44,67 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
 <body>
 
 <!-- Header -->
-    <header class="header">
-        <a href="/index.php" class="logo">
-            <img src="/Img/logo.png" alt="Logo de Seres">
-        </a>
-        <nav class="nav-menu" id="navMenu">
-            <a href="/index.php" class="nav-link">Inicio</a>
-            <a href="/galeria.php" class="nav-link">Galería</a>
-            <a href="/mitos.php" class="nav-link">Mitologías</a>
-        </nav>
-        <div class="menu-toggle" id="menuToggle">
-            <i class="fi fi-rr-menu-burger"></i>
-        </div>
-        <a href="/iniciar.php" class="user-btn"><i class="fi fi-rr-user"></i></a>
-    </header>
+<header class="header">
+    <a href="/index.php" class="logo">
+        <img src="/Img/logo.png" alt="<?= __('site_title') ?>">
+    </a>
+    <nav class="nav-menu" id="navMenu">
+        <a href="/index.php" class="nav-link"><?= __('home') ?></a>
+        <a href="/galeria.php" class="nav-link"><?= __('gallery') ?></a>
+        <a href="/mitos.php" class="nav-link"><?= __('mythologies') ?></a>
+    </nav>
+    <div class="menu-toggle" id="menuToggle">
+        <i class="fi fi-rr-menu-burger"></i>
+    </div>
+    
+    <!-- Selector de idioma -->
+    <div class="language-switcher">
+        <a href="?lang=es" class="<?= $current_lang === 'es' ? 'active' : '' ?>">ES</a> 
+        <span>|</span>
+        <a href="?lang=en" class="<?= $current_lang === 'en' ? 'active' : '' ?>">EN</a>
+    </div>
+    
+    <a href="/iniciar.php" class="user-btn"><i class="fi fi-rr-user"></i></a>
+</header>
 
-  <!-- Panel de Filtros -->
-  <section class="filter-panel collapsed">
+<!-- Panel de Filtros -->
+<section class="filter-panel collapsed">
     <div class="filter-container">
-      <!-- Header siempre visible -->
       <div class="filter-header">
         <h2 class="filter-title">
           <i class="fi fi-rr-filter"></i>
-          Filtros
+          <?= __('filter_title') ?>
         </h2>
         
         <div class="search-and-toggle">
-          <!-- Barra de búsqueda (siempre visible) -->
           <div class="search-wrapper">
-            <input type="text" id="searchInput" placeholder="Buscar por nombre..." class="search-input">
+            <input type="text" id="searchInput" placeholder="<?= __('search_placeholder') ?>" class="search-input">
             <i class="fi fi-rr-search search-icon"></i>
           </div>
 
-          <!-- Botón para mostrar/ocultar filtros -->
           <button id="toggleFilters" class="btn-toggle">
-            Mostrar Filtros
+            <?= __('show_filters') ?>
             <i class="fi fi-rr-angle-down"></i>
           </button>
         </div>
       </div>
       
-      <!-- Contenido colapsable -->
       <div class="filter-content">
         <div class="filter-groups">
-          <!-- Filtro por Tipo -->
           <div class="filter-group">
-            <label class="filter-label">Tipo:</label>
+            <label class="filter-label"><?= __('type') ?>:</label>
             <select id="tipoFilter" class="filter-select">
-              <option value="">Todos los tipos</option>
+              <option value=""><?= __('all_types') ?></option>
               <?php foreach ($tipos as $tipo): ?>
                 <option value="<?= htmlspecialchars($tipo) ?>"><?= htmlspecialchars($tipo) ?></option>
               <?php endforeach; ?>
             </select>
           </div>
 
-          <!-- Filtro por Región -->
           <div class="filter-group">
-            <label class="filter-label">Región:</label>
+            <label class="filter-label"><?= __('region') ?>:</label>
             <select id="regionFilter" class="filter-select">
-              <option value="">Todas las regiones</option>
+              <option value=""><?= __('all_regions') ?></option>
               <?php foreach ($regiones as $region): ?>
                 <option value="<?= htmlspecialchars($region) ?>"><?= htmlspecialchars($region) ?></option>
               <?php endforeach; ?>
@@ -109,21 +112,19 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
           </div>
         </div>
 
-        <!-- Botones de acción -->
         <div class="filter-actions">
           <button id="clearFilters" class="btn-clear">
             <i class="fi fi-rr-refresh"></i>
-            Limpiar filtros
+            <?= __('clear_filters') ?>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Contador de resultados -->
     <div class="results-counter">
-      <span id="resultsCount"><?= count($seres) ?></span> seres encontrados
+      <span id="resultsCount"><?= count($seres) ?></span> <?= __('beings_found') ?>
     </div>
-  </section>
+</section>
 
   <!-- Grid de la galería -->
   <main class="grid-container" id="galeriaGrid">
@@ -156,14 +157,28 @@ $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
   </main>
 
   <!-- Mensaje cuando no hay resultados -->
-  <div class="no-results" id="noResults" style="display: none;">
+<div class="no-results" id="noResults" style="display: none;">
     <div class="no-results-content">
       <i class="fi fi-rr-search-alt"></i>
-      <h3>No se encontraron resultados</h3>
-      <p>Intenta ajustar los filtros o términos de búsqueda</p>
+      <h3><?= __('no_results') ?></h3>
+      <p><?= __('adjust_filters') ?></p>
     </div>
-  </div>
+</div>
 
+<script>
+    // Pasar traducciones a JavaScript
+    const TRANSLATIONS = {
+        image_not_available: "<?= __('image_not_available') ?>",
+        view_details: "<?= __('view_details') ?>",
+        enlarge_image: "<?= __('enlarge_image') ?>",
+        enlarged_image: "<?= __('enlarged_image') ?>",
+        gallery_initialized: "<?= __('gallery_initialized') ?>",
+        gallery_init_error: "<?= __('gallery_init_error') ?>",
+        detail_js_loaded: "<?= __('detail_js_loaded') ?>",
+        modal_not_found: "<?= __('modal_not_found') ?>",
+        menu_elements_not_found: "<?= __('menu_elements_not_found') ?>"
+    };
+</script>
   <script src="/JS/galeria.js"></script>
   <script src="/JS/header.js"></script>
 

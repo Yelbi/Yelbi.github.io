@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Verificar que los elementos existan
             if (!menuToggle || !navMenu) {
-                console.error('Elementos del menú no encontrados');
+                console.error(TRANSLATIONS.menu_elements_not_found);
                 return;
             }
 
