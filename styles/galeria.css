@@ -337,7 +337,7 @@ body {
   height: 100%;
   object-fit: cover;
   object-position: center;
-  transition: transform var(--transition-slow), opacity 0.5s ease;
+  transition: opacity 0.3s ease !important;
   opacity: 0;
 }
 
@@ -983,23 +983,6 @@ body {
   transform: none;
 }
 
-/* FIX: Prevenir que las tarjetas se queden "bailando" */
-.card.loading::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 20px;
-  height: 20px;
-  border: 2px solid #e5e7eb;
-  border-top: 2px solid #3b82f6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  z-index: 10;
-  background: rgba(255, 255, 255, 0.9);
-}
-
 @keyframes spin {
   0% { transform: translate(-50%, -50%) rotate(0deg); }
   100% { transform: translate(-50%, -50%) rotate(360deg); }
@@ -1022,11 +1005,6 @@ body {
   .card.loading img {
     animation: none;
     opacity: 0.5;
-  }
-  
-  .card.loading::after {
-    animation: none;
-    opacity: 0.7;
   }
 }
 

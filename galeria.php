@@ -142,13 +142,14 @@ try {
 <main class="grid-container" id="galeriaGrid">
     <?php foreach ($seres as $index => $s): ?>
       <a href="/detalle.php?ser=<?= urlencode($s['slug']) ?>" 
-         class="card" 
+         class="card <?= $index < 4 ? 'image-loaded' : '' ?>" 
          data-tipo="<?= htmlspecialchars($s['tipo']) ?>" 
          data-region="<?= htmlspecialchars($s['region']) ?>"
          data-nombre="<?= strtolower(htmlspecialchars($s['nombre'])) ?>">
         <img src="<?= htmlspecialchars($s['imagen']) ?>" 
              alt="<?= htmlspecialchars($s['nombre']) ?>" 
-             loading="lazy">
+             loading="lazy"
+             <?= $index < 4 ? 'class="loaded"' : '' ?>>
         <div class="card-info">
           <div class="nombre"><?= htmlspecialchars($s['nombre']) ?></div>
           <div class="info-badges">

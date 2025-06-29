@@ -382,30 +382,30 @@ class ResponsiveGallery {
     });
   }
 
-  setupLazyLoading() {
-    const imageObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          this.loadImage(entry.target);
-          imageObserver.unobserve(entry.target);
-        }
-      });
-    }, {
-      rootMargin: this.config.lazyLoadMargin,
-      threshold: 0.01
-    });
-
-    this.observers.set('images', imageObserver);
-
-    this.elements.images.forEach((img, index) => {
-      if (index < this.config.preloadCount) {
-        img.loading = 'eager';
-        this.loadImage(img);
-      } else {
-        imageObserver.observe(img);
+setupLazyLoading() {
+  const imageObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        this.loadImage(entry.target);
+        imageObserver.unobserve(entry.target);
       }
     });
-  }
+  }, {
+    rootMargin: this.config.lazyLoadMargin,
+    threshold: 0.01
+  });
+
+  this.observers.set('images', imageObserver);
+
+  this.elements.images.forEach((img, index) => {
+    // Precargar las primeras imágenes inmediatamente
+    if (index < this.config.preloadCount || img.complete) {
+      this.loadImage(img);
+    } else {
+      imageObserver.observe(img);
+    }
+  });
+}
 
   loadImage(img) {
     const imageId = img.src || img.dataset.src;
@@ -443,20 +443,22 @@ class ResponsiveGallery {
     img.addEventListener('error', handleError, { once: true });
   }
 
-  handleImageLoaded(img, card, wasTimeout = false) {
-    const imageId = img.src || img.dataset.src;
-    this.loadedImages.add(imageId);
+handleImageLoaded(img, card, wasTimeout = false) {
+  const imageId = img.src || img.dataset.src;
+  this.loadedImages.add(imageId);
 
-    if (!img.classList.contains('loaded')) {
-      img.classList.add('loaded');
-      img.style.opacity = '1';
-    }
-    
-    if (card) {
-      card.classList.remove('loading');
-      card.offsetHeight;
-    }
+  // Cambio crítico: Forzar visibilidad inmediata
+  img.style.opacity = '1';
+  img.classList.add('loaded');
+  
+  if (card) {
+    card.classList.remove('loading');
+    // Agregar clase para manejar estado de carga completo
+    card.classList.add('image-loaded');
+    // Forzar repintado para asegurar la transición
+    card.offsetHeight;
   }
+}
 
   handleImageError(img, card) {
     const imageId = img.src || img.dataset.src;
