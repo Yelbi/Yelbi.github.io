@@ -94,7 +94,7 @@ try {
             <div class="dropdown-menu" id="dropdownMenu">
                 <div class="dropdown-header">
                     <img src="/Img/default-avatar.png" alt="Foto de perfil" id="dropdownProfileImage">
-                    <span id="dropdownUserName">Usuario</span>
+                    <span class="dropdown-user-name">Usuario</span>
                 </div>
                 <a href="/user-panel.php" class="dropdown-item">
                     <i class="fi fi-rr-user"></i> Mi perfil

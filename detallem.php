@@ -1,6 +1,7 @@
 <?php
 // detallem.php
 require 'config/connection.php';
+require 'config/i18n.php';
 
 $slug = $_GET['mito'] ?? '';
 
@@ -57,17 +58,47 @@ try {
 <body>
 
 <!-- Header -->
-<header class="header">
-    <a href="/index.php" class="logo">
-        <img src="/Img/logo.png" alt="">
-    </a>
-    <nav class="nav-menu">
-        <a href="/index.php" class="nav-link">Inicio</a>
-        <a href="/galeria.php" class="nav-link">Galería</a>
-        <a href="/mitos.php" class="nav-link">Mitologías</a>
-    </nav>
-    <a href="/iniciar.php" class="user-btn"><i class="fi fi-rr-user"></i></a>
-</header>
+    <header class="header">
+        <a href="/index.php" class="logo">
+            <img src="/Img/logo.png" alt="<?= __('site_title') ?>">
+        </a>
+        <nav class="nav-menu" id="navMenu">
+            <a href="/index.php" class="nav-link"><?= __('home') ?></a>
+            <a href="/galeria.php" class="nav-link"><?= __('gallery') ?></a>
+            <a href="/mitos.php" class="nav-link"><?= __('mythologies') ?></a>
+        </nav>
+        <div class="menu-toggle" id="menuToggle">
+            <i class="fi fi-rr-menu-burger"></i>
+        </div>
+        
+        <!-- Botón de login (visible cuando no autenticado) -->
+        <a href="/iniciar.php" class="user-btn" id="loginButton">
+            <i class="fi fi-rr-user"></i>
+        </a>
+        
+        <!-- Menú de perfil (visible solo cuando autenticado) -->
+        <div class="profile-menu" id="profileMenu" style="display: none;">
+            <div class="profile-icon" id="profileMenuToggle">
+                <img src="/Img/default-avatar.png" alt="Foto de perfil" id="profileImage">
+            </div>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <div class="dropdown-header">
+                    <img src="/Img/default-avatar.png" alt="Foto de perfil" id="dropdownProfileImage">
+                    <span class="dropdown-user-name">Usuario</span>
+                </div>
+                <a href="/user-panel.php" class="dropdown-item">
+                    <i class="fi fi-rr-user"></i> Mi perfil
+                </a>
+                <a href="#" class="dropdown-item" onclick="toggleLanguage()">
+                    <i class="fi fi-rr-globe"></i> Cambiar idioma
+                </a>
+                <div class="divider"></div>
+                <a href="#" class="dropdown-item" onclick="logout()">
+                    <i class="fi fi-rr-sign-out"></i> Cerrar sesión
+                </a>
+            </div>
+        </div>
+    </header>
 
 <main class="detail-container">
     <!-- Sección Hero con retrato -->
