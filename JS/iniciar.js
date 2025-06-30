@@ -16,6 +16,80 @@ const AUTH_CHECK_INTERVAL = 30000; // 30 segundos (menos frecuente)
 const AUTH_CACHE_DURATION = 120000; // 2 minutos de cache
 const REDIRECT_DELAY = 50; // Delay mínimo ultra-rápido
 
+// ============= FUNCIONES PARA EL DROPDOWN DEL USUARIO =============
+
+// Función para actualizar el nombre de usuario en el dropdown
+function updateDropdownUserName(userName) {
+    const dropdownUserNameElements = document.querySelectorAll('#dropdownUserName, .dropdown-user-name');
+    
+    if (userName) {
+        // Actualizar todos los elementos que muestran el nombre de usuario
+        dropdownUserNameElements.forEach(element => {
+            if (element) {
+                element.textContent = userName;
+            }
+        });
+        
+        // También actualizar la variable global si existe
+        if (typeof window.dropdownUserName !== 'undefined') {
+            window.dropdownUserName = userName;
+        }
+    }
+}
+
+// Función para obtener el nombre de usuario desde localStorage o token
+function getUserDisplayName() {
+    // Primero intentar obtener desde localStorage
+    let userName = localStorage.getItem('user_name');
+    
+    if (!userName) {
+        // Si no está en localStorage, intentar extraer del token
+        const token = localStorage.getItem('jwt_token');
+        if (token) {
+            const tokenData = decodeToken(token);
+            if (tokenData && tokenData.email) {
+                // Si no hay nombre, usar la parte del email antes del @
+                userName = tokenData.email.split('@')[0];
+            }
+        }
+    }
+    
+    return userName || 'Usuario';
+}
+
+// Función para inicializar el nombre de usuario en el dropdown
+function initializeDropdownUserName() {
+    const userName = getUserDisplayName();
+    updateDropdownUserName(userName);
+}
+
+// Función para actualizar toda la información del usuario en la interfaz
+function updateUserInfo(userData) {
+    if (!userData) return;
+    
+    // Actualizar nombre de usuario
+    if (userData.name || userData.email) {
+        const displayName = userData.name || userData.email.split('@')[0];
+        updateDropdownUserName(displayName);
+        
+        // Guardar en localStorage para persistencia
+        localStorage.setItem('user_name', displayName);
+    }
+    
+    // Actualizar imagen de perfil si está disponible
+    if (userData.profile_image) {
+        const profileImages = document.querySelectorAll('#profileImage, #dropdownProfileImage');
+        profileImages.forEach(img => {
+            if (img) img.src = userData.profile_image;
+        });
+        
+        // Guardar en localStorage
+        localStorage.setItem('profile_image', userData.profile_image);
+    }
+}
+
+// ============= RESTO DE FUNCIONES EXISTENTES =============
+
 // Funciones para cambiar entre formularios
 function showForm(formId) {
     // Ocultar todos los formularios
@@ -554,6 +628,9 @@ async function login(email, password) {
 
         // Actualizar la interfaz para mostrar el menú de perfil
         updateAuthUI();
+        
+        // Actualizar información del usuario en dropdown
+        updateUserInfo(userData);
 
         // REDIRECCIÓN AUTOMÁTICA AL PANEL
         const targetUrl = userRole === 'admin' ? '/admin-panel.php' : '/user-panel.php';
@@ -576,6 +653,8 @@ function logout() {
     
     // Limpiar todo el estado
     localStorage.removeItem('jwt_token');
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('profile_image');
     sessionStorage.removeItem('just_logged_in');
     sessionStorage.removeItem('auth_checked');
     
@@ -624,11 +703,8 @@ function updateAuthUI() {
                 img.src = cachedUser.profile_image || '/Img/default-avatar.png';
             });
             
-            // Actualizar nombre de usuario
-            const userNameElements = document.querySelectorAll('#dropdownUserName');
-            userNameElements.forEach(el => {
-                el.textContent = cachedUser.name || cachedUser.email.split('@')[0];
-            });
+            // Actualizar nombre de usuario usando la nueva función
+            updateDropdownUserName(cachedUser.name || cachedUser.email.split('@')[0]);
         }
         
         // Mostrar menú de perfil y ocultar botón de login
@@ -648,6 +724,11 @@ window.showForgotPassword = showForgotPassword;
 window.showResetPassword = showResetPassword;
 window.backToLogin = backToLogin;
 window.updateAuthUI = updateAuthUI;
+window.updateDropdownUserName = updateDropdownUserName;
+window.getUserDisplayName = getUserDisplayName;
+window.initializeDropdownUserName = initializeDropdownUserName;
+window.updateUserInfo = updateUserInfo;
+window.logout = logout;
 
 // Inicialización al cargar la página
 document.addEventListener('DOMContentLoaded', async () => {
@@ -680,6 +761,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Si hay token válido, redirigir automáticamente
     if (hasValidToken()) {
         console.log('🔑 Usuario autenticado, redirigiendo...');
+        
+        // Inicializar dropdown con información del usuario
+        initializeDropdownUserName();
+        
         const userRole = authState.userRole;
         const targetUrl = userRole === 'admin' ? '/admin-panel.php' : '/user-panel.php';
         window.location.href = targetUrl;

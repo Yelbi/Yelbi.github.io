@@ -71,10 +71,18 @@ try {
             <i class="fi fi-rr-menu-burger"></i>
         </div>
         
-        <!-- Botón de login (visible cuando no autenticado) -->
-        <a href="/iniciar.php" class="user-btn" id="loginButton">
-            <i class="fi fi-rr-user"></i>
-        </a>
+        <!-- Contenedor para botones de autenticación -->
+        <div class="auth-buttons">
+            <!-- Botón de idioma (visible cuando no autenticado) -->
+            <a href="#" class="user-btn" id="languageButton">
+                <i class="fi fi-rr-globe"></i>
+            </a>
+            
+            <!-- Botón de login (visible cuando no autenticado) -->
+            <a href="/iniciar.php" class="user-btn" id="loginButton">
+                <i class="fi fi-rr-user"></i>
+            </a>
+        </div>
         
         <!-- Menú de perfil (visible solo cuando autenticado) -->
         <div class="profile-menu" id="profileMenu" style="display: none;">
@@ -84,7 +92,7 @@ try {
             <div class="dropdown-menu" id="dropdownMenu">
                 <div class="dropdown-header">
                     <img src="/Img/default-avatar.png" alt="Foto de perfil" id="dropdownProfileImage">
-                    <span class="dropdown-user-name">Usuario</span>
+                    <span class="dropdown-user-name" id="dropdownUserName">Usuario</span>
                 </div>
                 <a href="/user-panel.php" class="dropdown-item">
                     <i class="fi fi-rr-user"></i> Mi perfil
