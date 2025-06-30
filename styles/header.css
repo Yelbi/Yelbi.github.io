@@ -262,6 +262,11 @@
     margin-right: 15px;
 }
 
+.auth-buttons {
+    display: flex;
+    gap: 10px;
+}
+
         /* Tablets */
         @media (max-width: 1024px) {
             .header {
@@ -338,6 +343,10 @@
 
             .submenu-item {
                 padding: 10px 12px;
+            }
+
+            .auth-buttons {
+                gap: 5px;
             }
         }
 

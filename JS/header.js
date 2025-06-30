@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const dropdownUserName = document.querySelector('.dropdown-user-name');
     const profileImage = document.getElementById('profileImage');
     const dropdownProfileImage = document.getElementById('dropdownProfileImage');
+    const languageButton = document.getElementById('languageButton');
 
     // Verificar que los elementos existan
     if (!menuToggle || !navMenu) {
@@ -65,98 +66,78 @@ document.addEventListener('DOMContentLoaded', function() {
                 dropdownMenu.classList.remove('active');
             }
         });
-
-        // Cargar datos del usuario si está autenticado
-        const token = localStorage.getItem('jwt_token');
-        if (token) {
-            try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        
-        // Buscar el nombre en múltiples campos posibles
-        const userName = payload.name || payload.username || payload.email || 'Usuario';
-        
-        // Actualizar el nombre en todas las ubicaciones
-        dropdownUserName.textContent = userName;
-        
-        // Cargar imagen de perfil si existe
-        if (payload.profile_image) {
-            profileImage.src = payload.profile_image;
-            dropdownProfileImage.src = payload.profile_image;
-        }
-
-        // Mostrar menú de perfil y ocultar botón de login
-        const loginButton = document.getElementById('loginButton');
-        const profileMenu = document.getElementById('profileMenu');
-        if (loginButton) loginButton.style.display = 'none';
-        if (profileMenu) profileMenu.style.display = 'block';
-    } catch (e) {
-        console.error('Error decoding token', e);
-    }
-        }
     }
 
-    // Funcionalidad de cambio de idioma
-    setupLanguageSwitcher();
+    // Actualizar interfaz según estado de autenticación
+    updateAuthUI();
+
+    // Configurar botón de idioma
+    if (languageButton) {
+        languageButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleLanguage();
+        });
+    }
 });
 
-// Función para configurar el cambio de idioma
-function setupLanguageSwitcher() {
-    const languageToggle = document.querySelector('.dropdown-item[onclick="toggleLanguage()"]');
+// Función para actualizar la UI según autenticación
+function updateAuthUI() {
+    const token = localStorage.getItem('jwt_token');
+    const isAuthenticated = token && token.trim() !== '';
     
-    if (languageToggle) {
-        // Remover el onclick inline si existe
-        languageToggle.removeAttribute('onclick');
+    const loginButton = document.getElementById('loginButton');
+    const profileMenu = document.getElementById('profileMenu');
+    const languageButton = document.getElementById('languageButton');
+    
+    if (isAuthenticated) {
+        // Obtener datos del usuario
+        const userName = localStorage.getItem('user_name') || 'Usuario';
+        const profileImageUrl = localStorage.getItem('profile_image') || '/Img/default-avatar.png';
         
-        // Agregar el event listener
-        languageToggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            toggleLanguageMenu(this);
-        });
+        // Actualizar elementos
+        if (dropdownUserName) dropdownUserName.textContent = userName;
+        if (profileImage) profileImage.src = profileImageUrl;
+        if (dropdownProfileImage) dropdownProfileImage.src = profileImageUrl;
+        
+        // Mostrar menú de perfil y ocultar botones de login
+        if (loginButton) loginButton.style.display = 'none';
+        if (languageButton) languageButton.style.display = 'none';
+        if (profileMenu) profileMenu.style.display = 'block';
+    } else {
+        // Mostrar botones de login/idioma y ocultar perfil
+        if (loginButton) loginButton.style.display = 'block';
+        if (languageButton) languageButton.style.display = 'block';
+        if (profileMenu) profileMenu.style.display = 'none';
     }
 }
 
-// Función para mostrar/ocultar el submenu de idiomas
-function toggleLanguageMenu(element) {
-    // Verificar si ya existe un submenu
-    let existingSubmenu = element.nextElementSibling;
-    if (existingSubmenu && existingSubmenu.classList.contains('language-submenu')) {
-        existingSubmenu.remove();
-        return;
-    }
+// Función global para cerrar sesión
+window.logout = function() {
+    // Eliminar datos de usuario
+    localStorage.removeItem('jwt_token');
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('profile_image');
+    
+    // Actualizar interfaz
+    updateAuthUI();
+    
+    // Redirigir
+    window.location.href = '/iniciar.php';
+};
 
-    // Crear el submenu de idiomas
-    const submenu = document.createElement('div');
-    submenu.className = 'language-submenu';
-    submenu.innerHTML = `
-        <a href="?lang=es" class="dropdown-item submenu-item ${getCurrentLanguage() === 'es' ? 'active' : ''}">
-            <span class="flag">🇪🇸</span> Español
-        </a>
-        <a href="?lang=en" class="dropdown-item submenu-item ${getCurrentLanguage() === 'en' ? 'active' : ''}">
-            <span class="flag">🇺🇸</span> English
-        </a>
-    `;
-
-    // Insertar el submenu después del elemento clickeado
-    element.parentNode.insertBefore(submenu, element.nextSibling);
-
-    // Agregar estilos inline para el submenu (se podría mover al CSS)
-    submenu.style.cssText = `
-        background: #f8f9fa;
-        border-left: 3px solid #007bff;
-        margin-left: 15px;
-        border-radius: 4px;
-        overflow: hidden;
-        animation: slideDown 0.3s ease;
-    `;
-
-    // Agregar event listeners para los enlaces de idioma
-    submenu.querySelectorAll('.submenu-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            // Permitir que el enlace funcione normalmente
-            // El cambio de página se manejará por el href
-        });
-    });
-}
+// Función para cambiar idioma
+window.toggleLanguage = function() {
+    const currentLang = getCurrentLanguage();
+    const newLang = currentLang === 'es' ? 'en' : 'es';
+    
+    // Guardar preferencia
+    localStorage.setItem('preferred_language', newLang);
+    
+    // Recargar página con nuevo idioma
+    const url = new URL(window.location);
+    url.searchParams.set('lang', newLang);
+    window.location.href = url.toString();
+};
 
 // Función para obtener el idioma actual
 function getCurrentLanguage() {
@@ -167,41 +148,17 @@ function getCurrentLanguage() {
         return langFromUrl;
     }
     
-    // Si no hay parámetro en la URL, intentar obtenerlo del localStorage o del navegador
     const savedLang = localStorage.getItem('preferred_language');
     if (savedLang) {
         return savedLang;
     }
     
-    // Por defecto, usar español
     return 'es';
 }
 
-// Función global para cerrar sesión
-window.logout = function() {
-    localStorage.removeItem('jwt_token');
-    
-    // Actualizar la interfaz inmediatamente
-    const loginButton = document.getElementById('loginButton');
-    const profileMenu = document.getElementById('profileMenu');
-    
-    if (loginButton) loginButton.style.display = 'block';
-    if (profileMenu) profileMenu.style.display = 'none';
-    
-    // Redirigir
-    window.location.href = '/iniciar.php';
-};
-
-// Función global para el toggle de idioma (mantener compatibilidad)
-window.toggleLanguage = function() {
-    const currentLang = getCurrentLanguage();
-    const newLang = currentLang === 'es' ? 'en' : 'es';
-    
-    // Guardar preferencia
-    localStorage.setItem('preferred_language', newLang);
-    
-    // Cambiar idioma
-    const url = new URL(window.location);
-    url.searchParams.set('lang', newLang);
-    window.location.href = url.toString();
-};
+// Sincronización entre pestañas
+window.addEventListener('storage', (event) => {
+    if (event.key === 'user_name' || event.key === 'profile_image' || event.key === 'jwt_token') {
+        updateAuthUI();
+    }
+});
