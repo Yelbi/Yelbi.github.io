@@ -32,7 +32,22 @@
             <a href="?lang=en" class="<?= $current_lang === 'en' ? 'active' : '' ?>">EN</a>
         </div>
         
-        <a href="/iniciar.php" class="user-btn"><i class="fi fi-rr-user"></i></a>
+        <!-- Menú de perfil (reemplaza el user-btn) -->
+        <div class="profile-menu">
+            <div class="profile-icon" id="profileMenuToggle">
+                <img src="/Img/default-avatar.png" alt="Foto de perfil" id="profileImage">
+            </div>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <div class="dropdown-header">
+                    <img src="/Img/default-avatar.png" alt="Foto de perfil" id="dropdownProfileImage">
+                    <span id="dropdownUserName">Usuario</span>
+                </div>
+                <a href="/user-panel.php" class="dropdown-item"><i class="fi fi-rr-user"></i> Mi perfil</a>
+                <a href="#" class="dropdown-item"><i class="fi fi-rr-globe"></i> Cambiar idioma</a>
+                <div class="divider"></div>
+                <a href="#" class="dropdown-item" onclick="logout()"><i class="fi fi-rr-sign-out"></i> Cerrar sesión</a>
+            </div>
+        </div>
     </header>
 
     <div class="container" id="container">

@@ -87,7 +87,8 @@ class ResponsiveGallery {
       enableHoverEffects: this.deviceInfo.supportsHover && !this.deviceInfo.isTouchDevice,
       enableParallax: this.deviceInfo.isDesktop && !isLowPerformance,
       preloadCount: this.deviceInfo.isSlowConnection ? 2 : (isMobile ? 4 : 8),
-      filterBatchSize: isLowPerformance ? 5 : 10
+      filterBatchSize: isLowPerformance ? 5 : 10,
+      imageTimeout: 3000 // Reducido de 5000 a 3000ms
     };
   }
 
@@ -144,7 +145,6 @@ class ResponsiveGallery {
   }
 
   showCard(card, index) {
-    // Cancelar temporizador de ocultación pendiente
     const timerKey = card;
     if (this.timers.has(timerKey)) {
       clearTimeout(this.timers.get(timerKey));
@@ -172,7 +172,7 @@ class ResponsiveGallery {
     card.classList.add('filtering-hide');
 
     const hideTimeout = this.config.enableAnimations ? 300 : 0;
-    const timerKey = card;  // Usar la referencia DOM como clave única
+    const timerKey = card;
     
     if (this.timers.has(timerKey)) {
       clearTimeout(this.timers.get(timerKey));
@@ -306,11 +306,11 @@ class ResponsiveGallery {
     window.addEventListener('scroll', throttledScroll, { passive: true });
   }
 
-    setupCardInteractions() {
-        this.elements.cards.forEach((card, index) => {
-            card.setAttribute('tabindex', '0');
-            card.setAttribute('role', 'button');
-            card.setAttribute('aria-label', `${TRANSLATIONS.view_details} ${card.dataset.nombre}`);
+  setupCardInteractions() {
+    this.elements.cards.forEach((card, index) => {
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-label', `Ver detalles ${card.dataset.nombre}`);
 
       if (this.config.enableHoverEffects) {
         this.addHoverEffects(card);
@@ -382,123 +382,155 @@ class ResponsiveGallery {
     });
   }
 
-setupLazyLoading() {
-  const imageObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        this.loadImage(entry.target);
-        imageObserver.unobserve(entry.target);
+  // CORRECCIÓN PRINCIPAL: Simplificar y corregir el lazy loading
+  setupLazyLoading() {
+    // Primero, manejar imágenes ya cargadas o que deberían precargarse
+    this.elements.images.forEach((img, index) => {
+      const card = img.closest('.card');
+      
+      // Si ya está marcada como loaded en el HTML o es de las primeras
+      if (img.classList.contains('loaded') || index < this.config.preloadCount) {
+        this.handleImageLoaded(img, card);
+        return;
       }
+      
+      // Si ya se completó la carga naturalmente
+      if (img.complete && img.naturalHeight !== 0) {
+        this.handleImageLoaded(img, card);
+        return;
+      }
+      
+      // Configurar lazy loading para el resto
+      this.setupImageLazyLoad(img, card);
     });
-  }, {
-    rootMargin: this.config.lazyLoadMargin,
-    threshold: 0.01
-  });
-
-  this.observers.set('images', imageObserver);
-
-  this.elements.images.forEach((img, index) => {
-    // Precargar las primeras imágenes inmediatamente
-    if (index < this.config.preloadCount || img.complete) {
-      this.loadImage(img);
-    } else {
-      imageObserver.observe(img);
-    }
-  });
-}
-
-  loadImage(img) {
-    const imageId = img.src || img.dataset.src;
-    if (this.loadedImages.has(imageId)) return;
-
-    const card = img.closest('.card');
+  }
+  
+  setupImageLazyLoad(img, card) {
+    // Crear observer para esta imagen
+    const imageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          this.loadImageWithTimeout(entry.target);
+          imageObserver.unobserve(entry.target);
+        }
+      });
+    }, {
+      rootMargin: this.config.lazyLoadMargin,
+      threshold: 0.01
+    });
     
-    if (img.complete && img.naturalHeight !== 0) {
-      this.handleImageLoaded(img, card);
-      return;
-    }
-
-    if (card && !img.classList.contains('loaded')) {
+    imageObserver.observe(img);
+    this.observers.set(img, imageObserver);
+  }
+  
+  loadImageWithTimeout(img) {
+    const card = img.closest('.card');
+    const imageId = img.src || img.dataset.src;
+    
+    if (this.loadedImages.has(imageId)) return;
+    
+    // Mostrar estado de carga
+    if (card) {
       card.classList.add('loading');
     }
-
+    
+    // Configurar timeout
     const loadingTimeout = setTimeout(() => {
-      this.handleImageLoaded(img, card, true);
-    }, 5000);
-
+      this.handleImageError(img, card);
+    }, this.config.imageTimeout);
+    
+    // Eventos de carga
     const handleLoad = () => {
       clearTimeout(loadingTimeout);
       this.handleImageLoaded(img, card);
     };
-
+    
     const handleError = () => {
       clearTimeout(loadingTimeout);
       this.handleImageError(img, card);
     };
-
+    
+    // Limpiar eventos anteriores
     img.removeEventListener('load', handleLoad);
     img.removeEventListener('error', handleError);
     
+    // Agregar nuevos eventos
     img.addEventListener('load', handleLoad, { once: true });
     img.addEventListener('error', handleError, { once: true });
+    
+    // Si la imagen ya está cargada, ejecutar inmediatamente
+    if (img.complete && img.naturalHeight !== 0) {
+      handleLoad();
+    }
   }
 
-handleImageLoaded(img, card, wasTimeout = false) {
-  const imageId = img.src || img.dataset.src;
-  this.loadedImages.add(imageId);
+  handleImageLoaded(img, card) {
+    const imageId = img.src || img.dataset.src;
+    this.loadedImages.add(imageId);
 
-  // Cambio crítico: Forzar visibilidad inmediata
-  img.style.opacity = '1';
-  img.classList.add('loaded');
-  
-  if (card) {
-    card.classList.remove('loading');
-    // Agregar clase para manejar estado de carga completo
-    card.classList.add('image-loaded');
-    // Forzar repintado para asegurar la transición
-    card.offsetHeight;
+    // Asegurar visibilidad
+    img.style.opacity = '1';
+    img.classList.add('loaded');
+    
+    if (card) {
+      card.classList.remove('loading');
+      card.classList.add('image-loaded');
+      // Forzar repintado
+      card.offsetHeight;
+    }
   }
-}
 
   handleImageError(img, card) {
     const imageId = img.src || img.dataset.src;
     this.loadedImages.add(imageId);
 
+    // Crear placeholder
     img.style.opacity = '0.5';
     img.src = this.generatePlaceholderSVG();
-    img.classList.add('loaded');
+    img.classList.add('loaded', 'error');
     
     if (card) {
       card.classList.remove('loading');
+      card.classList.add('image-error');
       card.offsetHeight;
     }
   }
 
+  // Método mejorado para verificar y corregir estados
   checkAndFixStuckLoadingStates() {
     this.elements.cards.forEach(card => {
       if (card.classList.contains('loading')) {
         const img = card.querySelector('img');
         
-        if (img && img.complete && img.naturalHeight !== 0) {
-          card.classList.remove('loading');
-          img.classList.add('loaded');
-          img.style.opacity = '1';
+        if (img) {
+          // Si la imagen ya se cargó naturalmente
+          if (img.complete && img.naturalHeight !== 0) {
+            this.handleImageLoaded(img, card);
+          }
+          // Si han pasado más de 5 segundos, forzar error
+          else if (!img.classList.contains('loaded')) {
+            setTimeout(() => {
+              if (card.classList.contains('loading')) {
+                this.handleImageError(img, card);
+              }
+            }, 100);
+          }
         }
       }
     });
   }
 
-    generatePlaceholderSVG() {
-        return 'data:image/svg+xml;base64,' + btoa(`
-            <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="200" height="200" fill="#f3f4f6"/>
-                <path d="M85 85h30v30H85z" fill="#d1d5db"/>
-                <text x="100" y="130" text-anchor="middle" fill="#6b7280" font-family="Arial" font-size="12">
-                    ${TRANSLATIONS.image_not_available}
-                </text>
-            </svg>
-        `);
-    }
+  generatePlaceholderSVG() {
+    return 'data:image/svg+xml;base64,' + btoa(`
+      <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="200" height="200" fill="#f3f4f6"/>
+        <path d="M85 85h30v30H85z" fill="#d1d5db"/>
+        <text x="100" y="130" text-anchor="middle" fill="#6b7280" font-family="Arial" font-size="12">
+          Imagen no disponible
+        </text>
+      </svg>
+    `);
+  }
 
   clearAllFilters() {
     this.state.filters = { search: '', tipo: '', region: '' };
@@ -515,7 +547,7 @@ handleImageLoaded(img, card, wasTimeout = false) {
 
     const wasCollapsed = this.elements.filterPanel.classList.contains('collapsed');
     this.elements.filterPanel.classList.toggle('collapsed');
-    this.state.isFilterPanelVisible = !wasCollapsed; // Corregido para reflejar el nuevo estado
+    this.state.isFilterPanelVisible = !wasCollapsed;
     
     this.updateToggleButton(wasCollapsed);
     this.addHapticFeedback();
@@ -600,7 +632,6 @@ handleImageLoaded(img, card, wasTimeout = false) {
         }
       });
 
-      // Aplicar filtros siempre, incluso si no hay parámetros
       this.applyFilters();
     } catch (error) {
       console.warn('Error loading filters from URL:', error);
@@ -703,29 +734,26 @@ handleImageLoaded(img, card, wasTimeout = false) {
     return stuckCards.length;
   }
 
-setupBadgeFilters() {
-  document.querySelectorAll('.badge').forEach(badge => {
-    badge.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-            const filterType = badge.dataset.filter;
-            const filterValue = badge.dataset.value;
-            
-            // Actualizar estado y controles UI
-            this.state.filters[filterType] = filterValue;
-            
-            if (filterType === 'tipo' && this.elements.tipoFilter) {
-                this.elements.tipoFilter.value = filterValue;
-            } else if (filterType === 'region' && this.elements.regionFilter) {
-                this.elements.regionFilter.value = filterValue;
-            }
-            
-            // Aplicar filtros
-            this.applyFilters();
-            
-            // Feedback visual
-            this.addClickFeedback(badge);
-        });
+  setupBadgeFilters() {
+    document.querySelectorAll('.badge').forEach(badge => {
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        const filterType = badge.dataset.filter;
+        const filterValue = badge.dataset.value;
+        
+        this.state.filters[filterType] = filterValue;
+        
+        if (filterType === 'tipo' && this.elements.tipoFilter) {
+          this.elements.tipoFilter.value = filterValue;
+        } else if (filterType === 'region' && this.elements.regionFilter) {
+          this.elements.regionFilter.value = filterValue;
+        }
+        
+        this.applyFilters();
+        this.addClickFeedback(badge);
+      });
     });
   }
 
@@ -737,7 +765,6 @@ setupBadgeFilters() {
       this.setupLazyLoading();
       this.setupBadgeFilters();
       
-      // Sincronizar estado del panel de filtros
       if (this.elements.filterPanel) {
         if (this.state.isFilterPanelVisible) {
           this.elements.filterPanel.classList.remove('collapsed');
@@ -745,6 +772,7 @@ setupBadgeFilters() {
         this.updateToggleButton(!this.state.isFilterPanelVisible);
       }
       
+      // Verificar imágenes después de un breve delay
       setTimeout(() => this.checkAndFixStuckLoadingStates(), 1000);
       
       window.addEventListener('beforeunload', () => this.cleanup());

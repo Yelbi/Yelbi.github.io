@@ -651,10 +651,32 @@ async function login(email, password) {
         userInfoCache.set({
             role: userRole,
             userId: result.user?.id,
-            email: email
+            email: email,
+            name: result.user?.name || email.split('@')[0],
+            profile_image: result.user?.profile_image || '/Img/default-avatar.png'
         });
 
         console.log('👤 Role:', userRole);
+
+        // Actualizar imágenes de perfil en todas las páginas
+        if (result.user?.profile_image) {
+            setTimeout(() => {
+                const profileImages = document.querySelectorAll('#profileImage, #dropdownProfileImage');
+                profileImages.forEach(img => {
+                    img.src = result.user.profile_image;
+                });
+            }, 100);
+        }
+
+        // Actualizar nombre de usuario en todas las páginas
+        if (result.user?.name) {
+            setTimeout(() => {
+                const userNameElements = document.querySelectorAll('#dropdownUserName');
+                userNameElements.forEach(el => {
+                    el.textContent = result.user.name;
+                });
+            }, 100);
+        }
 
         // Redirección ultra-rápida sin mensaje
         const targetUrl = userRole === 'admin' ? '/admin-panel.php' : '/user-panel.php';
