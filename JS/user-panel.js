@@ -94,61 +94,68 @@ async function apiRequest(action, data = {}, method = 'POST') {
     }
 }
 
-// Llamar a esta función en DOMContentLoaded
 document.addEventListener('DOMContentLoaded', async () => {
     await loadProfile();
-    await loadProfileImage(); // Nueva función
+    await loadProfileImage();
+    setupProfileImagePreview(); // Agregar esta línea
 });
 
-// Función para cargar la imagen de perfil
-async function loadProfileImage() {
-    try {
-        const result = await apiRequest('get-profile-image', {}, 'GET');
-        if (result.profileImage) {
-            document.getElementById('currentProfileImage').src = result.profileImage;
-            localStorage.setItem('profile_image', result.profileImage);
-            updateAuthUI(); // Actualizar UI en header
-        }
-    } catch (error) {
-        console.error('Error cargando imagen de perfil:', error);
-    }
-}
-
-// Configurar previsualización de imagen
+// 2. Mejorar la función setupProfileImagePreview con mejor manejo de errores
 function setupProfileImagePreview() {
     const fileInput = document.getElementById('newProfileImage');
     const fileInfo = document.getElementById('fileInfo');
+    
+    // Crear elemento de información de archivo si no existe
+    if (!fileInfo) {
+        const fileInfoElement = document.createElement('div');
+        fileInfoElement.id = 'fileInfo';
+        fileInfoElement.className = 'file-info';
+        fileInput.parentNode.insertBefore(fileInfoElement, fileInput.nextSibling);
+    }
+    
     const previewContainer = document.createElement('div');
     previewContainer.className = 'preview-container';
     const previewImage = document.createElement('img');
     previewImage.className = 'preview-image';
     previewImage.id = 'imagePreview';
     previewContainer.appendChild(previewImage);
-    fileInput.parentNode.insertBefore(previewContainer, fileInput.nextSibling);
+    
+    // Insertar después del elemento de información de archivo
+    const actualFileInfo = document.getElementById('fileInfo');
+    actualFileInfo.parentNode.insertBefore(previewContainer, actualFileInfo.nextSibling);
 
     fileInput.addEventListener('change', function() {
         const file = this.files[0];
-        if (!file) return;
+        const actualFileInfo = document.getElementById('fileInfo');
+        
+        if (!file) {
+            actualFileInfo.textContent = '';
+            previewImage.style.display = 'none';
+            return;
+        }
 
         // Validar tipo y tamaño
         const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         const maxSize = 2 * 1024 * 1024; // 2MB
 
         if (!validTypes.includes(file.type)) {
-            fileInfo.textContent = 'Formato no válido. Use JPG, PNG o GIF.';
+            actualFileInfo.textContent = 'Formato no válido. Use JPG, PNG, GIF o WEBP.';
+            actualFileInfo.style.color = '#f44336';
             this.value = '';
             previewImage.style.display = 'none';
             return;
         }
 
         if (file.size > maxSize) {
-            fileInfo.textContent = 'El archivo es demasiado grande (máx. 2MB).';
+            actualFileInfo.textContent = 'El archivo es demasiado grande (máximo 2MB).';
+            actualFileInfo.style.color = '#f44336';
             this.value = '';
             previewImage.style.display = 'none';
             return;
         }
 
-        fileInfo.textContent = `Archivo: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`;
+        actualFileInfo.textContent = `Archivo: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`;
+        actualFileInfo.style.color = 'rgba(255, 255, 255, 0.7)';
         
         // Mostrar previsualización
         const reader = new FileReader();
@@ -160,17 +167,23 @@ function setupProfileImagePreview() {
     });
 }
 
-// Event listener para el formulario de foto
+// 3. Mejorar el event listener del formulario con mejor feedback visual
 document.getElementById('profilePictureForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const fileInput = document.getElementById('newProfileImage');
     const file = fileInput.files[0];
+    const submitButton = e.target.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton.innerHTML;
     
     if (!file) {
         showAlert('profileAlert', 'Por favor selecciona una imagen', 'error');
         return;
     }
+    
+    // Mostrar estado de carga
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<div class="loading-spinner small"></div> Subiendo...';
     
     try {
         const formData = new FormData();
@@ -188,18 +201,63 @@ document.getElementById('profilePictureForm').addEventListener('submit', async (
         
         if (response.ok) {
             // Actualizar imagen localmente
-            document.getElementById('currentProfileImage').src = result.profileImage;
+            const newImageUrl = result.profileImage + '?t=' + Date.now(); // Cache busting
+            document.getElementById('currentProfileImage').src = newImageUrl;
             localStorage.setItem('profile_image', result.profileImage);
-            updateAuthUI();
+            
+            // Actualizar UI del header si existe la función
+            if (typeof updateAuthUI === 'function') {
+                updateAuthUI();
+            }
+            
             showAlert('profileAlert', 'Foto de perfil actualizada correctamente', 'success');
+            
+            // Limpiar formulario y previsualización
+            fileInput.value = '';
+            const fileInfo = document.getElementById('fileInfo');
+            const previewImage = document.getElementById('imagePreview');
+            if (fileInfo) fileInfo.textContent = '';
+            if (previewImage) previewImage.style.display = 'none';
+            
         } else {
             throw new Error(result.error || 'Error al actualizar la foto');
         }
     } catch (error) {
-        showAlert('profileAlert', error.message, 'error');
+        console.error('Error uploading image:', error);
+        showAlert('profileAlert', 'Error al subir la imagen: ' + error.message, 'error');
+    } finally {
+        // Restaurar botón
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonText;
     }
 });
 
+// 4. Mejorar la función loadProfileImage con mejor manejo de errores
+async function loadProfileImage() {
+    try {
+        const result = await apiRequest('get-profile-image', {}, 'GET');
+        if (result.profileImage) {
+            const imageUrl = result.profileImage + '?t=' + Date.now(); // Cache busting
+            const currentImage = document.getElementById('currentProfileImage');
+            if (currentImage) {
+                currentImage.src = imageUrl;
+            }
+            localStorage.setItem('profile_image', result.profileImage);
+            
+            // Actualizar UI del header si existe la función
+            if (typeof updateAuthUI === 'function') {
+                updateAuthUI();
+            }
+        }
+    } catch (error) {
+        console.error('Error cargando imagen de perfil:', error);
+        // No mostrar error al usuario si es solo la imagen, usar imagen por defecto
+        const currentImage = document.getElementById('currentProfileImage');
+        if (currentImage) {
+            currentImage.src = '/Img/default-avatar.png';
+        }
+    }
+}
 // Event Listener
 document.getElementById('complaintForm').addEventListener('submit', async (e) => {
     e.preventDefault();

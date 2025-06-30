@@ -61,6 +61,12 @@ switch ($method) {
             case 'delete-complaint':
                 deleteComplaint($input);
                 break;
+            case 'update-profile-image':
+                updateProfileImage();
+                break;
+            case 'get-profile-image':
+                getProfileImage();
+                break;
             case 'request-password-reset':
                 try {
                     $data = json_decode(file_get_contents('php://input'), true);
@@ -443,6 +449,102 @@ if (isset($_GET['cleanup']) && $_GET['cleanup'] === 'true') {
     }
 }
 
+function updateProfileImage() {
+    global $db;
+    
+    try {
+        $authData = authenticateJWT();
+        $userId = $authData['sub'];
+        
+        // Verificar que se haya subido un archivo
+        if (empty($_FILES['profileImage'])) {
+            jsonResponse(['error' => 'No se subió ningún archivo'], 400);
+        }
+        
+        $file = $_FILES['profileImage'];
+        
+        // Validar errores de subida
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            jsonResponse(['error' => 'Error en la subida del archivo: ' . $file['error']], 400);
+        }
+        
+        // Validar tipo de archivo
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($file['type'], $allowedTypes)) {
+            jsonResponse(['error' => 'Tipo de archivo no permitido. Use JPG, PNG, GIF o WEBP.'], 400);
+        }
+        
+        // Validar tamaño (máximo 2MB)
+        $maxSize = 2 * 1024 * 1024; // 2MB
+        if ($file['size'] > $maxSize) {
+            jsonResponse(['error' => 'El archivo es demasiado grande (máximo 2MB)'], 400);
+        }
+        
+        // Crear directorio de subidas si no existe
+        $uploadDir = __DIR__ . '/../uploads/profile_pictures/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+        
+        // Generar un nombre único para el archivo
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $newFilename = 'user_' . $userId . '_' . time() . '.' . $extension;
+        $destination = $uploadDir . $newFilename;
+        
+        // Mover el archivo subido
+        if (move_uploaded_file($file['tmp_name'], $destination)) {
+            // Guardar la ruta en la base de datos (solo el nombre del archivo o la ruta relativa)
+            $relativePath = 'uploads/profile_pictures/' . $newFilename;
+            
+            // Actualizar el perfil del usuario en la base de datos
+            $stmt = $db->prepare("UPDATE users SET profile_image = ? WHERE id = ?");
+            $stmt->execute([$relativePath, $userId]);
+            
+            // Devolver la URL completa de la imagen
+            $baseUrl = 'https://seres.blog/'; // Cambia según tu entorno
+            $imageUrl = $baseUrl . $relativePath;
+            
+            jsonResponse([
+                'success' => true,
+                'profileImage' => $imageUrl
+            ]);
+        } else {
+            jsonResponse(['error' => 'Error al guardar el archivo'], 500);
+        }
+        
+    } catch (Exception $e) {
+        jsonResponse(['error' => $e->getMessage()], 500);
+    }
+}
+
+function getProfileImage() {
+    global $db;
+    
+    try {
+        $authData = authenticateJWT();
+        $userId = $authData['sub'];
+        
+        $stmt = $db->prepare("SELECT profile_image FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($result && $result['profile_image']) {
+            jsonResponse([
+                'success' => true,
+                'profileImage' => 'https://seres.blog/' . $result['profile_image']
+            ]);
+        } else {
+            jsonResponse([
+                'success' => true,
+                'profileImage' => 'https://seres.blog/Img/default-avatar.png'
+            ]);
+        }
+        
+    } catch (Exception $e) {
+        jsonResponse(['error' => $e->getMessage()], 500);
+    }
+}
+
 // Enviar queja/sugerencia
 function submitComplaint($input) {
     global $db;
@@ -476,15 +578,16 @@ function getComplaints() {
     try {
         $authData = authenticateJWT();
         
-        // Verificar si es administrador usando role
+        // Verificar si es administrador
         $userData = $user->getById($authData['sub']);
         if (!$userData || $userData['role'] !== 'admin') {
             jsonResponse(['error' => 'No autorizado'], 403);
         }
         
-        // Obtener quejas
+        // Obtener quejas con imagen de perfil
         $stmt = $db->query("
-            SELECT c.*, u.email AS user_email 
+            SELECT c.*, u.email AS user_email, 
+                   COALESCE(u.profile_image, 'Img/default-avatar.png') AS user_profile_image
             FROM complaints c
             JOIN users u ON c.user_id = u.id
             ORDER BY c.created_at DESC

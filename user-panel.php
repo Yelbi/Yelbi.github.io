@@ -89,14 +89,21 @@
         </div>
 
 <div class="profile-picture-section">
-    <h3>Foto de Perfil</h3>
+    <h3><i class="fi fi-rr-camera"></i> Foto de Perfil</h3>
     <div class="current-picture">
         <img id="currentProfileImage" src="/Img/default-avatar.png" alt="Tu foto actual">
     </div>
-    <form id="profilePictureForm">
+    <form id="profilePictureForm" enctype="multipart/form-data">
         <div class="form-group">
-            <label for="newProfileImage">Seleccionar nueva imagen:</label>
-            <input type="file" id="newProfileImage" name="newProfileImage" accept="image/*">
+            <label for="newProfileImage">
+                <i class="fi fi-rr-upload"></i> Seleccionar nueva imagen:
+            </label>
+            <input type="file" 
+                   id="newProfileImage" 
+                   name="newProfileImage" 
+                   accept="image/jpeg,image/png,image/gif,image/webp"
+                   required>
+            <div id="fileInfo" class="file-info"></div>
         </div>
         <button type="submit" class="btn">
             <i class="fi fi-rr-upload"></i> Actualizar Foto
