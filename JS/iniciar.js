@@ -15,8 +15,6 @@ let authState = {
 const AUTH_CHECK_INTERVAL = 30000; // 30 segundos (menos frecuente)
 const AUTH_CACHE_DURATION = 120000; // 2 minutos de cache
 const REDIRECT_DELAY = 50; // Delay mínimo ultra-rápido
-const SESSION_DURATION = 7200; // 2 horas en segundos
-const TOKEN_REFRESH_THRESHOLD = 1800; // Renovar token 30 min antes de expirar
 
 // Funciones para cambiar entre formularios
 function showForm(formId) {
@@ -121,15 +119,10 @@ function showPasswordRequirements(strengthDiv, password) {
     strengthDiv.innerHTML = html;
 }
 
-// ============= SISTEMA DE AUTENTICACIÓN ULTRA-OPTIMIZADO =============
+// ============= SISTEMA DE AUTENTICACIÓN SIMPLIFICADO =============
 
-// Función para crear timestamp con margen de seguridad
-function createSecureTimestamp() {
-    return Math.floor(Date.now() / 1000) + SESSION_DURATION;
-}
-
-// Función mejorada para decodificar y validar JWT
-function decodeAndValidateToken(token) {
+// Función simplificada para decodificar JWT (sin validación de expiración)
+function decodeToken(token) {
     if (!token || typeof token !== 'string') return null;
     
     try {
@@ -137,21 +130,13 @@ function decodeAndValidateToken(token) {
         if (parts.length !== 3) return null;
         
         const payload = JSON.parse(atob(parts[1]));
-        const now = Math.floor(Date.now() / 1000);
-        
-        // Verificar expiración con margen de seguridad
-        if (payload.exp && payload.exp <= now) {
-            console.log('🚫 Token expirado:', new Date(payload.exp * 1000));
-            return null;
-        }
         
         return {
             role: payload.role || 'user',
             userId: payload.user_id,
             email: payload.email,
             exp: payload.exp,
-            iat: payload.iat,
-            timeLeft: payload.exp - now
+            iat: payload.iat
         };
     } catch (error) {
         console.error('❌ Error decodificando token:', error);
@@ -183,8 +168,8 @@ const userInfoCache = {
     }
 };
 
-// Función ultra-rápida para verificar token válido
-function hasValidTokenUltraFast() {
+// Función simplificada para verificar token válido (sin verificación de expiración)
+function hasValidToken() {
     const token = localStorage.getItem('jwt_token');
     if (!token) {
         authState.tokenValid = false;
@@ -199,10 +184,8 @@ function hasValidTokenUltraFast() {
         return true;
     }
     
-    const tokenInfo = decodeAndValidateToken(token);
+    const tokenInfo = decodeToken(token);
     if (!tokenInfo) {
-        localStorage.removeItem('jwt_token');
-        userInfoCache.clear();
         authState.tokenValid = false;
         return false;
     }
@@ -215,37 +198,8 @@ function hasValidTokenUltraFast() {
     return true;
 }
 
-// Función para renovar token automáticamente
-async function refreshTokenIfNeeded() {
-    const token = localStorage.getItem('jwt_token');
-    if (!token) return false;
-    
-    const tokenInfo = decodeAndValidateToken(token);
-    if (!tokenInfo) return false;
-    
-    // Si el token expira en menos de 30 minutos, renovarlo
-    if (tokenInfo.timeLeft < TOKEN_REFRESH_THRESHOLD) {
-        console.log('🔄 Renovando token automáticamente...');
-        
-        try {
-            const result = await apiRequest('refresh-token', {}, 'POST');
-            if (result.token) {
-                localStorage.setItem('jwt_token', result.token);
-                userInfoCache.clear(); // Limpiar cache para forzar recarga
-                console.log('✅ Token renovado exitosamente');
-                return true;
-            }
-        } catch (error) {
-            console.error('❌ Error renovando token:', error);
-            // No limpiar token aún, podría ser error temporal
-        }
-    }
-    
-    return false;
-}
-
-// Función de redirección ultra-rápida
-function ultraFastRedirect() {
+// Función de redirección simplificada
+function fastRedirect() {
     if (!authState.fastRedirectEnabled) return false;
     
     const now = Date.now();
@@ -262,14 +216,14 @@ function ultraFastRedirect() {
         return false;
     }
     
-    // Verificación ultra-rápida del token
-    if (!hasValidTokenUltraFast()) {
+    // Verificación del token
+    if (!hasValidToken()) {
         console.log('📝 Token inválido, permaneciendo en login');
         authState.authenticated = false;
         return false;
     }
     
-    console.log('⚡ Redirección ultra-rápida activada');
+    console.log('⚡ Redirección activada');
     
     // Actualizar estado inmediatamente
     authState.authenticated = true;
@@ -278,47 +232,42 @@ function ultraFastRedirect() {
     // Determinar URL de destino
     const targetUrl = authState.userRole === 'admin' ? '/admin-panel.php' : '/user-panel.php';
     
-    console.log('🚀 Redirigiendo instantáneamente a:', targetUrl);
+    console.log('🚀 Redirigiendo a:', targetUrl);
     
-    // Redirección inmediata sin mensaje (más rápida)
+    // Redirección inmediata sin mensaje
     window.location.replace(targetUrl);
     
     return true;
 }
 
-// Sistema de monitoreo inteligente
-function startIntelligentMonitoring() {
-    // Verificación inicial ultra-rápida
-    setTimeout(() => ultraFastRedirect(), 10);
+// Sistema de monitoreo simplificado (sin verificación de expiración)
+function startSimpleMonitoring() {
+    // Verificación inicial
+    setTimeout(() => fastRedirect(), 10);
     
-    // Monitoreo menos frecuente pero más inteligente
+    // Monitoreo básico
     const monitoringInterval = setInterval(() => {
         const now = Date.now();
         
         // Solo verificar si ha pasado suficiente tiempo y no estamos verificando
         if (!authState.checking && (now - authState.lastCheck > AUTH_CACHE_DURATION)) {
             
-            // Verificación rápida local
-            if (hasValidTokenUltraFast() && !authState.authenticated) {
+            // Verificación local
+            if (hasValidToken() && !authState.authenticated) {
                 console.log('🔄 Monitoreo detectó cambio de estado');
-                ultraFastRedirect();
+                fastRedirect();
             }
-            
-            // Renovar token si es necesario (sin bloquear)
-            refreshTokenIfNeeded().catch(err => 
-                console.log('⚠️ Error en renovación automática:', err.message)
-            );
         }
     }, AUTH_CHECK_INTERVAL);
     
-    // Listener optimizado para cambios en localStorage
+    // Listener para cambios en localStorage
     window.addEventListener('storage', (e) => {
         if (e.key === 'jwt_token') {
             userInfoCache.clear(); // Limpiar cache
             
             if (e.newValue) {
                 console.log('🔄 Token detectado en otra pestaña');
-                setTimeout(() => ultraFastRedirect(), 50);
+                setTimeout(() => fastRedirect(), 50);
             } else {
                 console.log('🚫 Token removido en otra pestaña');
                 authState.authenticated = false;
@@ -328,11 +277,11 @@ function startIntelligentMonitoring() {
         }
     });
     
-    // Listener optimizado para visibilidad
+    // Listener para visibilidad
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden && !authState.authenticated) {
-            console.log('🔄 Página visible, verificación rápida');
-            setTimeout(() => ultraFastRedirect(), 25);
+            console.log('🔄 Página visible, verificación');
+            setTimeout(() => fastRedirect(), 25);
         }
     });
     
@@ -340,62 +289,6 @@ function startIntelligentMonitoring() {
     window.addEventListener('beforeunload', () => {
         clearInterval(monitoringInterval);
     });
-}
-
-// Verificación completa con servidor (solo cuando es necesario)
-async function verifyWithServerWhenNeeded() {
-    // Solo verificar si el token está próximo a expirar o hay dudas
-    const token = localStorage.getItem('jwt_token');
-    if (!token) return false;
-    
-    const tokenInfo = decodeAndValidateToken(token);
-    if (!tokenInfo) return false;
-    
-    // Si el token es reciente y válido, no verificar con servidor
-    if (tokenInfo.timeLeft > TOKEN_REFRESH_THRESHOLD) {
-        return true;
-    }
-    
-    // Verificación con servidor solo si es necesario
-    if (authState.checking) return false;
-    authState.checking = true;
-    
-    try {
-        console.log('🔍 Verificación necesaria con servidor...');
-        const result = await apiRequest('profile', {}, 'GET');
-        
-        if (result.user && result.user.role) {
-            authState.authenticated = true;
-            authState.userRole = result.user.role;
-            authState.lastCheck = Date.now();
-            
-            // Actualizar cache
-            userInfoCache.set({
-                role: result.user.role,
-                userId: result.user.id,
-                email: result.user.email
-            });
-            
-            return true;
-        }
-        
-        return false;
-    } catch (error) {
-        console.error('❌ Error verificando con servidor:', error);
-        
-        // Solo limpiar si el error indica que el token es inválido
-        if (error.message.includes('token') || error.message.includes('unauthorized')) {
-            localStorage.removeItem('jwt_token');
-            userInfoCache.clear();
-            authState.authenticated = false;
-            authState.userRole = null;
-            authState.tokenValid = false;
-        }
-        
-        return false;
-    } finally {
-        authState.checking = false;
-    }
 }
 
 // NUEVA FUNCIÓN: Solicitar recuperación de contraseña
@@ -599,7 +492,7 @@ async function apiRequest(action, data = {}, method = 'POST', retries = 2) {
     }
 }
 
-// Login ultra-optimizado
+// Login simplificado
 async function login(email, password) {
     if (!email || !password) {
         showAlert('loginAlert', 'Por favor, completa todos los campos.');
@@ -720,7 +613,7 @@ function updateAuthUI() {
     const profileMenu = document.getElementById('profileMenu');
     const panelRedirect = document.getElementById('panelRedirect');
     
-    if (hasValidTokenUltraFast()) {
+    if (hasValidToken()) {
         // Obtener datos del usuario desde el cache
         const cachedUser = userInfoCache.get();
         
@@ -785,7 +678,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     // 2. Si hay token válido, redirigir automáticamente
-    if (hasValidTokenUltraFast()) {
+    if (hasValidToken()) {
         console.log('🔑 Usuario autenticado, redirigiendo...');
         const userRole = authState.userRole;
         const targetUrl = userRole === 'admin' ? '/admin-panel.php' : '/user-panel.php';
