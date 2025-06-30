@@ -59,6 +59,7 @@
         }
 
         .user-btn {
+            display: block;
             color: white;
             text-decoration: none;
             padding: 10px 20px;
@@ -89,7 +90,7 @@
 /* Nuevos estilos para el menú de perfil */
 .profile-menu {
     position: relative;
-    display: inline-block;
+    display: none;
 }
 
 .profile-icon {
@@ -138,6 +139,19 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes slideDown {
+    from { 
+        opacity: 0; 
+        max-height: 0; 
+        transform: translateY(-10px); 
+    }
+    to { 
+        opacity: 1; 
+        max-height: 200px; 
+        transform: translateY(0); 
+    }
+}
+
 .dropdown-header {
     padding: 15px;
     display: flex;
@@ -167,6 +181,7 @@
     color: #333;
     transition: background 0.2s ease;
     font-size: 0.9rem;
+    cursor: pointer;
 }
 
 .dropdown-item:hover {
@@ -183,6 +198,63 @@
     height: 1px;
     background: #eee;
     margin: 5px 0;
+}
+
+/* Estilos para el submenu de idiomas */
+.language-submenu {
+    background: #f8f9fa;
+    border-left: 3px solid #007bff;
+    margin-left: 15px;
+    border-radius: 4px;
+    overflow: hidden;
+    animation: slideDown 0.3s ease;
+}
+
+.submenu-item {
+    padding: 8px 15px;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.submenu-item:hover {
+    background: #e9ecef;
+    padding-left: 20px;
+}
+
+.submenu-item.active {
+    background: #007bff;
+    color: white;
+}
+
+.submenu-item.active:hover {
+    background: #0056b3;
+}
+
+.submenu-item .flag {
+    margin-right: 8px;
+    font-size: 1rem;
+}
+
+.submenu-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 0;
+    background: #007bff;
+    transition: height 0.2s ease;
+}
+
+.submenu-item:hover::before {
+    height: 60%;
+}
+
+.submenu-item.active::before {
+    height: 100%;
+    background: rgba(255, 255, 255, 0.3);
 }
 
 /* Ajuste para el selector de idioma */
@@ -253,6 +325,20 @@
                 padding: 8px 15px;
                 font-size: 0.9rem;
             }
+
+            /* Ajustes para móviles en el menú de perfil */
+            .dropdown-menu {
+                min-width: 180px;
+                right: -10px;
+            }
+
+            .language-submenu {
+                margin-left: 10px;
+            }
+
+            .submenu-item {
+                padding: 10px 12px;
+            }
         }
 
         /* Móviles pequeños */
@@ -276,5 +362,14 @@
             .nav-menu {
                 top: 55px;
                 height: calc(100vh - 55px);
+            }
+
+            .dropdown-menu {
+                min-width: 160px;
+                right: -15px;
+            }
+
+            .submenu-item .flag {
+                font-size: 0.9rem;
             }
         }

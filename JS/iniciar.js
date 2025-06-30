@@ -8,7 +8,7 @@ let authState = {
     userRole: null,
     lastCheck: 0,
     tokenValid: false,
-    fastRedirectEnabled: true
+    fastRedirectEnabled: false // Desactivamos la redirección automática
 };
 
 // Constantes de tiempo optimizadas
@@ -648,42 +648,22 @@ async function login(email, password) {
         authState.lastCheck = Date.now();
 
         // Guardar info en cache
-        userInfoCache.set({
+        const userData = {
             role: userRole,
             userId: result.user?.id,
             email: email,
             name: result.user?.name || email.split('@')[0],
             profile_image: result.user?.profile_image || '/Img/default-avatar.png'
-        });
+        };
+        userInfoCache.set(userData);
 
         console.log('👤 Role:', userRole);
 
-        // Actualizar imágenes de perfil en todas las páginas
-        if (result.user?.profile_image) {
-            setTimeout(() => {
-                const profileImages = document.querySelectorAll('#profileImage, #dropdownProfileImage');
-                profileImages.forEach(img => {
-                    img.src = result.user.profile_image;
-                });
-            }, 100);
-        }
+        // Actualizar la interfaz para mostrar el menú de perfil
+        updateAuthUI();
 
-        // Actualizar nombre de usuario en todas las páginas
-        if (result.user?.name) {
-            setTimeout(() => {
-                const userNameElements = document.querySelectorAll('#dropdownUserName');
-                userNameElements.forEach(el => {
-                    el.textContent = result.user.name;
-                });
-            }, 100);
-        }
-
-        // Redirección ultra-rápida sin mensaje
-        const targetUrl = userRole === 'admin' ? '/admin-panel.php' : '/user-panel.php';
-        console.log('🚀 Redirigiendo instantáneamente a:', targetUrl);
-        
-        // Redirección inmediata
-        window.location.replace(targetUrl);
+        // Mostrar mensaje de bienvenida
+        showAlert('loginAlert', 'Inicio de sesión exitoso. Bienvenido!', 'success');
         
         return true;
     } catch (error) {
@@ -732,14 +712,51 @@ async function submitComplaint(subject, description) {
     }
 }
 
+// Función para actualizar la interfaz de usuario según el estado de autenticación
+function updateAuthUI() {
+    const loginButton = document.getElementById('loginButton');
+    const profileMenu = document.getElementById('profileMenu');
+    const panelRedirect = document.getElementById('panelRedirect');
+    
+    if (hasValidTokenUltraFast()) {
+        // Obtener datos del usuario desde el cache
+        const cachedUser = userInfoCache.get();
+        
+        if (cachedUser) {
+            // Actualizar imágenes de perfil
+            const profileImages = document.querySelectorAll('#profileImage, #dropdownProfileImage');
+            profileImages.forEach(img => {
+                img.src = cachedUser.profile_image || '/Img/default-avatar.png';
+            });
+            
+            // Actualizar nombre de usuario
+            const userNameElements = document.querySelectorAll('#dropdownUserName');
+            userNameElements.forEach(el => {
+                el.textContent = cachedUser.name || cachedUser.email.split('@')[0];
+            });
+        }
+        
+        // Mostrar menú de perfil y ocultar botón de login
+        if (loginButton) loginButton.style.display = 'none';
+        if (profileMenu) profileMenu.style.display = 'block';
+        if (panelRedirect) panelRedirect.style.display = 'block';
+    } else {
+        // Mostrar botón de login y ocultar menú de perfil
+        if (loginButton) loginButton.style.display = 'block';
+        if (profileMenu) profileMenu.style.display = 'none';
+        if (panelRedirect) panelRedirect.style.display = 'none';
+    }
+}
+
 // Hacer las funciones globales para que funcionen desde el HTML
 window.showForgotPassword = showForgotPassword;
 window.showResetPassword = showResetPassword;
 window.backToLogin = backToLogin;
+window.updateAuthUI = updateAuthUI;
 
-// Inicialización ultra-optimizada al cargar la página
+// Inicialización al cargar la página
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Inicializando sistema de autenticación optimizado...');
+    console.log('🚀 Inicializando sistema de autenticación...');
     
     const urlParams = new URLSearchParams(window.location.search);
     const resetToken = urlParams.get('token');
@@ -769,21 +786,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (justLoggedIn) {
         console.log('🚫 Post-login, evitando verificación');
         sessionStorage.removeItem('just_logged_in');
-        showLogin();
-        return;
     }
     
-    // 3. Redirección ultra-rápida si hay token válido
-    const redirected = ultraFastRedirect();
+    // 3. Actualizar la interfaz de usuario
+    updateAuthUI();
     
-    // 4. Si no se redirigió, mostrar login
-    if (!redirected) {
-        console.log('📝 Mostrando formulario de login');
+    // 4. Mostrar el formulario de login si no hay token
+    if (!localStorage.getItem('jwt_token')) {
         showLogin();
+    } else {
+        // Mostramos el botón de redirección manual
+        const panelRedirect = document.getElementById('panelRedirect');
+        if (panelRedirect) {
+            panelRedirect.style.display = 'block';
+        }
     }
-    
-    // 5. Iniciar sistema de monitoreo inteligente
-    startIntelligentMonitoring();
 });
 
 // Event Listeners optimizados
