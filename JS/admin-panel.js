@@ -153,7 +153,11 @@ async function loadAdminMessages() {
             }
             
             const formattedDate = formatMessageDate(complaint.created_at);
-            const avatar = complaint.user_email.charAt(0).toUpperCase();
+                // Usar avatar del usuario si está disponible
+    const avatarImage = complaint.user_profile_image || '/Img/default-avatar.png';
+    const avatar = `<div class="sender-avatar">
+        <img src="${avatarImage}" alt="${complaint.user_email}">
+    </div>`;
             
             messageElement.innerHTML = `
                 <div class="message-header" onclick="toggleMessageDetail(${complaint.id})">

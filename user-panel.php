@@ -88,6 +88,22 @@
             </div>
         </div>
 
+<div class="profile-picture-section">
+    <h3>Foto de Perfil</h3>
+    <div class="current-picture">
+        <img id="currentProfileImage" src="/Img/default-avatar.png" alt="Tu foto actual">
+    </div>
+    <form id="profilePictureForm">
+        <div class="form-group">
+            <label for="newProfileImage">Seleccionar nueva imagen:</label>
+            <input type="file" id="newProfileImage" name="newProfileImage" accept="image/*">
+        </div>
+        <button type="submit" class="btn">
+            <i class="fi fi-rr-upload"></i> Actualizar Foto
+        </button>
+    </form>
+</div>
+
         <!-- Grid de secciones -->
         <div class="sections-grid">
             <!-- Sección de Quejas y Sugerencias -->
