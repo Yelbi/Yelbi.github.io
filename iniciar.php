@@ -26,38 +26,48 @@
             <i class="fi fi-rr-menu-burger"></i>
         </div>
         
-        <!-- Contenedor para botones de autenticación -->
-        <div class="auth-buttons">
-            <!-- Botón de idioma (visible cuando no autenticado) -->
-            <a href="#" class="user-btn" id="languageButton">
-                <i class="fi fi-rr-globe"></i>
-            </a>
-            
-            <!-- Botón de login (visible cuando no autenticado) -->
-            <a href="/iniciar.php" class="user-btn" id="loginButton">
+        <!-- Botón unificado de usuario/idioma -->
+        <div class="unified-menu">
+            <!-- Botón principal (visible cuando no autenticado) -->
+            <div class="user-btn" id="unifiedButton">
                 <i class="fi fi-rr-user"></i>
-            </a>
-        </div>
-        
-        <!-- Menú de perfil (visible solo cuando autenticado) -->
-        <div class="profile-menu" id="profileMenu" style="display: none;">
-            <div class="profile-icon" id="profileMenuToggle">
+            </div>
+            
+            <!-- Menú de perfil (visible solo cuando autenticado) -->
+            <div class="profile-icon" id="profileIcon" style="display: none;">
                 <img src="/Img/default-avatar.png" alt="Foto de perfil" id="profileImage">
             </div>
+            
+            <!-- Menú desplegable unificado -->
             <div class="dropdown-menu" id="dropdownMenu">
-                <div class="dropdown-header">
+                <!-- Header para usuarios autenticados -->
+                <div class="dropdown-header" id="userHeader" style="display: none;">
                     <img src="/Img/default-avatar.png" alt="Foto de perfil" id="dropdownProfileImage">
                     <span class="dropdown-user-name" id="dropdownUserName">Usuario</span>
                 </div>
-                <a href="/user-panel.php" class="dropdown-item">
-                    <i class="fi fi-rr-user"></i> Mi perfil
-                </a>
-                <a href="#" class="dropdown-item" onclick="toggleLanguage()">
-                    <i class="fi fi-rr-globe"></i> Cambiar idioma
-                </a>
+                
+                <!-- Opciones para usuarios no autenticados -->
+                <div class="guest-options" id="guestOptions">
+                    <a href="/iniciar.php" class="dropdown-item">
+                        <i class="fi fi-rr-sign-in"></i> Iniciar sesión
+                    </a>
+                </div>
+                
+                <!-- Opciones para usuarios autenticados -->
+                <div class="user-options" id="userOptions" style="display: none;">
+                    <a href="/user-panel.php" class="dropdown-item">
+                        <i class="fi fi-rr-user"></i> Mi perfil
+                    </a>
+                    <div class="divider"></div>
+                    <a href="#" class="dropdown-item" onclick="logout()">
+                        <i class="fi fi-rr-sign-out"></i> Cerrar sesión
+                    </a>
+                </div>
+                
+                <!-- Opción de idioma (siempre visible) -->
                 <div class="divider"></div>
-                <a href="#" class="dropdown-item" onclick="logout()">
-                    <i class="fi fi-rr-sign-out"></i> Cerrar sesión
+                <a href="#" class="dropdown-item" id="languageOption" onclick="toggleLanguage()">
+                    <i class="fi fi-rr-globe"></i> Cambiar idioma
                 </a>
             </div>
         </div>
