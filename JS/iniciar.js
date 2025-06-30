@@ -662,8 +662,10 @@ async function login(email, password) {
         // Actualizar la interfaz para mostrar el menú de perfil
         updateAuthUI();
 
-        // Mostrar mensaje de bienvenida
-        showAlert('loginAlert', 'Inicio de sesión exitoso. Bienvenido!', 'success');
+        // REDIRECCIÓN AUTOMÁTICA AL PANEL
+        const targetUrl = userRole === 'admin' ? '/admin-panel.php' : '/user-panel.php';
+        console.log('🚀 Redirigiendo a:', targetUrl);
+        window.location.href = targetUrl;
         
         return true;
     } catch (error) {
@@ -782,25 +784,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
-    // 2. Si acabamos de hacer login, evitar verificación
+    // 2. Si hay token válido, redirigir automáticamente
+    if (hasValidTokenUltraFast()) {
+        console.log('🔑 Usuario autenticado, redirigiendo...');
+        const userRole = authState.userRole;
+        const targetUrl = userRole === 'admin' ? '/admin-panel.php' : '/user-panel.php';
+        window.location.href = targetUrl;
+        return;
+    }
+    
+    // 3. Si acabamos de hacer login, evitar verificación
     if (justLoggedIn) {
         console.log('🚫 Post-login, evitando verificación');
         sessionStorage.removeItem('just_logged_in');
     }
     
-    // 3. Actualizar la interfaz de usuario
-    updateAuthUI();
-    
-    // 4. Mostrar el formulario de login si no hay token
-    if (!localStorage.getItem('jwt_token')) {
-        showLogin();
-    } else {
-        // Mostramos el botón de redirección manual
-        const panelRedirect = document.getElementById('panelRedirect');
-        if (panelRedirect) {
-            panelRedirect.style.display = 'block';
-        }
-    }
+    // 4. Mostrar formulario de login
+    showLogin();
 });
 
 // Event Listeners optimizados

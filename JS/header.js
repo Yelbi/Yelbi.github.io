@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const navMenu = document.getElementById('navMenu');
     const profileMenuToggle = document.getElementById('profileMenuToggle');
     const dropdownMenu = document.getElementById('dropdownMenu');
-    const dropdownUserName = document.getElementById('dropdownUserName');
+    const dropdownUserName = document.querySelector('.dropdown-user-name');
     const profileImage = document.getElementById('profileImage');
     const dropdownProfileImage = document.getElementById('dropdownProfileImage');
 
@@ -70,25 +70,28 @@ document.addEventListener('DOMContentLoaded', function() {
         const token = localStorage.getItem('jwt_token');
         if (token) {
             try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                if (payload.name) {
-                    dropdownUserName.textContent = payload.name;
-                    
-                    // Cargar imagen de perfil si existe
-                    if (payload.profile_image) {
-                        profileImage.src = payload.profile_image;
-                        dropdownProfileImage.src = payload.profile_image;
-                    }
-                }
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        
+        // Buscar el nombre en múltiples campos posibles
+        const userName = payload.name || payload.username || payload.email || 'Usuario';
+        
+        // Actualizar el nombre en todas las ubicaciones
+        dropdownUserName.textContent = userName;
+        
+        // Cargar imagen de perfil si existe
+        if (payload.profile_image) {
+            profileImage.src = payload.profile_image;
+            dropdownProfileImage.src = payload.profile_image;
+        }
 
-                // Mostrar menú de perfil y ocultar botón de login
-                const loginButton = document.getElementById('loginButton');
-                const profileMenu = document.getElementById('profileMenu');
-                if (loginButton) loginButton.style.display = 'none';
-                if (profileMenu) profileMenu.style.display = 'block';
-            } catch (e) {
-                console.error('Error decoding token', e);
-            }
+        // Mostrar menú de perfil y ocultar botón de login
+        const loginButton = document.getElementById('loginButton');
+        const profileMenu = document.getElementById('profileMenu');
+        if (loginButton) loginButton.style.display = 'none';
+        if (profileMenu) profileMenu.style.display = 'block';
+    } catch (e) {
+        console.error('Error decoding token', e);
+    }
         }
     }
 
