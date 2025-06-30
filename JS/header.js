@@ -2,12 +2,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     const menuToggle = document.getElementById('menuToggle');
     const navMenu = document.getElementById('navMenu');
-    const profileMenuToggle = document.getElementById('profileMenuToggle');
+    const unifiedButton = document.getElementById('unifiedButton');
+    const profileIcon = document.getElementById('profileIcon');
     const dropdownMenu = document.getElementById('dropdownMenu');
     const dropdownUserName = document.querySelector('.dropdown-user-name');
     const profileImage = document.getElementById('profileImage');
     const dropdownProfileImage = document.getElementById('dropdownProfileImage');
-    const languageButton = document.getElementById('languageButton');
 
     // Verificar que los elementos existan
     if (!menuToggle || !navMenu) {
@@ -52,32 +52,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Lógica para el menú de perfil
-    if (profileMenuToggle && dropdownMenu) {
-        profileMenuToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            dropdownMenu.classList.toggle('active');
-        });
+    // Lógica para el menú unificado
+    function setupUnifiedMenu() {
+        // Click en botón unificado (no autenticado)
+        if (unifiedButton) {
+            unifiedButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('active');
+            });
+        }
+
+        // Click en icono de perfil (autenticado)
+        if (profileIcon) {
+            profileIcon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('active');
+            });
+        }
 
         // Cerrar el menú desplegable al hacer clic en cualquier lugar
         document.addEventListener('click', function(e) {
-            if (dropdownMenu.classList.contains('active') && 
-                !e.target.closest('.profile-menu')) {
+            if (dropdownMenu && dropdownMenu.classList.contains('active') && 
+                !e.target.closest('.unified-menu')) {
                 dropdownMenu.classList.remove('active');
             }
         });
     }
 
+    setupUnifiedMenu();
+
     // Actualizar interfaz según estado de autenticación
     updateAuthUI();
-
-    // Configurar botón de idioma
-    if (languageButton) {
-        languageButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            toggleLanguage();
-        });
-    }
 });
 
 // Función para actualizar la UI según autenticación
@@ -85,9 +90,14 @@ function updateAuthUI() {
     const token = localStorage.getItem('jwt_token');
     const isAuthenticated = token && token.trim() !== '';
     
-    const loginButton = document.getElementById('loginButton');
-    const profileMenu = document.getElementById('profileMenu');
-    const languageButton = document.getElementById('languageButton');
+    const unifiedButton = document.getElementById('unifiedButton');
+    const profileIcon = document.getElementById('profileIcon');
+    const userHeader = document.getElementById('userHeader');
+    const guestOptions = document.getElementById('guestOptions');
+    const userOptions = document.getElementById('userOptions');
+    const dropdownUserName = document.getElementById('dropdownUserName');
+    const profileImage = document.getElementById('profileImage');
+    const dropdownProfileImage = document.getElementById('dropdownProfileImage');
     
     if (isAuthenticated) {
         // Obtener datos del usuario
@@ -99,15 +109,19 @@ function updateAuthUI() {
         if (profileImage) profileImage.src = profileImageUrl;
         if (dropdownProfileImage) dropdownProfileImage.src = profileImageUrl;
         
-        // Mostrar menú de perfil y ocultar botones de login
-        if (loginButton) loginButton.style.display = 'none';
-        if (languageButton) languageButton.style.display = 'none';
-        if (profileMenu) profileMenu.style.display = 'block';
+        // Mostrar elementos de usuario autenticado
+        if (unifiedButton) unifiedButton.style.display = 'none';
+        if (profileIcon) profileIcon.style.display = 'block';
+        if (userHeader) userHeader.style.display = 'flex';
+        if (guestOptions) guestOptions.style.display = 'none';
+        if (userOptions) userOptions.style.display = 'block';
     } else {
-        // Mostrar botones de login/idioma y ocultar perfil
-        if (loginButton) loginButton.style.display = 'block';
-        if (languageButton) languageButton.style.display = 'block';
-        if (profileMenu) profileMenu.style.display = 'none';
+        // Mostrar elementos de invitado
+        if (unifiedButton) unifiedButton.style.display = 'block';
+        if (profileIcon) profileIcon.style.display = 'none';
+        if (userHeader) userHeader.style.display = 'none';
+        if (guestOptions) guestOptions.style.display = 'block';
+        if (userOptions) userOptions.style.display = 'none';
     }
 }
 
