@@ -121,24 +121,38 @@ async function checkTokenValidity() {
 
 // Función para limpiar completamente la sesión
 function clearUserSession() {
-    // Limpiar localStorage
-    localStorage.removeItem('jwt_token');
-    localStorage.removeItem('user_name');
-    localStorage.removeItem('profile_image');
-    localStorage.removeItem('user_id');
-    localStorage.removeItem('user_email');
+    const userId = localStorage.getItem('user_id');
     
-    // Limpiar sessionStorage también por si acaso
-    sessionStorage.removeItem('jwt_token');
-    sessionStorage.removeItem('user_name');
-    sessionStorage.removeItem('profile_image');
-    sessionStorage.removeItem('user_id');
-    sessionStorage.removeItem('user_email');
+    // Si tenemos un usuario, mantener solo su imagen
+    if (userId) {
+        const userImageKey = getUserImageKey(userId);
+        const userImage = localStorage.getItem(userImageKey);
+        
+        // Limpiar todo el localStorage excepto la imagen de este usuario
+        const allKeys = Object.keys(localStorage);
+        for (const key of allKeys) {
+            if (key !== userImageKey) {
+                localStorage.removeItem(key);
+            }
+        }
+        
+        // Restaurar la imagen si existía
+        if (userImage) {
+            localStorage.setItem(userImageKey, userImage);
+        }
+    } else {
+        // Limpiar todo si no hay usuario
+        localStorage.clear();
+    }
+    
+    // Limpiar sessionStorage
+    sessionStorage.clear();
 }
 
 // Función mejorada para actualizar la UI según autenticación
 function updateAuthUI() {
     const token = localStorage.getItem('jwt_token');
+    const userId = localStorage.getItem('user_id');
     const isAuthenticated = token && token.trim() !== '' && !isTokenExpired(token);
     
     const unifiedButton = document.getElementById('unifiedButton');
@@ -150,10 +164,13 @@ function updateAuthUI() {
     const profileImage = document.getElementById('profileImage');
     const dropdownProfileImage = document.getElementById('dropdownProfileImage');
     
-    if (isAuthenticated) {
-        // Obtener datos del usuario
+    if (isAuthenticated && userId) {
+        // Obtener nombre de usuario
         const userName = localStorage.getItem('user_name') || 'Usuario';
-        let profileImageUrl = localStorage.getItem('profile_image') || '/Img/default-avatar.png';
+        
+        // Obtener imagen específica del usuario
+        const userImageKey = getUserImageKey(userId);
+        let profileImageUrl = localStorage.getItem(userImageKey) || '/Img/default-avatar.png';
         
         // Asegurar que la URL de la imagen sea absoluta
         if (profileImageUrl && !profileImageUrl.startsWith('http') && !profileImageUrl.startsWith('/')) {
@@ -161,20 +178,18 @@ function updateAuthUI() {
         }
         
         // Agregar timestamp para evitar cache de imágenes
-        if (profileImageUrl !== '/Img/default-avatar.png') {
-            profileImageUrl += '?v=' + Date.now();
-        }
+        const timestampedUrl = profileImageUrl + '?v=' + Date.now();
         
         // Actualizar elementos
         if (dropdownUserName) dropdownUserName.textContent = userName;
         if (profileImage) {
-            profileImage.src = profileImageUrl;
+            profileImage.src = timestampedUrl;
             profileImage.onerror = function() {
                 this.src = '/Img/default-avatar.png';
             };
         }
         if (dropdownProfileImage) {
-            dropdownProfileImage.src = profileImageUrl;
+            dropdownProfileImage.src = timestampedUrl;
             dropdownProfileImage.onerror = function() {
                 this.src = '/Img/default-avatar.png';
             };
@@ -206,17 +221,15 @@ function isTokenExpired(token) {
     try {
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => 
+            '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
 
         const decoded = JSON.parse(jsonPayload);
         const currentTime = Date.now() / 1000;
         
         return decoded.exp < currentTime;
     } catch (error) {
-        console.error('Error decodificando token:', error);
-        return true; // Si no se puede decodificar, considerar expirado
+        return true;
     }
 }
 
@@ -270,7 +283,11 @@ function getCurrentLanguage() {
 
 // Función global para actualizar foto de perfil desde otras partes de la aplicación
 window.updateProfileImage = function(newImageUrl) {
-    localStorage.setItem('profile_image', newImageUrl);
+    const userId = localStorage.getItem('user_id');
+    if (userId) {
+        const userImageKey = getUserImageKey(userId);
+        localStorage.setItem(userImageKey, newImageUrl);
+    }
     updateAuthUI();
 };
 

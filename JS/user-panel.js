@@ -9,14 +9,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadProfile() {
     try {
+        // Verificar primero si tenemos un token válido
+        const token = localStorage.getItem('jwt_token');
+        if (!token || isTokenExpired(token)) {
+            clearUserSession();
+            window.location.href = '/iniciar.php';
+            return;
+        }
+
         const result = await apiRequest('profile', {}, 'GET');
         if (result.user) {
             document.getElementById('profileName').textContent = result.user.name;
             document.getElementById('profileEmail').textContent = result.user.email;
             
-            // Actualizar datos en localStorage para sincronización
+            // Guardar datos importantes
             localStorage.setItem('user_name', result.user.name);
             localStorage.setItem('user_email', result.user.email);
+            localStorage.setItem('user_id', result.user.id);
             
         } else {
             throw new Error('No se pudo cargar el perfil');
@@ -25,7 +34,7 @@ async function loadProfile() {
         console.error('Profile load error:', error);
         
         // Manejar específicamente errores 401 y 403
-        if (error.message.includes('401') || error.message.includes('403')) {
+        if (error.message.includes('401') || error.message.includes('403') || error.message.includes('Sesión expirada')) {
             clearUserSession();
             window.location.href = '/iniciar.php';
         } else {
@@ -102,8 +111,10 @@ async function apiRequest(action, data = {}, method = 'POST') {
         
         // Verificar si la respuesta indica que el token ha expirado
         if (response.status === 401 || response.status === 403) {
+            // Si es error de autenticación, limpiar y redirigir
             clearUserSession();
-            throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+            window.location.href = '/iniciar.php';
+            throw new Error('Sesión expirada. Redirigiendo...');
         }
         
         const textResponse = await response.text();
@@ -237,25 +248,15 @@ document.getElementById('profilePictureForm').addEventListener('submit', async (
         const result = await response.json();
         
         if (response.ok && result.profileImage) {
-            // Actualizar imagen localmente con cache busting
-            const newImageUrl = result.profileImage;
-            const timestampedUrl = newImageUrl + '?v=' + Date.now();
-            
-            // Actualizar imagen actual en la página
-            const currentImage = document.getElementById('currentProfileImage');
-            if (currentImage) {
-                currentImage.src = timestampedUrl;
+            const userId = localStorage.getItem('user_id');
+            if (userId) {
+                // Guardar en localStorage con clave específica
+                const userImageKey = getUserImageKey(userId);
+                localStorage.setItem(userImageKey, result.profileImage);
             }
             
-            // Guardar en localStorage (sin timestamp para evitar problemas)
-            localStorage.setItem('profile_image', newImageUrl);
-            
-            // Actualizar UI del header usando la función global
-            if (typeof window.updateProfileImage === 'function') {
-                window.updateProfileImage(newImageUrl);
-            } else if (typeof updateAuthUI === 'function') {
-                updateAuthUI();
-            }
+            // Actualizar todos los elementos de imagen
+            updateImageElements(result.profileImage);
             
             showAlert('profileAlert', 'Foto de perfil actualizada correctamente', 'success');
             
@@ -279,46 +280,93 @@ document.getElementById('profilePictureForm').addEventListener('submit', async (
     }
 });
 
+function getUserImageKey(userId) {
+    return `profile_image_${userId}`;
+}
+
+// Función auxiliar para actualizar elementos de imagen
+function updateImageElements(imageUrl) {
+    // Usar timestamp para evitar cache
+    const timestampedUrl = imageUrl + '?v=' + Date.now();
+    
+    // Actualizar imagen actual en la página
+    const currentImage = document.getElementById('currentProfileImage');
+    if (currentImage) {
+        currentImage.src = timestampedUrl;
+        currentImage.onerror = function() {
+            this.src = '/Img/default-avatar.png';
+        };
+    }
+    
+    // Actualizar UI del header usando la función global
+    if (typeof window.updateProfileImage === 'function') {
+        window.updateProfileImage(imageUrl);
+    } else if (typeof updateAuthUI === 'function') {
+        updateAuthUI();
+    }
+}
+
+
 // Función mejorada para cargar la imagen de perfil
 async function loadProfileImage() {
     try {
+        const userId = localStorage.getItem('user_id');
+        if (!userId) {
+            throw new Error('ID de usuario no encontrado');
+        }
+        
+        // Obtener clave específica del usuario
+        const userImageKey = getUserImageKey(userId);
+        
+        // Intentar con la imagen en cache (localStorage)
+        const cachedImage = localStorage.getItem(userImageKey);
+        if (cachedImage) {
+            updateImageElements(cachedImage);
+            return;
+        }
+
+        // Si no hay en cache, cargar desde el servidor
         const result = await apiRequest('get-profile-image', {}, 'GET');
         if (result.profileImage) {
-            // Usar timestamp para evitar cache
-            const imageUrl = result.profileImage;
-            const timestampedUrl = imageUrl + '?v=' + Date.now();
-            
-            const currentImage = document.getElementById('currentProfileImage');
-            if (currentImage) {
-                currentImage.src = timestampedUrl;
-                currentImage.onerror = function() {
-                    this.src = '/Img/default-avatar.png';
-                };
-            }
-            
-            // Guardar en localStorage (sin timestamp)
-            localStorage.setItem('profile_image', imageUrl);
-            
-            // Actualizar UI del header
-            if (typeof window.updateProfileImage === 'function') {
-                window.updateProfileImage(imageUrl);
-            } else if (typeof updateAuthUI === 'function') {
-                updateAuthUI();
-            }
+            // Guardar en localStorage con clave específica
+            localStorage.setItem(userImageKey, result.profileImage);
+            updateImageElements(result.profileImage);
+        } else {
+            // Usar imagen por defecto si no hay
+            updateImageElements('/Img/default-avatar.png');
         }
     } catch (error) {
         console.error('Error cargando imagen de perfil:', error);
         // Usar imagen por defecto si hay error
-        const currentImage = document.getElementById('currentProfileImage');
-        if (currentImage) {
-            currentImage.src = '/Img/default-avatar.png';
-        }
+        updateImageElements('/Img/default-avatar.png');
         
         // Si es error de autenticación, limpiar sesión
         if (error.message.includes('401') || error.message.includes('403')) {
             clearUserSession();
             window.location.href = '/iniciar.php';
         }
+    }
+}
+
+// Función auxiliar para actualizar elementos de imagen
+function updateImageElements(imageUrl) {
+    // Usar timestamp para evitar cache
+    const timestampedUrl = imageUrl + '?v=' + Date.now();
+    
+    // Actualizar imagen actual en la página
+    const currentImage = document.getElementById('currentProfileImage');
+    if (currentImage) {
+        currentImage.src = timestampedUrl;
+        currentImage.onerror = function() {
+            this.src = '/Img/default-avatar.png';
+        };
+    }
+    
+    // Actualizar UI del header usando la función global
+    if (typeof window.updateProfileImage === 'function') {
+        window.updateProfileImage(imageUrl);
+    } else if (typeof updateAuthUI === 'function') {
+        updateAuthUI();
     }
 }
 

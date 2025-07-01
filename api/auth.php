@@ -238,7 +238,7 @@ function login($user, $security, $input) {
 
             // Generar token JWT
             $issuedAt = time();
-            $expirationTime = $issuedAt + 3600;
+            $expirationTime = $issuedAt + 86400; // 24 horas
             
             $payload = [
                 'iat' => $issuedAt,
@@ -527,17 +527,19 @@ function getProfileImage() {
         $stmt->execute([$userId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        if ($result && $result['profile_image']) {
-            jsonResponse([
-                'success' => true,
-                'profileImage' => 'https://seres.blog/' . $result['profile_image']
-            ]);
+        $imagePath = $result['profile_image'] ?? '';
+        $baseUrl = 'https://seres.blog/';
+        
+        if (!empty($imagePath)) {
+            $fullUrl = $baseUrl . $imagePath;
         } else {
-            jsonResponse([
-                'success' => true,
-                'profileImage' => 'https://seres.blog/Img/default-avatar.png'
-            ]);
+            $fullUrl = $baseUrl . 'Img/default-avatar.png';
         }
+        
+        jsonResponse([
+            'success' => true,
+            'profileImage' => $fullUrl
+        ]);
         
     } catch (Exception $e) {
         jsonResponse(['error' => $e->getMessage()], 500);
