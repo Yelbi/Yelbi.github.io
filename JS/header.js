@@ -81,21 +81,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     setupUnifiedMenu();
 
-    // Actualizar interfaz según estado de autenticación al cargar
-    updateAuthUI();
+    // Verificar token al cargar la página
+    checkTokenValidity();
 });
 
 // Función mejorada para validar token
 async function checkTokenValidity() {
-    const token = localStorage.getItem('jwt_token');
+    const token = getStoredToken();
     if (!token) {
         updateAuthUI();
         return;
     }
 
+    // Verificar si el token ha expirado localmente primero
+    if (isTokenExpired(token)) {
+        console.log('Token expirado localmente, limpiando sesión...');
+        clearUserSession();
+        updateAuthUI();
+        return;
+    }
+
     try {
-        // Verificar si el token ha expirado mediante una llamada al API
-        const response = await fetch('https://seres.blog/api/auth.php?action=validate-token', {
+        // Verificar token en el servidor
+        const response = await fetch('https://seres.blog/api/auth.php?action=verify-session', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -104,19 +112,27 @@ async function checkTokenValidity() {
         });
 
         if (!response.ok) {
-            throw new Error('Token inválido');
+            throw new Error('Token inválido en servidor');
         }
 
         const result = await response.json();
         if (!result.valid) {
-            throw new Error('Token expirado');
+            throw new Error('Token no válido');
         }
 
+        // Token válido, actualizar UI
+        updateAuthUI();
+
     } catch (error) {
-        console.log('Token expirado o inválido, limpiando sesión...');
+        console.log('Token inválido, limpiando sesión...', error.message);
         clearUserSession();
         updateAuthUI();
     }
+}
+
+// Función para obtener token almacenado (prioriza localStorage)
+function getStoredToken() {
+    return localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
 }
 
 // Función para limpiar completamente la sesión
@@ -145,14 +161,19 @@ function clearUserSession() {
         localStorage.clear();
     }
     
-    // Limpiar sessionStorage
+    // Limpiar sessionStorage también
     sessionStorage.clear();
+}
+
+// Función helper para obtener clave de imagen del usuario
+function getUserImageKey(userId) {
+    return `profile_image_${userId}`;
 }
 
 // Función mejorada para actualizar la UI según autenticación
 function updateAuthUI() {
-    const token = localStorage.getItem('jwt_token');
-    const userId = localStorage.getItem('user_id');
+    const token = getStoredToken();
+    const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
     const isAuthenticated = token && token.trim() !== '' && !isTokenExpired(token);
     
     const unifiedButton = document.getElementById('unifiedButton');
@@ -166,7 +187,7 @@ function updateAuthUI() {
     
     if (isAuthenticated && userId) {
         // Obtener nombre de usuario
-        const userName = localStorage.getItem('user_name') || 'Usuario';
+        const userName = localStorage.getItem('user_name') || sessionStorage.getItem('user_name') || 'Usuario';
         
         // Obtener imagen específica del usuario
         const userImageKey = getUserImageKey(userId);
@@ -220,6 +241,8 @@ function updateAuthUI() {
 function isTokenExpired(token) {
     try {
         const base64Url = token.split('.')[1];
+        if (!base64Url) return true;
+        
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => 
             '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
@@ -227,8 +250,10 @@ function isTokenExpired(token) {
         const decoded = JSON.parse(jsonPayload);
         const currentTime = Date.now() / 1000;
         
-        return decoded.exp < currentTime;
+        // Agregar margen de 5 minutos para evitar problemas de sincronización
+        return decoded.exp < (currentTime + 300);
     } catch (error) {
+        console.error('Error decodificando token:', error);
         return true;
     }
 }
@@ -283,7 +308,7 @@ function getCurrentLanguage() {
 
 // Función global para actualizar foto de perfil desde otras partes de la aplicación
 window.updateProfileImage = function(newImageUrl) {
-    const userId = localStorage.getItem('user_id');
+    const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
     if (userId) {
         const userImageKey = getUserImageKey(userId);
         localStorage.setItem(userImageKey, newImageUrl);
@@ -293,7 +318,7 @@ window.updateProfileImage = function(newImageUrl) {
 
 // Sincronización mejorada entre pestañas
 window.addEventListener('storage', (event) => {
-    if (event.key === 'user_name' || event.key === 'profile_image' || event.key === 'jwt_token') {
+    if (event.key === 'user_name' || event.key === 'jwt_token' || event.key?.startsWith('profile_image_')) {
         updateAuthUI();
     }
     
@@ -303,3 +328,19 @@ window.addEventListener('storage', (event) => {
         updateAuthUI();
     }
 });
+
+// Función para establecer datos de usuario después del login
+window.setUserData = function(userData, token) {
+    // Guardar en localStorage por defecto
+    localStorage.setItem('jwt_token', token);
+    localStorage.setItem('user_id', userData.id);
+    localStorage.setItem('user_name', userData.name);
+    localStorage.setItem('user_email', userData.email);
+    
+    if (userData.role) {
+        localStorage.setItem('user_role', userData.role);
+    }
+    
+    // Actualizar UI inmediatamente
+    updateAuthUI();
+};

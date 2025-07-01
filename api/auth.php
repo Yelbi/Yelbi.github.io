@@ -2,7 +2,7 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-// api/auth.php
+
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/User.php';
@@ -64,9 +64,6 @@ switch ($method) {
             case 'update-profile-image':
                 updateProfileImage();
                 break;
-            case 'get-profile-image':
-                getProfileImage();
-                break;
             case 'request-password-reset':
                 try {
                     $data = json_decode(file_get_contents('php://input'), true);
@@ -75,7 +72,6 @@ switch ($method) {
                         throw new Exception('Email requerido');
                     }
                     
-                    // Usar $db en lugar de $pdo
                     createPasswordResetTable($db);
                     cleanExpiredTokens($db);
                     $result = requestPasswordReset($data['email'], $db);
@@ -97,7 +93,6 @@ switch ($method) {
                         throw new Exception('Token y nueva contraseña requeridos');
                     }
                     
-                    // CORRECCIÓN: Usar $db en lugar de $pdo
                     $result = resetPassword($data['token'], $data['new_password'], $db);
                     
                     http_response_code(200);
@@ -121,8 +116,14 @@ switch ($method) {
             case 'verify-session':
                 verifySession();
                 break;
+            case 'validate-token':
+                validateToken();
+                break;
             case 'get-complaints':
                 getComplaints();
+                break;
+            case 'get-profile-image':
+                getProfileImage();
                 break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
@@ -190,7 +191,6 @@ function register($user, $security, $input) {
             
             $email_sent = sendEmail($email, "Verifica tu cuenta", $email_body);
             
-            // Para debug, incluir el token en desarrollo
             $response = [
                 'success' => true,
                 'message' => 'Cuenta creada. Revisa tu email para verificar tu cuenta.',
@@ -199,7 +199,7 @@ function register($user, $security, $input) {
             
             if (!$email_sent) {
                 logError("Fallo al enviar email de verificación a: $email");
-                $response['verification_token'] = $verification_token; // Solo para debug
+                $response['verification_token'] = $verification_token;
                 $response['message'] = 'Cuenta creada, pero no se pudo enviar el email. Usa este token para verificación: ' . $verification_token;
             }
 
@@ -213,7 +213,7 @@ function register($user, $security, $input) {
     }
 }
 
-// Función de login
+// Función de login mejorada
 function login($user, $security, $input) {
     try {
         if (!isset($input['email'], $input['password'])) {
@@ -236,15 +236,17 @@ function login($user, $security, $input) {
                 jsonResponse(['error' => 'Debes verificar tu email antes de iniciar sesión'], 403);
             }
 
-            // Generar token JWT
+            // Generar token JWT con tiempo extendido
             $issuedAt = time();
-            $expirationTime = $issuedAt + 86400; // 24 horas
+            $expirationTime = $issuedAt + (7 * 24 * 60 * 60); // 7 días
             
             $payload = [
                 'iat' => $issuedAt,
                 'exp' => $expirationTime,
                 'sub' => $userData['id'],
                 'email' => $userData['email'],
+                'name' => $userData['name'],
+                'role' => $userData['role'],
                 'is_admin' => ($userData['role'] === 'admin')
             ];
 
@@ -253,6 +255,7 @@ function login($user, $security, $input) {
             
             $security->logLoginAttempt($email, $ip, true);
             
+            // Respuesta mejorada con todos los datos necesarios
             jsonResponse([
                 'success' => true,
                 'message' => 'Login exitoso',
@@ -261,9 +264,10 @@ function login($user, $security, $input) {
                     'id' => $userData['id'],
                     'name' => $userData['name'],
                     'email' => $userData['email'],
-                    'role' => $userData['role'] // Asegurar que el rol se envía
+                    'role' => $userData['role']
                 ],
-                'is_admin' => ($userData['role'] === 'admin') // Para compatibilidad
+                'expires_at' => $expirationTime,
+                'is_admin' => ($userData['role'] === 'admin')
             ]);
         } else {
             $security->logLoginAttempt($email, $ip, false);
@@ -300,6 +304,28 @@ function verifyEmail($user, $input) {
     }
 }
 
+// Función mejorada para validar token
+function validateToken() {
+    try {
+        $authData = authenticateJWT();
+        
+        jsonResponse([
+            'valid' => true,
+            'user' => [
+                'id' => $authData['sub'],
+                'email' => $authData['email'],
+                'name' => $authData['name'] ?? '',
+                'role' => $authData['role'] ?? 'user',
+                'is_admin' => $authData['is_admin'] ?? false
+            ],
+            'expires_at' => $authData['exp']
+        ]);
+        
+    } catch (Exception $e) {
+        jsonResponse(['valid' => false, 'error' => $e->getMessage()], 401);
+    }
+}
+
 // Obtener perfil
 function getProfile($user) {
     try {
@@ -314,7 +340,8 @@ function getProfile($user) {
                     'id' => $userData['id'],
                     'name' => $userData['name'],
                     'email' => $userData['email'],
-                    'role' => $userData['role'] // Asegurar que role está incluido
+                    'role' => $userData['role'],
+                    'profile_image' => $userData['profile_image'] ?? null
                 ]
             ]);
         } else {
@@ -330,7 +357,15 @@ function getProfile($user) {
 function verifySession() {
     try {
         $authData = authenticateJWT();
-        jsonResponse(['valid' => true, 'user' => $authData]);
+        jsonResponse([
+            'valid' => true,
+            'user' => [
+                'id' => $authData['sub'],
+                'email' => $authData['email'],
+                'name' => $authData['name'] ?? '',
+                'role' => $authData['role'] ?? 'user'
+            ]
+        ]);
     } catch (Exception $e) {
         jsonResponse(['valid' => false, 'error' => $e->getMessage()], 401);
     }
@@ -410,7 +445,7 @@ function changePassword($user, $input) {
     }
 }
 
-// Cerrar sesión (solo para el frontend)
+// Cerrar sesión
 function logout() {
     jsonResponse([
         'success' => true,
@@ -418,7 +453,7 @@ function logout() {
     ]);
 }
 
-// Middleware de autenticación JWT
+// Middleware de autenticación JWT mejorado
 function authenticateJWT() {
     $headers = getallheaders();
     $authHeader = $headers['Authorization'] ?? '';
@@ -428,7 +463,14 @@ function authenticateJWT() {
         
         try {
             $decoded = JWT::decode($token, new Key(JWT_SECRET, JWT_ALGORITHM));
-            return (array) $decoded;
+            $decodedArray = (array) $decoded;
+            
+            // Verificar que el token no haya expirado
+            if ($decodedArray['exp'] < time()) {
+                throw new Exception('Token expirado');
+            }
+            
+            return $decodedArray;
         } catch (Exception $e) {
             throw new Exception('Token inválido: ' . $e->getMessage());
         }
