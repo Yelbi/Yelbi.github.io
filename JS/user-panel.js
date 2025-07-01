@@ -3,6 +3,8 @@ const API_BASE_URL = 'https://seres.blog/api/auth.php';
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadProfile();
+    await loadProfileImage();
+    setupProfileImagePreview();
 });
 
 async function loadProfile() {
@@ -11,6 +13,11 @@ async function loadProfile() {
         if (result.user) {
             document.getElementById('profileName').textContent = result.user.name;
             document.getElementById('profileEmail').textContent = result.user.email;
+            
+            // Actualizar datos en localStorage para sincronización
+            localStorage.setItem('user_name', result.user.name);
+            localStorage.setItem('user_email', result.user.email);
+            
         } else {
             throw new Error('No se pudo cargar el perfil');
         }
@@ -19,7 +26,7 @@ async function loadProfile() {
         
         // Manejar específicamente errores 401 y 403
         if (error.message.includes('401') || error.message.includes('403')) {
-            localStorage.removeItem('jwt_token');
+            clearUserSession();
             window.location.href = '/iniciar.php';
         } else {
             showAlert('profileAlert', 'Error cargando perfil: ' + error.message, 'error');
@@ -27,8 +34,25 @@ async function loadProfile() {
     }
 }
 
-function logout() {
+// Función para limpiar completamente la sesión
+function clearUserSession() {
+    // Limpiar localStorage
     localStorage.removeItem('jwt_token');
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('profile_image');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('user_email');
+    
+    // Limpiar sessionStorage también
+    sessionStorage.removeItem('jwt_token');
+    sessionStorage.removeItem('user_name');
+    sessionStorage.removeItem('profile_image');
+    sessionStorage.removeItem('user_id');
+    sessionStorage.removeItem('user_email');
+}
+
+function logout() {
+    clearUserSession();
     window.location.href = '/iniciar.php';
 }
 
@@ -55,7 +79,7 @@ function showAlert(elementId, message, type = 'error') {
     }, 5000);
 }
 
-// API Request
+// API Request mejorado
 async function apiRequest(action, data = {}, method = 'POST') {
     try {
         const headers = {
@@ -75,6 +99,13 @@ async function apiRequest(action, data = {}, method = 'POST') {
 
         const url = `${API_BASE_URL}?action=${action}`;
         const response = await fetch(url, options);
+        
+        // Verificar si la respuesta indica que el token ha expirado
+        if (response.status === 401 || response.status === 403) {
+            clearUserSession();
+            throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+        }
+        
         const textResponse = await response.text();
         
         try {
@@ -94,13 +125,7 @@ async function apiRequest(action, data = {}, method = 'POST') {
     }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-    await loadProfile();
-    await loadProfileImage();
-    setupProfileImagePreview(); // Agregar esta línea
-});
-
-// 2. Mejorar la función setupProfileImagePreview con mejor manejo de errores
+// Función mejorada para configurar la previsualización de imagen
 function setupProfileImagePreview() {
     const fileInput = document.getElementById('newProfileImage');
     const fileInfo = document.getElementById('fileInfo');
@@ -113,16 +138,21 @@ function setupProfileImagePreview() {
         fileInput.parentNode.insertBefore(fileInfoElement, fileInput.nextSibling);
     }
     
-    const previewContainer = document.createElement('div');
-    previewContainer.className = 'preview-container';
-    const previewImage = document.createElement('img');
-    previewImage.className = 'preview-image';
-    previewImage.id = 'imagePreview';
-    previewContainer.appendChild(previewImage);
+    // Crear contenedor de previsualización si no existe
+    let previewContainer = document.querySelector('.preview-container');
+    if (!previewContainer) {
+        previewContainer = document.createElement('div');
+        previewContainer.className = 'preview-container';
+        const previewImage = document.createElement('img');
+        previewImage.className = 'preview-image';
+        previewImage.id = 'imagePreview';
+        previewContainer.appendChild(previewImage);
+        
+        const actualFileInfo = document.getElementById('fileInfo');
+        actualFileInfo.parentNode.insertBefore(previewContainer, actualFileInfo.nextSibling);
+    }
     
-    // Insertar después del elemento de información de archivo
-    const actualFileInfo = document.getElementById('fileInfo');
-    actualFileInfo.parentNode.insertBefore(previewContainer, actualFileInfo.nextSibling);
+    const previewImage = document.getElementById('imagePreview');
 
     fileInput.addEventListener('change', function() {
         const file = this.files[0];
@@ -167,7 +197,7 @@ function setupProfileImagePreview() {
     });
 }
 
-// 3. Mejorar el event listener del formulario con mejor feedback visual
+// Event listener mejorado para el formulario de foto de perfil
 document.getElementById('profilePictureForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -197,16 +227,33 @@ document.getElementById('profilePictureForm').addEventListener('submit', async (
             body: formData
         });
         
+        // Verificar si la sesión ha expirado
+        if (response.status === 401 || response.status === 403) {
+            clearUserSession();
+            window.location.href = '/iniciar.php';
+            return;
+        }
+        
         const result = await response.json();
         
-        if (response.ok) {
-            // Actualizar imagen localmente
-            const newImageUrl = result.profileImage + '?t=' + Date.now(); // Cache busting
-            document.getElementById('currentProfileImage').src = newImageUrl;
-            localStorage.setItem('profile_image', result.profileImage);
+        if (response.ok && result.profileImage) {
+            // Actualizar imagen localmente con cache busting
+            const newImageUrl = result.profileImage;
+            const timestampedUrl = newImageUrl + '?v=' + Date.now();
             
-            // Actualizar UI del header si existe la función
-            if (typeof updateAuthUI === 'function') {
+            // Actualizar imagen actual en la página
+            const currentImage = document.getElementById('currentProfileImage');
+            if (currentImage) {
+                currentImage.src = timestampedUrl;
+            }
+            
+            // Guardar en localStorage (sin timestamp para evitar problemas)
+            localStorage.setItem('profile_image', newImageUrl);
+            
+            // Actualizar UI del header usando la función global
+            if (typeof window.updateProfileImage === 'function') {
+                window.updateProfileImage(newImageUrl);
+            } else if (typeof updateAuthUI === 'function') {
                 updateAuthUI();
             }
             
@@ -232,33 +279,50 @@ document.getElementById('profilePictureForm').addEventListener('submit', async (
     }
 });
 
-// 4. Mejorar la función loadProfileImage con mejor manejo de errores
+// Función mejorada para cargar la imagen de perfil
 async function loadProfileImage() {
     try {
         const result = await apiRequest('get-profile-image', {}, 'GET');
         if (result.profileImage) {
-            const imageUrl = result.profileImage + '?t=' + Date.now(); // Cache busting
+            // Usar timestamp para evitar cache
+            const imageUrl = result.profileImage;
+            const timestampedUrl = imageUrl + '?v=' + Date.now();
+            
             const currentImage = document.getElementById('currentProfileImage');
             if (currentImage) {
-                currentImage.src = imageUrl;
+                currentImage.src = timestampedUrl;
+                currentImage.onerror = function() {
+                    this.src = '/Img/default-avatar.png';
+                };
             }
-            localStorage.setItem('profile_image', result.profileImage);
             
-            // Actualizar UI del header si existe la función
-            if (typeof updateAuthUI === 'function') {
+            // Guardar en localStorage (sin timestamp)
+            localStorage.setItem('profile_image', imageUrl);
+            
+            // Actualizar UI del header
+            if (typeof window.updateProfileImage === 'function') {
+                window.updateProfileImage(imageUrl);
+            } else if (typeof updateAuthUI === 'function') {
                 updateAuthUI();
             }
         }
     } catch (error) {
         console.error('Error cargando imagen de perfil:', error);
-        // No mostrar error al usuario si es solo la imagen, usar imagen por defecto
+        // Usar imagen por defecto si hay error
         const currentImage = document.getElementById('currentProfileImage');
         if (currentImage) {
             currentImage.src = '/Img/default-avatar.png';
         }
+        
+        // Si es error de autenticación, limpiar sesión
+        if (error.message.includes('401') || error.message.includes('403')) {
+            clearUserSession();
+            window.location.href = '/iniciar.php';
+        }
     }
 }
-// Event Listener
+
+// Event Listener para formulario de quejas
 document.getElementById('complaintForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const subject = document.getElementById('complaintSubject').value;

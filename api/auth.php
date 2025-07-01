@@ -108,7 +108,6 @@ switch ($method) {
                     echo json_encode(['error' => $e->getMessage()]);
                 }
                 break;
-                
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
         }
