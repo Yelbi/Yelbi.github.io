@@ -38,5 +38,16 @@
     "gallery_init_error": "Error initializing gallery",
     "detail_js_loaded": "Detail.js loaded successfully",
     "modal_not_found": "Modal elements not found",
-    "menu_elements_not_found": "Menu elements not found"
+    "menu_elements_not_found": "Menu elements not found",
+    "country": "Country",
+    "all_countries": "All countries",
+    "origin": "Origin",
+    "main_beings": "Main Beings",
+    "mythologies_found": "Mythologies found",
+    "change_language": "Change language",
+    "login": "Login",
+    "logout": "Logout",
+    "my_profile": "My profile",
+    "user": "User",
+    "admin_panel": "Admin panel"
 }

@@ -36,11 +36,11 @@ try {
 }
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= $current_lang ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($mito['nombre']) ?> - Seres</title>
+    <title><?= htmlspecialchars($mito['nombre']) ?> - <?= __('site_title') ?></title>
     <link rel="stylesheet" href="/styles/detallem.css">
     <link rel="stylesheet" href="/styles/header.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,9 +50,9 @@ try {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Meta tags para SEO -->
-    <meta name="description" content="Información completa sobre <?= htmlspecialchars($mito['nombre']) ?>, <?= htmlspecialchars($mito['pais']) ?> de <?= htmlspecialchars($mito['region']) ?>">
-    <meta property="og:title" content="<?= htmlspecialchars($mito['nombre']) ?> - Seres">
-    <meta property="og:description" content="Descubre todo sobre <?= htmlspecialchars($mito['nombre']) ?>">
+    <meta name="description" content="<?= __('discover') ?> <?= htmlspecialchars($mito['nombre']) ?>">
+    <meta property="og:title" content="<?= htmlspecialchars($mito['nombre']) ?> - <?= __('site_title') ?>">
+    <meta property="og:description" content="<?= __('discover') ?> <?= htmlspecialchars($mito['nombre']) ?>">
     <meta property="og:image" content="<?= htmlspecialchars($mito['imagen']) ?>">
 </head>
 <body>
@@ -88,31 +88,31 @@ try {
                 <!-- Header para usuarios autenticados -->
                 <div class="dropdown-header" id="userHeader" style="display: none;">
                     <img src="/Img/default-avatar.png" alt="Foto de perfil" id="dropdownProfileImage">
-                    <span class="dropdown-user-name" id="dropdownUserName">Usuario</span>
+                    <span class="dropdown-user-name" id="dropdownUserName"><?= __('user') ?></span>
                 </div>
                 
                 <!-- Opciones para usuarios no autenticados -->
                 <div class="guest-options" id="guestOptions">
                     <a href="/iniciar.php" class="dropdown-item">
-                        <i class="fi fi-rr-sign-in"></i> Iniciar sesión
+                        <i class="fi fi-rr-sign-in"></i> <?= __('login') ?>
                     </a>
                 </div>
                 
                 <!-- Opciones para usuarios autenticados -->
                 <div class="user-options" id="userOptions" style="display: none;">
                     <a href="/user-panel.php" class="dropdown-item">
-                        <i class="fi fi-rr-user"></i> Mi perfil
+                        <i class="fi fi-rr-user"></i> <?= __('my_profile') ?>
                     </a>
                     <div class="divider"></div>
                     <a href="#" class="dropdown-item" onclick="logout()">
-                        <i class="fi fi-rr-sign-out"></i> Cerrar sesión
+                        <i class="fi fi-rr-sign-out"></i> <?= __('logout') ?>
                     </a>
                 </div>
                 
                 <!-- Opción de idioma (siempre visible) -->
                 <div class="divider"></div>
                 <a href="#" class="dropdown-item" id="languageOption" onclick="toggleLanguage()">
-                    <i class="fi fi-rr-globe"></i> Cambiar idioma
+                    <i class="fi fi-rr-globe"></i> <?= __('change_language') ?>
                 </a>
             </div>
         </div>
@@ -126,9 +126,11 @@ try {
                 <h1 class="mito-title"><?= htmlspecialchars($mito['nombre']) ?></h1>
                 <div class="basic-info">
                     <div class="info-item">
+                        <span class="label"><?= __('country') ?>:</span>
                         <span class="value pais"><?= htmlspecialchars($mito['pais']) ?></span>
                     </div>
                     <div class="info-item">
+                        <span class="label"><?= __('region') ?>:</span>
                         <span class="value region"><?= htmlspecialchars($mito['region']) ?></span>
                     </div>
                 </div>
@@ -141,7 +143,7 @@ try {
         <div class="content-grid">
             <?php if (!empty($detallem['descripcion'])): ?>
             <div class="content-card description-card">
-                <h2 class="section-title">Descripción</h2>
+                <h2 class="section-title"><?= __('description') ?></h2>
                 <div class="content-text"><?= nl2br(htmlspecialchars($detallem['descripcion'])) ?></div>
             </div>
             <?php endif; ?>
@@ -150,23 +152,28 @@ try {
             <div class="content-card characteristics-card">
                 <div class="characteristics-grid <?= empty($detallem['origen_img']) ? 'single-column' : '' ?>">
                     <div class="characteristics-text">
-                        <h2 class="section-title">Origen</h2>
+                        <h2 class="section-title"><?= __('origin') ?></h2>
                         <div class="content-text"><?= nl2br(htmlspecialchars($detallem['origen'])) ?></div>
                     </div>
+                    <?php if (!empty($detallem['origen_img'])): ?>
+                    <div class="characteristics-image">
+                        <img src="<?= htmlspecialchars($detallem['origen_img']) ?>" alt="<?= htmlspecialchars($mito['nombre']) ?>" loading="lazy">
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
             <?php endif; ?>
 
             <?php if (!empty($detallem['historia'])): ?>
             <div class="content-card history-card">
-                <h2 class="section-title">Historia</h2>
+                <h2 class="section-title"><?= __('history') ?></h2>
                 <div class="content-text"><?= nl2br(htmlspecialchars($detallem['historia'])) ?></div>
             </div>
             <?php endif; ?>
 
             <?php if (!empty($detallem['seres_principales'])): ?>
             <div class="content-card etymology-card">
-                <h2 class="section-title">Seres Principaless</h2>
+                <h2 class="section-title"><?= __('main_beings') ?></h2>
                 <div class="content-text"><?= nl2br(htmlspecialchars($detallem['seres_principales'])) ?></div>
             </div>
             <?php endif; ?>
@@ -177,7 +184,7 @@ try {
     <!-- Galería de imágenes estilo Pinterest -->
     <?php if (!empty($imagenes)): ?>
     <section class="gallery-section">
-        <h2 class="section-title">Galería de Imágenes</h2>
+        <h2 class="section-title"><?= __('image_gallery') ?></h2>
         <div class="masonry-gallery">
             <?php foreach ($imagenes as $img): ?>
             <div class="masonry-item">
@@ -193,7 +200,7 @@ try {
 
 <section class="navigation-section">
     <div class="nav-buttons">
-        <a href="/mitos.php" class="btn-back">Volver a la Galería</a>
+        <a href="/mitos.php" class="btn-back"><?= __('back_to_gallery') ?></a>
         <?php
         // CONSULTAS MODIFICADAS PARA ORDEN ALFABÉTICO
         $prev = $pdo->prepare("SELECT slug, nombre FROM mitos WHERE nombre < ? ORDER BY nombre DESC LIMIT 1");

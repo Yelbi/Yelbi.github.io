@@ -38,5 +38,16 @@
     "gallery_init_error": "Error inicializando galería",
     "detail_js_loaded": "Detalle.js cargado correctamente",
     "modal_not_found": "Elementos del modal no encontrados",
+    "country": "Country",
+    "all_countries": "Todos los países",
+    "origin": "Origen",
+    "main_beings": "Seres Principales",
+    "mythologies_found": "Mitologías encontradas",
+    "change_language": "Cambiar idioma",
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "my_profile": "Mi perfil",
+    "user": "Usuario",
+    "admin_panel": "Panel de administración",
     "menu_elements_not_found": "Elementos del menú no encontrados"
 }

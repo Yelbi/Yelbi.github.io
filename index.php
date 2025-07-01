@@ -127,6 +127,7 @@
         <script src="/JS/backspace.js"></script>
         <script type="module" src="/JS/backhole.js"></script>
         <script src="/JS/infinity.js"></script>
+        <script src="/JS/language.js"></script>
     </div>
 </body>
 </html>
