@@ -1,30 +1,44 @@
 <?php
-// mitos.php - Con sistema de filtros
 require 'config/connection.php';
 require 'config/i18n.php';
 
 $lang = $current_lang; // Idioma actual desde i18n.php
 
-// Obtener todos los mitos
-$stmt = $pdo->query("SELECT * FROM mitos ORDER BY nombre ASC");
-$mitos = $stmt->fetchAll();
+try {
+    // Obtener todos los mitos con traducción
+    $stmt = $pdo->prepare("
+        SELECT s.id, s.slug, s.imagen, st.nombre, st.pais, st.region 
+        FROM mitos s
+        JOIN mitos_translations st ON s.id = st.mito_id
+        WHERE st.language_code = ?
+        ORDER BY st.nombre ASC
+    ");
+    $stmt->execute([$lang]);
+    $mitos = $stmt->fetchAll();
 
-// Obtener paises únicos (dinámicamente desde la base de datos)
-$stmt_paises = $pdo->query("SELECT DISTINCT pais FROM mitos WHERE pais IS NOT NULL AND pais != '' ORDER BY pais ASC");
-$paises = $stmt_paises->fetchAll(PDO::FETCH_COLUMN);
+    // Obtener paises únicos (traducidos)
+    $stmt_paises = $pdo->prepare("
+        SELECT DISTINCT st.pais 
+        FROM mitos_translations st
+        WHERE st.language_code = ?
+        ORDER BY st.pais ASC
+    ");
+    $stmt_paises->execute([$lang]);
+    $paises = $stmt_paises->fetchAll(PDO::FETCH_COLUMN);
 
-// Optimización para móvil
-$isMobile = false;
-if (preg_match('/Mobile|Android|iPhone|iPad|iPod/i', $_SERVER['HTTP_USER_AGENT'])) {
-    $isMobile = true;
+    // Obtener regiones únicas (traducidas)
+    $stmt_regiones = $pdo->prepare("
+        SELECT DISTINCT st.region 
+        FROM mitos_translations st
+        WHERE st.language_code = ?
+        ORDER BY st.region ASC
+    ");
+    $stmt_regiones->execute([$lang]);
+    $regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
+
+} catch (PDOException $e) {
+    die("Error: " . $e->getMessage());
 }
-$fields = $isMobile ? 'id, nombre, slug, imagen, pais, region' : '*';
-$stmt = $pdo->query("SELECT $fields FROM mitos ORDER BY nombre ASC");
-$mitos = $stmt->fetchAll();
-
-// Obtener regiones únicas (dinámicamente desde la base de datos)
-$stmt_regiones = $pdo->query("SELECT DISTINCT region FROM mitos WHERE region IS NOT NULL AND region != '' ORDER BY region ASC");
-$regiones = $stmt_regiones->fetchAll(PDO::FETCH_COLUMN);
 ?>
 <!DOCTYPE html>
 <html lang="<?= $current_lang ?>">
