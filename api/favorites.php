@@ -86,35 +86,15 @@ function createFavoritesTable($pdo) {
 
 function listFavorites($pdo, $userId) {
     try {
-        // Primero verificar si la tabla seres_translations existe
-        $stmt = $pdo->prepare("SHOW TABLES LIKE 'seres_translations'");
-        $stmt->execute();
-        $translationsExists = $stmt->fetch() !== false;
-        
-        if ($translationsExists) {
-            // Si existe la tabla de traducciones, usarla
-            $current_lang = getCurrentLanguage();
-            
-            $stmt = $pdo->prepare("
-                SELECT s.id, s.imagen, st.nombre, st.tipo, st.region 
-                FROM user_favorites uf
-                INNER JOIN seres s ON uf.ser_id = s.id
-                INNER JOIN seres_translations st ON s.id = st.ser_id
-                WHERE uf.user_id = ? AND st.language_code = ?
-                ORDER BY uf.created_at DESC
-            ");
-            $stmt->execute([$userId, $current_lang]);
-        } else {
-            // Si no existe la tabla de traducciones, usar la tabla principal
-            $stmt = $pdo->prepare("
-                SELECT s.id, s.imagen, s.nombre, s.tipo, s.region 
-                FROM user_favorites uf
-                INNER JOIN seres s ON uf.ser_id = s.id
-                WHERE uf.user_id = ?
-                ORDER BY uf.created_at DESC
-            ");
-            $stmt->execute([$userId]);
-        }
+        // Consulta simplificada sin verificar tablas de traducción
+        $stmt = $pdo->prepare("
+            SELECT s.id, s.imagen, s.nombre, s.tipo, s.region 
+            FROM user_favorites uf
+            INNER JOIN seres s ON uf.ser_id = s.id
+            WHERE uf.user_id = ?
+            ORDER BY uf.created_at DESC
+        ");
+        $stmt->execute([$userId]);
         
         $favorites = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
@@ -127,7 +107,7 @@ function listFavorites($pdo, $userId) {
     } catch (Exception $e) {
         error_log("Error en listFavorites: " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['error' => 'Error obteniendo favoritos']);
+        echo json_encode(['error' => 'Error obteniendo favoritos: ' . $e->getMessage()]);
         exit;
     }
 }
@@ -245,35 +225,5 @@ function getBearerToken() {
     }
     
     return null;
-}
-
-function getCurrentLanguage() {
-    // Intentar obtener el idioma de diferentes fuentes
-    
-    // 1. Desde la sesión
-    if (isset($_SESSION['lang'])) {
-        return $_SESSION['lang'];
-    }
-    
-    // 2. Desde cookie
-    if (isset($_COOKIE['lang'])) {
-        return $_COOKIE['lang'];
-    }
-    
-    // 3. Desde parámetro GET
-    if (isset($_GET['lang'])) {
-        return $_GET['lang'];
-    }
-    
-    // 4. Desde cabeceras del navegador
-    if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-        $lang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
-        if (in_array($lang, ['es', 'en'])) { // Idiomas soportados
-            return $lang;
-        }
-    }
-    
-    // 5. Idioma por defecto
-    return 'es';
 }
 ?>
