@@ -1,6 +1,6 @@
 <?php require 'config/i18n.php'; ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= current_lang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="/styles/iniciar.css">
     <link rel="stylesheet" href="/styles/header.css">
-    <title>Sistema de Usuarios</title>
+    <title><?= __('user_system') ?></title>
 </head>
 <body>
 <!-- Header -->
@@ -35,39 +35,39 @@
             
             <!-- Menú de perfil (visible solo cuando autenticado) -->
             <div class="profile-icon" id="profileIcon" style="display: none;">
-                <img src="/Img/default-avatar.png" alt="Foto de perfil" id="profileImage">
+                <img src="/Img/default-avatar.png" alt="<?= __('profile_picture') ?>" id="profileImage">
             </div>
             
             <!-- Menú desplegable unificado -->
             <div class="dropdown-menu" id="dropdownMenu">
                 <!-- Header para usuarios autenticados -->
                 <div class="dropdown-header" id="userHeader" style="display: none;">
-                    <img src="/Img/default-avatar.png" alt="Foto de perfil" id="dropdownProfileImage">
-                    <span class="dropdown-user-name" id="dropdownUserName">Usuario</span>
+                    <img src="/Img/default-avatar.png" alt="<?= __('profile_picture') ?>" id="dropdownProfileImage">
+                    <span class="dropdown-user-name" id="dropdownUserName"><?= __('user') ?></span>
                 </div>
                 
                 <!-- Opciones para usuarios no autenticados -->
                 <div class="guest-options" id="guestOptions">
                     <a href="/iniciar.php" class="dropdown-item">
-                        <i class="fi fi-rr-sign-in"></i> Iniciar sesión
+                        <i class="fi fi-rr-sign-in"></i> <?= __('login') ?>
                     </a>
                 </div>
                 
                 <!-- Opciones para usuarios autenticados -->
                 <div class="user-options" id="userOptions" style="display: none;">
                     <a href="/user-panel.php" class="dropdown-item">
-                        <i class="fi fi-rr-user"></i> Mi perfil
+                        <i class="fi fi-rr-user"></i> <?= __('my_profile') ?>
                     </a>
                     <div class="divider"></div>
                     <a href="#" class="dropdown-item" onclick="logout()">
-                        <i class="fi fi-rr-sign-out"></i> Cerrar sesión
+                        <i class="fi fi-rr-sign-out"></i> <?= __('logout') ?>
                     </a>
                 </div>
                 
                 <!-- Opción de idioma (siempre visible) -->
                 <div class="divider"></div>
                 <a href="#" class="dropdown-item" id="languageOption" onclick="toggleLanguage()">
-                    <i class="fi fi-rr-globe"></i> Cambiar idioma
+                    <i class="fi fi-rr-globe"></i> <?= __('change_language') ?>
                 </a>
             </div>
         </div>
@@ -76,86 +76,86 @@
 <div class="container">
         <!-- Formulario de Inicio de Sesión -->
         <div id="loginForm" class="form-container active">
-            <h2>Iniciar Sesión</h2>
+            <h2><?= __('login') ?></h2>
             <div id="loginAlert"></div>
             <form id="loginFormElement">
                 <div class="form-group">
-                    <label for="loginEmail">Correo Electrónico</label>
+                    <label for="loginEmail"><?= __('email') ?></label>
                     <input type="email" id="loginEmail" required>
                 </div>
                 <div class="form-group">
-                    <label for="loginPassword">Contraseña</label>
+                    <label for="loginPassword"><?= __('password') ?></label>
                     <input type="password" id="loginPassword" required>
                 </div>
-                <button type="submit" class="btn" id="loginBtn">Iniciar Sesión</button>
+                <button type="submit" class="btn" id="loginBtn"><?= __('login') ?></button>
             </form>
-            <a href="#" class="link-btn" onclick="showRegister()">¿No tienes cuenta? Regístrate</a>
-            <a href="#" class="link-btn" onclick="showForgotPassword()">¿Olvidaste tu contraseña?</a>
+            <a href="#" class="link-btn" onclick="showRegister()"><?= __('no_account_register') ?></a>
+            <a href="#" class="link-btn" onclick="showForgotPassword()"><?= __('forgot_password') ?></a>
         </div>
 
         <!-- Formulario de Registro -->
         <div id="registerForm" class="form-container">
-            <h2>Crear Cuenta</h2>
+            <h2><?= __('create_account') ?></h2>
             <div id="registerAlert"></div>
             <form id="registerFormElement">
                 <div class="form-group">
-                    <label for="registerName">Nombre Completo *</label>
+                    <label for="registerName"><?= __('full_name') ?> *</label>
                     <input type="text" id="registerName" required>
                 </div>
                 <div class="form-group">
-                    <label for="registerEmail">Correo Electrónico *</label>
+                    <label for="registerEmail"><?= __('email') ?> *</label>
                     <input type="email" id="registerEmail" required>
                 </div>
                 <div class="form-group">
-                    <label for="registerPassword">Contraseña *</label>
+                    <label for="registerPassword"><?= __('password') ?> *</label>
                     <input type="password" id="registerPassword" required>
                     <div id="passwordStrength" class="password-strength"></div>
                 </div>
                 <div class="form-group">
-                    <label for="registerConfirmPassword">Confirmar Contraseña *</label>
+                    <label for="registerConfirmPassword"><?= __('confirm_password') ?> *</label>
                     <input type="password" id="registerConfirmPassword" required>
                 </div>
-                <button type="submit" class="btn" id="registerBtn">Crear Cuenta</button>
+                <button type="submit" class="btn" id="registerBtn"><?= __('create_account') ?></button>
             </form>
-            <a href="#" class="link-btn" onclick="showLogin()">¿Ya tienes cuenta? Inicia sesión</a>
+            <a href="#" class="link-btn" onclick="showLogin()"><?= __('already_have_account') ?></a>
         </div>
 
         <!-- Formulario Recuperación -->
         <div id="forgotPasswordForm" class="form-container">
-            <h2>Recuperar Contraseña</h2>
+            <h2><?= __('recover_password') ?></h2>
             <div id="forgotPasswordAlert"></div>
             <form id="forgotPasswordFormElement">
                 <div class="form-group">
-                    <label for="forgotEmail">Correo Electrónico</label>
+                    <label for="forgotEmail"><?= __('email') ?></label>
                     <input type="email" id="forgotEmail" required>
                 </div>
-                <button type="submit" class="btn" id="forgotPasswordBtn">Enviar Enlace</button>
+                <button type="submit" class="btn" id="forgotPasswordBtn"><?= __('send_link') ?></button>
             </form>
-            <a href="#" class="link-btn" onclick="backToLogin()">Volver al inicio de sesión</a>
+            <a href="#" class="link-btn" onclick="backToLogin()"><?= __('back_to_login') ?></a>
         </div>
 
         <!-- Formulario de Restablecer Contraseña -->
         <div id="resetPasswordForm" class="form-container">
-            <h2>Restablecer Contraseña</h2>
+            <h2><?= __('reset_password') ?></h2>
             <div id="resetPasswordAlert"></div>
             <form id="resetPasswordFormElement">
                 <div class="form-group">
-                    <label for="resetToken">Token de Recuperación</label>
+                    <label for="resetToken"><?= __('recovery_token') ?></label>
                     <input type="text" id="resetToken" required readonly>
-                    <small class="form-text text-muted">Este token se completó automáticamente</small>
+                    <small class="form-text text-muted"><?= __('token_auto_filled') ?></small>
                 </div>
                 <div class="form-group">
-                    <label for="resetNewPassword">Nueva Contraseña *</label>
+                    <label for="resetNewPassword"><?= __('new_password') ?> *</label>
                     <input type="password" id="resetNewPassword" required>
                     <div id="resetPasswordStrength" class="password-strength"></div>
                 </div>
                 <div class="form-group">
-                    <label for="resetConfirmPassword">Confirmar Nueva Contraseña *</label>
+                    <label for="resetConfirmPassword"><?= __('confirm_new_password') ?> *</label>
                     <input type="password" id="resetConfirmPassword" required>
                 </div>
-                <button type="submit" class="btn" id="resetPasswordBtn">Cambiar Contraseña</button>
+                <button type="submit" class="btn" id="resetPasswordBtn"><?= __('change_password') ?></button>
             </form>
-            <a href="#" class="link-btn" onclick="backToLogin()">Volver al inicio de sesión</a>
+            <a href="#" class="link-btn" onclick="backToLogin()"><?= __('back_to_login') ?></a>
         </div>
     </div>
     <script src="/JS/iniciar.js"></script>

@@ -2,14 +2,25 @@
 const API_BASE_URL = 'https://seres.blog/api/auth.php';
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Verificar autenticación ANTES de cargar el perfil
-    if (!await verifyAuthentication()) {
-        return; // Si no está autenticado, la función ya redirige
+    if (await verifyAuthentication()) {
+        await loadProfile();
+        await loadProfileImage();
+        await loadFavorites(); // Cargar favoritos después de autenticar
+        setupProfileImagePreview();
+    } else {
+        // Mostrar mensaje si no está autenticado
+        const favoritesContainer = document.getElementById('favoritesList');
+        if (favoritesContainer) {
+            favoritesContainer.innerHTML = `
+                <div class="empty-state">
+                    <div>
+                        <i class="fi fi-rr-heart"></i>
+                    </div>
+                    <p>Debes iniciar sesión para ver tus favoritos</p>
+                </div>
+            `;
+        }
     }
-    
-    await loadProfile();
-    await loadProfileImage();
-    setupProfileImagePreview();
 });
 
 // Nueva función para verificar autenticación de manera más robusta
@@ -121,6 +132,19 @@ function clearUserSession() {
         localStorage.removeItem(key);
         sessionStorage.removeItem(key);
     });
+    
+    // Limpiar favoritos en la UI
+    const favoritesContainer = document.getElementById('favoritesList');
+    if (favoritesContainer) {
+        favoritesContainer.innerHTML = `
+            <div class="empty-state">
+                <div>
+                    <i class="fi fi-rr-heart"></i>
+                </div>
+                <p>Debes iniciar sesión para ver tus favoritos</p>
+            </div>
+        `;
+    }
 }
 
 function logout() {
@@ -179,7 +203,17 @@ async function apiRequest(action, data = {}, method = 'POST') {
             throw new Error(`Sesión expirada (${response.status})`);
         }
         
+        // Primero obtener la respuesta como texto
         const textResponse = await response.text();
+        
+        // Si la respuesta está vacía, manejar adecuadamente
+        if (!textResponse.trim()) {
+            if (response.ok) {
+                return { success: true }; // Para casos donde no se espera contenido
+            } else {
+                throw new Error('Respuesta vacía del servidor');
+            }
+        }
         
         try {
             const result = JSON.parse(textResponse);
@@ -431,30 +465,73 @@ async function loadProfileImage() {
 
 async function loadFavorites() {
     try {
+        const token = getUserToken();
+        if (!token) {
+            throw new Error('No autenticado');
+        }
+        
         const response = await fetch('/api/favorites.php?action=list', {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${getUserToken()}`
+                'Authorization': `Bearer ${token}`
             }
         });
         
-        if (response.ok) {
-            const result = await response.json();
-            renderFavorites(result.favorites);
-        } else {
-            throw new Error('Error al cargar favoritos');
+        // Manejar respuestas vacías
+        if (response.status === 204) { // No Content
+            renderFavorites([]);
+            return;
         }
+        
+        // Manejar errores HTTP
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const result = await response.json();
+        renderFavorites(result.favorites);
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error cargando favoritos:', error);
         showAlert('profileAlert', 'Error cargando favoritos: ' + error.message, 'error');
+        
+        // Mostrar estado vacío si hay error
+        const container = document.getElementById('favoritesList');
+        if (container) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div>
+                        <i class="fi fi-rr-heart"></i>
+                    </div>
+                    <p>Error cargando favoritos</p>
+                </div>
+            `;
+        }
     }
+}
+
+function getUserToken() {
+    return localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
 }
 
 function renderFavorites(favorites) {
     const container = document.getElementById('favoritesList');
     if (!container) return;
     
-    if (!favorites || favorites.length === 0) {
+    // Si no hay favoritos o no es un array
+    if (!Array.isArray(favorites)) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div>
+                    <i class="fi fi-rr-heart"></i>
+                </div>
+                <p>Error al cargar favoritos</p>
+            </div>
+        `;
+        return;
+    }
+    
+    if (favorites.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <div>
@@ -469,7 +546,7 @@ function renderFavorites(favorites) {
     
     container.innerHTML = favorites.map(fav => `
         <div class="favorite-item" data-ser-id="${fav.id}">
-            <img src="${fav.imagen}" alt="${fav.nombre}">
+            <img src="${fav.imagen}" alt="${fav.nombre}" onerror="this.src='/Img/default-image.jpg'">
             <div class="favorite-info">
                 <h4>${fav.nombre}</h4>
                 <p>${fav.tipo} • ${fav.region}</p>
@@ -502,17 +579,32 @@ function renderFavorites(favorites) {
 }
 
 async function removeFavorite(serId) {
+    const token = getUserToken();
+    if (!token) {
+        throw new Error('Debes iniciar sesión para quitar favoritos');
+    }
+    
     const response = await fetch('/api/favorites.php?action=remove', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getUserToken()}`
+            'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ serId })
     });
     
+    // Manejar respuestas vacías
+    const responseText = await response.text();
+    if (!responseText) {
+        if (response.ok) {
+            return; // Éxito sin contenido
+        } else {
+            throw new Error('Respuesta vacía del servidor');
+        }
+    }
+    
     if (!response.ok) {
-        const result = await response.json();
+        const result = JSON.parse(responseText);
         throw new Error(result.error || 'Error al quitar favorito');
     }
 }

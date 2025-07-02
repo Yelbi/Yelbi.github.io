@@ -1,6 +1,6 @@
 <?php require 'config/i18n.php'; ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= current_lang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="/styles/header.css">
     <link rel="stylesheet" href="/styles/user-panel.css">
-    <title>Mi Perfil</title>
+    <title><?= __('my_profile') ?></title>
 </head>
 <body>
     <header class="header">
@@ -34,39 +34,39 @@
             
             <!-- Menú de perfil (visible solo cuando autenticado) -->
             <div class="profile-icon" id="profileIcon" style="display: none;">
-                <img src="/Img/default-avatar.png" alt="Foto de perfil" id="profileImage">
+                <img src="/Img/default-avatar.png" alt="<?= __('profile_picture') ?>" id="profileImage">
             </div>
             
             <!-- Menú desplegable unificado -->
             <div class="dropdown-menu" id="dropdownMenu">
                 <!-- Header para usuarios autenticados -->
                 <div class="dropdown-header" id="userHeader" style="display: none;">
-                    <img src="/Img/default-avatar.png" alt="Foto de perfil" id="dropdownProfileImage">
-                    <span class="dropdown-user-name" id="dropdownUserName">Usuario</span>
+                    <img src="/Img/default-avatar.png" alt="<?= __('profile_picture') ?>" id="dropdownProfileImage">
+                    <span class="dropdown-user-name" id="dropdownUserName"><?= __('user') ?></span>
                 </div>
                 
                 <!-- Opciones para usuarios no autenticados -->
                 <div class="guest-options" id="guestOptions">
                     <a href="/iniciar.php" class="dropdown-item">
-                        <i class="fi fi-rr-sign-in"></i> Iniciar sesión
+                        <i class="fi fi-rr-sign-in"></i> <?= __('login') ?>
                     </a>
                 </div>
                 
                 <!-- Opciones para usuarios autenticados -->
                 <div class="user-options" id="userOptions" style="display: none;">
                     <a href="/user-panel.php" class="dropdown-item">
-                        <i class="fi fi-rr-user"></i> Mi perfil
+                        <i class="fi fi-rr-user"></i> <?= __('my_profile') ?>
                     </a>
                     <div class="divider"></div>
                     <a href="#" class="dropdown-item" onclick="logout()">
-                        <i class="fi fi-rr-sign-out"></i> Cerrar sesión
+                        <i class="fi fi-rr-sign-out"></i> <?= __('logout') ?>
                     </a>
                 </div>
                 
                 <!-- Opción de idioma (siempre visible) -->
                 <div class="divider"></div>
                 <a href="#" class="dropdown-item" id="languageOption" onclick="toggleLanguage()">
-                    <i class="fi fi-rr-globe"></i> Cambiar idioma
+                    <i class="fi fi-rr-globe"></i> <?= __('change_language') ?>
                 </a>
             </div>
         </div>
@@ -78,25 +78,25 @@
             <div id="profileAlert"></div>
             <div class="user-info">
                 <div class="user-details">
-                    <p><strong>Nombre:</strong> <span id="profileName">Cargando...</span></p>
-                    <p><strong>Email:</strong> <span id="profileEmail">Cargando...</span></p>
+                    <p><strong><?= __('name') ?>:</strong> <span id="profileName"><?= __('loading') ?>...</span></p>
+                    <p><strong><?= __('email') ?>:</strong> <span id="profileEmail"><?= __('loading') ?>...</span></p>
                 </div>
                 <button class="logout-btn" onclick="logout()">
                     <i class="fi fi-rr-sign-out-alt"></i>
-                    Cerrar Sesión
+                    <?= __('logout') ?>
                 </button>
             </div>
         </div>
 
 <div class="profile-picture-section">
-    <h3><i class="fi fi-rr-camera"></i> Foto de Perfil</h3>
+    <h3><i class="fi fi-rr-camera"></i> <?= __('profile_picture') ?></h3>
     <div class="current-picture">
-        <img id="currentProfileImage" src="/Img/default-avatar.png" alt="Tu foto actual">
+        <img id="currentProfileImage" src="/Img/default-avatar.png" alt="<?= __('your_current_photo') ?>">
     </div>
     <form id="profilePictureForm" enctype="multipart/form-data">
         <div class="form-group">
             <label for="newProfileImage">
-                <i class="fi fi-rr-upload"></i> Seleccionar nueva imagen:
+                <i class="fi fi-rr-upload"></i> <?= __('select_new_image') ?>:
             </label>
             <input type="file" 
                    id="newProfileImage" 
@@ -106,7 +106,7 @@
             <div id="fileInfo" class="file-info"></div>
         </div>
         <button type="submit" class="btn">
-            <i class="fi fi-rr-upload"></i> Actualizar Foto
+            <i class="fi fi-rr-upload"></i> <?= __('update_photo') ?>
         </button>
     </form>
 </div>
@@ -119,21 +119,21 @@
                     <div class="section-icon">
                         <i class="fi fi-rr-comment-alt"></i>
                     </div>
-                    <h2 class="section-title">Buzón de Quejas y Sugerencias</h2>
+                    <h2 class="section-title"><?= __('complaints_suggestions_box') ?></h2>
                 </div>
                 
                 <form id="complaintForm">
                     <div class="form-group">
-                        <label for="complaintSubject">Asunto *</label>
-                        <input type="text" id="complaintSubject" placeholder="Escribe el asunto de tu mensaje" required>
+                        <label for="complaintSubject"><?= __('subject') ?> *</label>
+                        <input type="text" id="complaintSubject" placeholder="<?= __('write_message_subject') ?>" required>
                     </div>
                     <div class="form-group">
-                        <label for="complaintDescription">Descripción *</label>
-                        <textarea id="complaintDescription" rows="4" placeholder="Describe tu queja o sugerencia en detalle" required></textarea>
+                        <label for="complaintDescription"><?= __('description') ?> *</label>
+                        <textarea id="complaintDescription" rows="4" placeholder="<?= __('describe_complaint_suggestion') ?>" required></textarea>
                     </div>
                     <button type="submit" class="btn">
                         <i class="fi fi-rr-paper-plane"></i>
-                        Enviar Mensaje
+                        <?= __('send_message') ?>
                     </button>
                 </form>
             </div>
@@ -144,7 +144,7 @@
         <div class="section-icon">
             <i class="fi fi-rr-heart"></i>
         </div>
-        <h2 class="section-title">Mis Favoritos</h2>
+        <h2 class="section-title"><?= __('my_favorites') ?></h2>
     </div>
     
     <div class="favorites-list" id="favoritesList">

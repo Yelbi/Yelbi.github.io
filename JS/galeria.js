@@ -757,7 +757,117 @@ class ResponsiveGallery {
     });
   }
 
-  init() {
+    setupFavoriteButtons() {
+        document.querySelectorAll('.favorite-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const serId = btn.dataset.serId;
+                const isFavorited = btn.classList.contains('favorited');
+                
+                try {
+                    if (isFavorited) {
+                        await this.removeFavorite(serId);
+                        btn.classList.remove('favorited');
+                    } else {
+                        await this.addFavorite(serId);
+                        btn.classList.add('favorited');
+                    }
+                } catch (error) {
+                    this.showFavoriteNotice(error.message);
+                }
+            });
+        });
+    }
+    
+    async addFavorite(serId) {
+        const token = this.getUserToken();
+        if (!token) {
+            throw new Error('Debes iniciar sesión para agregar favoritos');
+        }
+        
+        const response = await fetch('/api/favorites.php?action=add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ serId })
+        });
+        
+        // Manejar respuestas vacías
+        const responseText = await response.text();
+        if (!responseText) {
+            if (response.ok) {
+                return; // Éxito sin contenido
+            } else {
+                throw new Error('Respuesta vacía del servidor');
+            }
+        }
+        
+        const result = JSON.parse(responseText);
+        
+        if (!response.ok) {
+            throw new Error(result.error || 'Error al agregar favorito');
+        }
+        
+        // Verificar límite
+        if (result.favoritesCount >= 3) {
+            this.showFavoriteNotice('¡Límite de favoritos alcanzado! (Máx. 3)');
+        }
+    }
+    
+    async removeFavorite(serId) {
+        const token = this.getUserToken();
+        if (!token) {
+            throw new Error('Debes iniciar sesión para quitar favoritos');
+        }
+        
+        const response = await fetch('/api/favorites.php?action=remove', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ serId })
+        });
+        
+        // Manejar respuestas vacías
+        const responseText = await response.text();
+        if (!responseText) {
+            if (response.ok) {
+                return; // Éxito sin contenido
+            } else {
+                throw new Error('Respuesta vacía del servidor');
+            }
+        }
+        
+        if (!response.ok) {
+            const result = JSON.parse(responseText);
+            throw new Error(result.error || 'Error al quitar favorito');
+        }
+    }
+    
+    getUserToken() {
+        return localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
+    }
+    
+    showFavoriteNotice(message) {
+        // Eliminar notificaciones anteriores
+        document.querySelectorAll('.favorite-limit-notice').forEach(el => el.remove());
+        
+        const notice = document.createElement('div');
+        notice.className = 'favorite-limit-notice';
+        notice.textContent = message;
+        document.body.appendChild(notice);
+        
+        setTimeout(() => {
+            notice.remove();
+        }, 3000);
+    }
+
+      init() {
     try {
       this.loadFiltersFromURL();
       this.setupEventListeners();
@@ -787,86 +897,6 @@ class ResponsiveGallery {
       console.error('Error inicializando galería:', error);
     }
   }
-
-      setupFavoriteButtons() {
-        document.querySelectorAll('.favorite-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const serId = btn.dataset.serId;
-                const isFavorited = btn.classList.contains('favorited');
-                
-                try {
-                    if (isFavorited) {
-                        await this.removeFavorite(serId);
-                        btn.classList.remove('favorited');
-                    } else {
-                        await this.addFavorite(serId);
-                        btn.classList.add('favorited');
-                    }
-                } catch (error) {
-                    this.showFavoriteNotice(error.message);
-                }
-            });
-        });
-    }
-    
-    async addFavorite(serId) {
-        const response = await fetch('/api/favorites.php?action=add', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.getUserToken()}`
-            },
-            body: JSON.stringify({ serId })
-        });
-        
-        const result = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(result.error || 'Error al agregar favorito');
-        }
-        
-        // Verificar límite
-        if (result.favoritesCount >= 3) {
-            this.showFavoriteNotice('¡Límite de favoritos alcanzado! (Máx. 3)');
-        }
-    }
-    
-    async removeFavorite(serId) {
-        const response = await fetch('/api/favorites.php?action=remove', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.getUserToken()}`
-            },
-            body: JSON.stringify({ serId })
-        });
-        
-        if (!response.ok) {
-            const result = await response.json();
-            throw new Error(result.error || 'Error al quitar favorito');
-        }
-    }
-    
-    getUserToken() {
-        return localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
-    }
-    
-    showFavoriteNotice(message) {
-        // Eliminar notificaciones anteriores
-        document.querySelectorAll('.favorite-limit-notice').forEach(el => el.remove());
-        
-        const notice = document.createElement('div');
-        notice.className = 'favorite-limit-notice';
-        notice.textContent = message;
-        document.body.appendChild(notice);
-        
-        setTimeout(() => {
-            notice.remove();
-        }, 3000);
-    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
