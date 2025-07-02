@@ -477,6 +477,9 @@ async function loadFavorites() {
             }
         });
         
+        // CORRECCIÓN: Obtener el texto de la respuesta ANTES de usarlo
+        const responseText = await response.text();
+        
         // Manejar respuestas vacías
         if (response.status === 204 || !responseText.trim()) {
             renderFavorites([]);
@@ -485,11 +488,11 @@ async function loadFavorites() {
         
         // Manejar errores HTTP
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
+            throw new Error(`HTTP ${response.status}: ${responseText}`);
         }
         
-        const result = await response.json();
+        // Intentar parsear JSON solo si hay contenido
+        const result = JSON.parse(responseText);
         renderFavorites(result.favorites);
     } catch (error) {
         console.error('Error cargando favoritos:', error);

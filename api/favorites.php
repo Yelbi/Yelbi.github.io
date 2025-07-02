@@ -84,12 +84,13 @@ function createFavoritesTable($pdo) {
 }
 
 function listFavorites($pdo, $userId) {
-    global $current_lang; // Usar la variable global de idioma
-    
     try {
-        // Verificar que el idioma esté definido
-        if (!isset($current_lang) || empty($current_lang)) {
-            throw new Exception('El idioma no está configurado');
+        // CORRECCIÓN: Obtener el idioma actual de manera más robusta
+        $current_lang = getCurrentLanguage(); // Función de i18n.php
+        
+        // Si no hay idioma definido, usar español por defecto
+        if (!$current_lang) {
+            $current_lang = 'es';
         }
         
         $stmt = $pdo->prepare("
@@ -99,7 +100,7 @@ function listFavorites($pdo, $userId) {
             INNER JOIN seres_translations st ON s.id = st.ser_id
             WHERE uf.user_id = ? AND st.language_code = ?
         ");
-        $stmt->execute([$userId, $current_lang]); // Usar $current_lang aquí
+        $stmt->execute([$userId, $current_lang]);
         $favorites = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         echo json_encode(['favorites' => $favorites]);
@@ -202,3 +203,35 @@ function getBearerToken() {
     
     return null;
 }
+
+// FUNCIÓN ADICIONAL: Si getCurrentLanguage() no existe en i18n.php
+function getCurrentLanguage() {
+    // Intentar obtener el idioma de diferentes fuentes
+    
+    // 1. Desde la sesión
+    if (isset($_SESSION['lang'])) {
+        return $_SESSION['lang'];
+    }
+    
+    // 2. Desde cookie
+    if (isset($_COOKIE['lang'])) {
+        return $_COOKIE['lang'];
+    }
+    
+    // 3. Desde parámetro GET
+    if (isset($_GET['lang'])) {
+        return $_GET['lang'];
+    }
+    
+    // 4. Desde cabeceras del navegador
+    if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+        $lang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+        if (in_array($lang, ['es', 'en'])) { // Idiomas soportados
+            return $lang;
+        }
+    }
+    
+    // 5. Idioma por defecto
+    return 'es';
+}
+?>
