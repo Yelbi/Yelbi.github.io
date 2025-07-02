@@ -207,13 +207,13 @@ async function apiRequest(action, data = {}, method = 'POST') {
         const textResponse = await response.text();
         
         // Si la respuesta está vacía, manejar adecuadamente
-        if (!textResponse.trim()) {
-            if (response.ok) {
-                return { success: true }; // Para casos donde no se espera contenido
-            } else {
-                throw new Error('Respuesta vacía del servidor');
-            }
-        }
+if (!textResponse.trim()) {
+    if (response.ok) {
+        return {}; // Respuesta exitosa vacía
+    } else {
+        throw new Error('Respuesta vacía del servidor con estado ' + response.status);
+    }
+}
         
         try {
             const result = JSON.parse(textResponse);
@@ -478,7 +478,7 @@ async function loadFavorites() {
         });
         
         // Manejar respuestas vacías
-        if (response.status === 204) { // No Content
+        if (response.status === 204 || !responseText.trim()) {
             renderFavorites([]);
             return;
         }

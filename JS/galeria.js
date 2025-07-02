@@ -757,97 +757,131 @@ class ResponsiveGallery {
     });
   }
 
-    setupFavoriteButtons() {
-        document.querySelectorAll('.favorite-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const serId = btn.dataset.serId;
-                const isFavorited = btn.classList.contains('favorited');
-                
-                try {
-                    if (isFavorited) {
-                        await this.removeFavorite(serId);
-                        btn.classList.remove('favorited');
-                    } else {
-                        await this.addFavorite(serId);
-                        btn.classList.add('favorited');
-                    }
-                } catch (error) {
-                    this.showFavoriteNotice(error.message);
-                }
-            });
-        });
+  // NUEVO: Cargar favoritos iniciales y marcar botones
+  async loadInitialFavorites() {
+    try {
+      const token = this.getUserToken();
+      if (!token) return;
+      
+      const response = await fetch('/api/favorites.php?action=list', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const responseText = await response.text();
+        if (responseText) {
+          const result = JSON.parse(responseText);
+          this.markFavorites(result.favorites);
+        }
+      }
+    } catch (error) {
+      console.error('Error cargando favoritos:', error);
+    }
+  }
+
+  // NUEVO: Marcar botones de favoritos según la lista del servidor
+  markFavorites(favorites) {
+    if (!Array.isArray(favorites)) return;
+    
+    const favoriteIds = new Set(favorites.map(fav => fav.id));
+    
+    document.querySelectorAll('.favorite-btn').forEach(btn => {
+      const serId = btn.dataset.serId;
+      if (favoriteIds.has(parseInt(serId))) {
+        btn.classList.add('favorited');
+      }
+    });
+  }
+
+  setupFavoriteButtons() {
+    document.querySelectorAll('.favorite-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const serId = btn.dataset.serId;
+        const isFavorited = btn.classList.contains('favorited');
+        
+        try {
+          if (isFavorited) {
+            await this.removeFavorite(serId);
+            btn.classList.remove('favorited');
+          } else {
+            await this.addFavorite(serId);
+            btn.classList.add('favorited');
+          }
+        } catch (error) {
+          this.showFavoriteNotice(error.message);
+        }
+      });
+    });
+  }
+  
+  async addFavorite(serId) {
+    const token = this.getUserToken();
+    if (!token) {
+      throw new Error('Debes iniciar sesión para agregar favoritos');
     }
     
-    async addFavorite(serId) {
-        const token = this.getUserToken();
-        if (!token) {
-            throw new Error('Debes iniciar sesión para agregar favoritos');
-        }
-        
-        const response = await fetch('/api/favorites.php?action=add', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ serId })
-        });
-        
-        // Manejar respuestas vacías
-        const responseText = await response.text();
-        if (!responseText) {
-            if (response.ok) {
-                return; // Éxito sin contenido
-            } else {
-                throw new Error('Respuesta vacía del servidor');
-            }
-        }
-        
-        const result = JSON.parse(responseText);
-        
-        if (!response.ok) {
-            throw new Error(result.error || 'Error al agregar favorito');
-        }
-        
-        // Verificar límite
-        if (result.favoritesCount >= 3) {
-            this.showFavoriteNotice('¡Límite de favoritos alcanzado! (Máx. 3)');
-        }
+    const response = await fetch('/api/favorites.php?action=add', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ serId })
+    });
+    
+    // Manejar respuestas vacías
+    const responseText = await response.text();
+    if (!responseText) {
+      if (response.ok) {
+        return; // Éxito sin contenido
+      } else {
+        throw new Error('Respuesta vacía del servidor');
+      }
     }
     
-    async removeFavorite(serId) {
-        const token = this.getUserToken();
-        if (!token) {
-            throw new Error('Debes iniciar sesión para quitar favoritos');
-        }
-        
-        const response = await fetch('/api/favorites.php?action=remove', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ serId })
-        });
-        
-        // Manejar respuestas vacías
-        const responseText = await response.text();
-        if (!responseText) {
-            if (response.ok) {
-                return; // Éxito sin contenido
-            } else {
-                throw new Error('Respuesta vacía del servidor');
-            }
-        }
-        
-        if (!response.ok) {
-            const result = JSON.parse(responseText);
-            throw new Error(result.error || 'Error al quitar favorito');
-        }
+    const result = JSON.parse(responseText);
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Error al agregar favorito');
     }
+  }
+  
+  async removeFavorite(serId) {
+    const token = this.getUserToken();
+    if (!token) {
+      throw new Error('Debes iniciar sesión para quitar favoritos');
+    }
+    
+    const response = await fetch('/api/favorites.php?action=remove', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ serId })
+    });
+    
+    // Manejar respuestas vacías
+    const responseText = await response.text();
+    if (!responseText) {
+      if (response.ok) {
+        return; // Éxito sin contenido
+      } else {
+        throw new Error('Respuesta vacía del servidor');
+      }
+    }
+    
+    if (!response.ok) {
+      const result = JSON.parse(responseText);
+      throw new Error(result.error || 'Error al quitar favorito');
+    }
+  }
     
     getUserToken() {
         return localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');

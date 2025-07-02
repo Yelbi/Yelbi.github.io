@@ -8,11 +8,7 @@ use Firebase\JWT\Key;
 
 // Define JWT secret key usando la constante existente
 if (!defined('JWT_SECRET_KEY')) {
-    // Define SECRET_KEY here if not defined elsewhere
-    if (!defined('SECRET_KEY')) {
-        define('SECRET_KEY', '123456789Grandiel$'); // Replace with your actual secret key
-    }
-    define('JWT_SECRET_KEY', SECRET_KEY);
+    define('JWT_SECRET_KEY', '123456789Grandiel$');
 }
 
 header('Content-Type: application/json');
@@ -26,6 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+// Crear tabla de favoritos si no existe
+createFavoritesTable($pdo);
+
 $action = $_GET['action'] ?? '';
 $token = getBearerToken();
 
@@ -37,8 +36,10 @@ if (!$token) {
 
 try {
     // Usar el método de decodificación existente en jwt.php
-    $decoded = JWT::decode($token, new Key('123456789Grandiel$', 'HS256'));
-    $userId = $decoded->user_id;
+    $decoded = JWT::decode($token, new Key(JWT_SECRET_KEY, 'HS256'));
+    
+    // CORRECCIÓN CLAVE: Usar 'sub' en lugar de 'user_id'
+    $userId = $decoded->sub;
     
     switch ($action) {
         case 'list':
@@ -65,24 +66,51 @@ try {
     exit;
 }
 
+function createFavoritesTable($pdo) {
+    try {
+        $sql = "CREATE TABLE IF NOT EXISTS user_favorites (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            ser_id INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (user_id, ser_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (ser_id) REFERENCES seres(id) ON DELETE CASCADE
+        )";
+        $pdo->exec($sql);
+    } catch (PDOException $e) {
+        error_log("Error creando tabla user_favorites: " . $e->getMessage());
+    }
+}
+
 function listFavorites($pdo, $userId) {
-    global $current_lang;
+    global $current_lang; // Usar la variable global de idioma
     
-    $stmt = $pdo->prepare("
-        SELECT s.id, s.imagen, st.nombre, st.tipo, st.region 
-        FROM user_favorites uf
-        JOIN seres s ON uf.ser_id = s.id
-        JOIN seres_translations st ON s.id = st.ser_id
-        WHERE uf.user_id = ? AND st.language_code = ?
-    ");
-    $stmt->execute([$userId, $current_lang]);
-    $favorites = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    echo json_encode(['favorites' => $favorites]);
+    try {
+        // Verificar que el idioma esté definido
+        if (!isset($current_lang) || empty($current_lang)) {
+            throw new Exception('El idioma no está configurado');
+        }
+        
+        $stmt = $pdo->prepare("
+            SELECT s.id, s.imagen, st.nombre, st.tipo, st.region 
+            FROM user_favorites uf
+            INNER JOIN seres s ON uf.ser_id = s.id
+            INNER JOIN seres_translations st ON s.id = st.ser_id
+            WHERE uf.user_id = ? AND st.language_code = ?
+        ");
+        $stmt->execute([$userId, $current_lang]); // Usar $current_lang aquí
+        $favorites = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode(['favorites' => $favorites]);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Error obteniendo favoritos: ' . $e->getMessage()]);
+        exit;
+    }
 }
 
 function addFavorite($pdo, $userId) {
-    // Leer datos JSON directamente del input
     $data = json_decode(file_get_contents('php://input'), true);
     
     if (!$data || !isset($data['serId'])) {
@@ -93,38 +121,27 @@ function addFavorite($pdo, $userId) {
     
     $serId = (int) $data['serId'];
     
-    // Verificar si ya es favorito
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM user_favorites WHERE user_id = ? AND ser_id = ?");
-    $stmt->execute([$userId, $serId]);
-    if ($stmt->fetchColumn() > 0) {
-        echo json_encode(['success' => true]);
-        exit;
-    }
-    
-    // Verificar límite (max 3)
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM user_favorites WHERE user_id = ?");
-    $stmt->execute([$userId]);
-    $count = (int) $stmt->fetchColumn();
-    
-    if ($count >= 3) {
-        http_response_code(400);
-        echo json_encode([
-            'error' => 'Límite de favoritos alcanzado',
-            'favoritesCount' => $count
-        ]);
-        exit;
-    }
-    
-    // Agregar a favoritos
     try {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM user_favorites WHERE user_id = ? AND ser_id = ?");
+        $stmt->execute([$userId, $serId]);
+        if ($stmt->fetchColumn() > 0) {
+            echo json_encode(['success' => true]);
+            exit;
+        }
+        
         $pdo->beginTransaction();
         $stmt = $pdo->prepare("INSERT INTO user_favorites (user_id, ser_id) VALUES (?, ?)");
         $stmt->execute([$userId, $serId]);
         $pdo->commit();
+
+        // Get the updated count of favorites for the user
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM user_favorites WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        $favoritesCount = (int)$stmt->fetchColumn();
         
         echo json_encode([
             'success' => true,
-            'favoritesCount' => $count + 1
+            'favoritesCount' => $favoritesCount
         ]);
     } catch (PDOException $e) {
         $pdo->rollBack();
@@ -175,7 +192,6 @@ function getBearerToken() {
         $headers = $_SERVER;
     }
     
-    // Obtener el encabezado de autorización
     $authHeader = $headers['Authorization'] ?? $headers['HTTP_AUTHORIZATION'] ?? '';
     
     if (!empty($authHeader)) {
