@@ -3,8 +3,15 @@ require_once '../config/connection.php';
 require_once '../config/jwt.php';
 require_once '../config/i18n.php';
 
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+
 // Define JWT secret key usando la constante existente
-if (!defined('JWT_SECRET_KEY') && defined('SECRET_KEY')) {
+if (!defined('JWT_SECRET_KEY')) {
+    // Define SECRET_KEY here if not defined elsewhere
+    if (!defined('SECRET_KEY')) {
+        define('SECRET_KEY', '123456789Grandiel$'); // Replace with your actual secret key
+    }
     define('JWT_SECRET_KEY', SECRET_KEY);
 }
 
@@ -30,7 +37,7 @@ if (!$token) {
 
 try {
     // Usar el método de decodificación existente en jwt.php
-    $decoded = JWT::decode($token);
+    $decoded = JWT::decode($token, new Key('123456789Grandiel$', 'HS256'));
     $userId = $decoded->user_id;
     
     switch ($action) {
