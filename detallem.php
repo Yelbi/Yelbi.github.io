@@ -1,29 +1,39 @@
 <?php
-// detallem.php
 require 'config/connection.php';
 require 'config/i18n.php';
 
 $slug = $_GET['mito'] ?? '';
+$lang = $current_lang; // Idioma actual desde i18n.php
 
 if (empty($slug)) {
-    header('Location: /mitos.php');
+    header('Location: /galeria.php');
     exit;
 }
 
 try {
-    // Obtener información básica del mito
-    $stmt = $pdo->prepare("SELECT * FROM mitos WHERE slug = ?");
-    $stmt->execute([$slug]);
+    // Obtener información básica del mito con traducción
+    $stmt = $pdo->prepare("
+        SELECT s.*, st.nombre, st.pais, st.region 
+        FROM mitos s
+        JOIN mitos_translations st ON s.id = st.mito_id
+        WHERE s.slug = ? AND st.language_code = ?
+    ");
+    $stmt->execute([$slug, $lang]);
     $mito = $stmt->fetch();
-
+    
     if (!$mito) {
-        header('Location: /mitos.php');
+        header('Location: /galeria.php');
         exit;
     }
     
-    // Obtener información detallada
-    $stmt = $pdo->prepare("SELECT * FROM mitos_detalle WHERE mito_id = ?");
-    $stmt->execute([$mito['id']]);
+    // Obtener información detallada con traducción
+    $stmt = $pdo->prepare("
+        SELECT sd.*, dt.descripcion, dt.origen, dt.historia, dt.seres_principales
+        FROM mitos_detalle sd
+        JOIN detallem_translations dt ON sd.id = dt.detallem_id
+        WHERE sd.mito_id = ? AND dt.language_code = ?
+    ");
+    $stmt->execute([$mito['id'], $lang]);
     $detallem = $stmt->fetch();
     
     // Obtener imágenes adicionales
