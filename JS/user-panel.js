@@ -2,21 +2,91 @@
 const API_BASE_URL = 'https://seres.blog/api/auth.php';
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Verificar autenticación ANTES de cargar el perfil
+    if (!await verifyAuthentication()) {
+        return; // Si no está autenticado, la función ya redirige
+    }
+    
     await loadProfile();
     await loadProfileImage();
     setupProfileImagePreview();
 });
 
+// Nueva función para verificar autenticación de manera más robusta
+async function verifyAuthentication() {
+    const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
+    
+    if (!token) {
+        console.log('No token found, redirecting to login');
+        redirectToLogin();
+        return false;
+    }
+
+    if (isTokenExpired(token)) {
+        console.log('Token expired, redirecting to login');
+        clearUserSession();
+        redirectToLogin();
+        return false;
+    }
+
+    try {
+        // Verificar con el servidor
+        const response = await fetch(`${API_BASE_URL}?action=verify-session`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            if (result.valid) {
+                return true; // Autenticación válida
+            }
+        }
+        
+        throw new Error('Invalid session');
+        
+    } catch (error) {
+        console.log('Session verification failed:', error.message);
+        clearUserSession();
+        redirectToLogin();
+        return false;
+    }
+}
+
+// Función mejorada para verificar expiración de token
+function isTokenExpired(token) {
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) return true;
+        
+        const base64Url = parts[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => 
+            '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+
+        const decoded = JSON.parse(jsonPayload);
+        const currentTime = Date.now() / 1000;
+        
+        // Usar margen de 60 segundos
+        return decoded.exp < (currentTime + 60);
+    } catch (error) {
+        console.error('Error decodificando token:', error);
+        return true;
+    }
+}
+
+// Función para redirigir al login
+function redirectToLogin() {
+    setTimeout(() => {
+        window.location.href = '/iniciar.php';
+    }, 100);
+}
+
 async function loadProfile() {
     try {
-        // Verificar primero si tenemos un token válido
-        const token = localStorage.getItem('jwt_token');
-        if (!token || isTokenExpired(token)) {
-            clearUserSession();
-            window.location.href = '/iniciar.php';
-            return;
-        }
-
         const result = await apiRequest('profile', {}, 'GET');
         if (result.user) {
             document.getElementById('profileName').textContent = result.user.name;
@@ -32,37 +102,30 @@ async function loadProfile() {
         }
     } catch (error) {
         console.error('Profile load error:', error);
+        showAlert('profileAlert', 'Error cargando perfil: ' + error.message, 'error');
         
-        // Manejar específicamente errores 401 y 403
-        if (error.message.includes('401') || error.message.includes('403') || error.message.includes('Sesión expirada')) {
+        // Solo redirigir si es un error de autenticación específico
+        if (error.message.includes('401') || error.message.includes('403') || 
+            error.message.includes('Sesión expirada') || error.message.includes('Token')) {
             clearUserSession();
-            window.location.href = '/iniciar.php';
-        } else {
-            showAlert('profileAlert', 'Error cargando perfil: ' + error.message, 'error');
+            redirectToLogin();
         }
     }
 }
 
 // Función para limpiar completamente la sesión
 function clearUserSession() {
-    // Limpiar localStorage
-    localStorage.removeItem('jwt_token');
-    localStorage.removeItem('user_name');
-    localStorage.removeItem('profile_image');
-    localStorage.removeItem('user_id');
-    localStorage.removeItem('user_email');
-    
-    // Limpiar sessionStorage también
-    sessionStorage.removeItem('jwt_token');
-    sessionStorage.removeItem('user_name');
-    sessionStorage.removeItem('profile_image');
-    sessionStorage.removeItem('user_id');
-    sessionStorage.removeItem('user_email');
+    // Limpiar localStorage - mantener imágenes de perfil
+    const keysToRemove = ['jwt_token', 'user_name', 'user_id', 'user_email', 'user_role'];
+    keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+    });
 }
 
 function logout() {
     clearUserSession();
-    window.location.href = '/iniciar.php';
+    redirectToLogin();
 }
 
 async function submitComplaint(subject, description) {
@@ -81,6 +144,8 @@ async function submitComplaint(subject, description) {
 // Función para mostrar alertas
 function showAlert(elementId, message, type = 'error') {
     const alertDiv = document.getElementById(elementId);
+    if (!alertDiv) return;
+    
     alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
     
     setTimeout(() => {
@@ -88,14 +153,14 @@ function showAlert(elementId, message, type = 'error') {
     }, 5000);
 }
 
-// API Request mejorado
+// API Request MEJORADO - menos agresivo con redirecciones
 async function apiRequest(action, data = {}, method = 'POST') {
     try {
         const headers = {
             'Content-Type': 'application/json'
         };
         
-        const token = localStorage.getItem('jwt_token');
+        const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
@@ -111,10 +176,7 @@ async function apiRequest(action, data = {}, method = 'POST') {
         
         // Verificar si la respuesta indica que el token ha expirado
         if (response.status === 401 || response.status === 403) {
-            // Si es error de autenticación, limpiar y redirigir
-            clearUserSession();
-            window.location.href = '/iniciar.php';
-            throw new Error('Sesión expirada. Redirigiendo...');
+            throw new Error(`Sesión expirada (${response.status})`);
         }
         
         const textResponse = await response.text();
@@ -132,6 +194,15 @@ async function apiRequest(action, data = {}, method = 'POST') {
         
     } catch (error) {
         console.error('API Error:', error);
+        
+        // Solo limpiar sesión y redirigir en casos específicos
+        if (error.message.includes('Sesión expirada') || 
+            error.message.includes('401') || 
+            error.message.includes('403')) {
+            clearUserSession();
+            redirectToLogin();
+        }
+        
         throw new Error(error.message || 'Error en la conexión');
     }
 }
@@ -139,6 +210,8 @@ async function apiRequest(action, data = {}, method = 'POST') {
 // Función mejorada para configurar la previsualización de imagen
 function setupProfileImagePreview() {
     const fileInput = document.getElementById('newProfileImage');
+    if (!fileInput) return;
+    
     const fileInfo = document.getElementById('fileInfo');
     
     // Crear elemento de información de archivo si no existe
@@ -170,8 +243,8 @@ function setupProfileImagePreview() {
         const actualFileInfo = document.getElementById('fileInfo');
         
         if (!file) {
-            actualFileInfo.textContent = '';
-            previewImage.style.display = 'none';
+            if (actualFileInfo) actualFileInfo.textContent = '';
+            if (previewImage) previewImage.style.display = 'none';
             return;
         }
 
@@ -180,105 +253,122 @@ function setupProfileImagePreview() {
         const maxSize = 2 * 1024 * 1024; // 2MB
 
         if (!validTypes.includes(file.type)) {
-            actualFileInfo.textContent = 'Formato no válido. Use JPG, PNG, GIF o WEBP.';
-            actualFileInfo.style.color = '#f44336';
+            if (actualFileInfo) {
+                actualFileInfo.textContent = 'Formato no válido. Use JPG, PNG, GIF o WEBP.';
+                actualFileInfo.style.color = '#f44336';
+            }
             this.value = '';
-            previewImage.style.display = 'none';
+            if (previewImage) previewImage.style.display = 'none';
             return;
         }
 
         if (file.size > maxSize) {
-            actualFileInfo.textContent = 'El archivo es demasiado grande (máximo 2MB).';
-            actualFileInfo.style.color = '#f44336';
+            if (actualFileInfo) {
+                actualFileInfo.textContent = 'El archivo es demasiado grande (máximo 2MB).';
+                actualFileInfo.style.color = '#f44336';
+            }
             this.value = '';
-            previewImage.style.display = 'none';
+            if (previewImage) previewImage.style.display = 'none';
             return;
         }
 
-        actualFileInfo.textContent = `Archivo: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`;
-        actualFileInfo.style.color = 'rgba(255, 255, 255, 0.7)';
+        if (actualFileInfo) {
+            actualFileInfo.textContent = `Archivo: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`;
+            actualFileInfo.style.color = 'rgba(255, 255, 255, 0.7)';
+        }
         
         // Mostrar previsualización
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            previewImage.src = e.target.result;
-            previewImage.style.display = 'block';
+        if (previewImage) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewImage.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
         }
-        reader.readAsDataURL(file);
     });
 }
 
 // Event listener mejorado para el formulario de foto de perfil
-document.getElementById('profilePictureForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const fileInput = document.getElementById('newProfileImage');
-    const file = fileInput.files[0];
-    const submitButton = e.target.querySelector('button[type="submit"]');
-    const originalButtonText = submitButton.innerHTML;
-    
-    if (!file) {
-        showAlert('profileAlert', 'Por favor selecciona una imagen', 'error');
-        return;
-    }
-    
-    // Mostrar estado de carga
-    submitButton.disabled = true;
-    submitButton.innerHTML = '<div class="loading-spinner small"></div> Subiendo...';
-    
-    try {
-        const formData = new FormData();
-        formData.append('profileImage', file);
+const profilePictureForm = document.getElementById('profilePictureForm');
+if (profilePictureForm) {
+    profilePictureForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
         
-        const response = await fetch(`${API_BASE_URL}?action=update-profile-image`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
-            },
-            body: formData
-        });
+        const fileInput = document.getElementById('newProfileImage');
+        const file = fileInput?.files[0];
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton?.innerHTML || 'Actualizar';
         
-        // Verificar si la sesión ha expirado
-        if (response.status === 401 || response.status === 403) {
-            clearUserSession();
-            window.location.href = '/iniciar.php';
+        if (!file) {
+            showAlert('profileAlert', 'Por favor selecciona una imagen', 'error');
             return;
         }
         
-        const result = await response.json();
+        // Mostrar estado de carga
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<div class="loading-spinner small"></div> Subiendo...';
+        }
         
-        if (response.ok && result.profileImage) {
-            const userId = localStorage.getItem('user_id');
-            if (userId) {
-                // Guardar en localStorage con clave específica
-                const userImageKey = getUserImageKey(userId);
-                localStorage.setItem(userImageKey, result.profileImage);
+        try {
+            const formData = new FormData();
+            formData.append('profileImage', file);
+            
+            const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
+            
+            const response = await fetch(`${API_BASE_URL}?action=update-profile-image`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+            
+            // Verificar si la sesión ha expirado
+            if (response.status === 401 || response.status === 403) {
+                clearUserSession();
+                redirectToLogin();
+                return;
             }
             
-            // Actualizar todos los elementos de imagen
-            updateImageElements(result.profileImage);
+            const result = await response.json();
             
-            showAlert('profileAlert', 'Foto de perfil actualizada correctamente', 'success');
-            
-            // Limpiar formulario y previsualización
-            fileInput.value = '';
-            const fileInfo = document.getElementById('fileInfo');
-            const previewImage = document.getElementById('imagePreview');
-            if (fileInfo) fileInfo.textContent = '';
-            if (previewImage) previewImage.style.display = 'none';
-            
-        } else {
-            throw new Error(result.error || 'Error al actualizar la foto');
+            if (response.ok && result.profileImage) {
+                const userId = localStorage.getItem('user_id');
+                if (userId) {
+                    // Guardar en localStorage con clave específica
+                    const userImageKey = getUserImageKey(userId);
+                    localStorage.setItem(userImageKey, result.profileImage);
+                }
+                
+                // Actualizar todos los elementos de imagen
+                updateImageElements(result.profileImage);
+                
+                showAlert('profileAlert', 'Foto de perfil actualizada correctamente', 'success');
+                
+                // Limpiar formulario y previsualización
+                fileInput.value = '';
+                const fileInfo = document.getElementById('fileInfo');
+                const previewImage = document.getElementById('imagePreview');
+                if (fileInfo) fileInfo.textContent = '';
+                if (previewImage) previewImage.style.display = 'none';
+                
+            } else {
+                throw new Error(result.error || 'Error al actualizar la foto');
+            }
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            showAlert('profileAlert', 'Error al subir la imagen: ' + error.message, 'error');
+        } finally {
+            // Restaurar botón
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonText;
+            }
         }
-    } catch (error) {
-        console.error('Error uploading image:', error);
-        showAlert('profileAlert', 'Error al subir la imagen: ' + error.message, 'error');
-    } finally {
-        // Restaurar botón
-        submitButton.disabled = false;
-        submitButton.innerHTML = originalButtonText;
-    }
-});
+    });
+}
 
 function getUserImageKey(userId) {
     return `profile_image_${userId}`;
@@ -301,11 +391,8 @@ function updateImageElements(imageUrl) {
     // Actualizar UI del header usando la función global
     if (typeof window.updateProfileImage === 'function') {
         window.updateProfileImage(imageUrl);
-    } else if (typeof updateAuthUI === 'function') {
-        updateAuthUI();
     }
 }
-
 
 // Función mejorada para cargar la imagen de perfil
 async function loadProfileImage() {
@@ -339,41 +426,19 @@ async function loadProfileImage() {
         console.error('Error cargando imagen de perfil:', error);
         // Usar imagen por defecto si hay error
         updateImageElements('/Img/default-avatar.png');
-        
-        // Si es error de autenticación, limpiar sesión
-        if (error.message.includes('401') || error.message.includes('403')) {
-            clearUserSession();
-            window.location.href = '/iniciar.php';
-        }
-    }
-}
-
-// Función auxiliar para actualizar elementos de imagen
-function updateImageElements(imageUrl) {
-    // Usar timestamp para evitar cache
-    const timestampedUrl = imageUrl + '?v=' + Date.now();
-    
-    // Actualizar imagen actual en la página
-    const currentImage = document.getElementById('currentProfileImage');
-    if (currentImage) {
-        currentImage.src = timestampedUrl;
-        currentImage.onerror = function() {
-            this.src = '/Img/default-avatar.png';
-        };
-    }
-    
-    // Actualizar UI del header usando la función global
-    if (typeof window.updateProfileImage === 'function') {
-        window.updateProfileImage(imageUrl);
-    } else if (typeof updateAuthUI === 'function') {
-        updateAuthUI();
     }
 }
 
 // Event Listener para formulario de quejas
-document.getElementById('complaintForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const subject = document.getElementById('complaintSubject').value;
-    const description = document.getElementById('complaintDescription').value;
-    await submitComplaint(subject, description);
-});
+const complaintForm = document.getElementById('complaintForm');
+if (complaintForm) {
+    complaintForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const subject = document.getElementById('complaintSubject')?.value;
+        const description = document.getElementById('complaintDescription')?.value;
+        
+        if (subject && description) {
+            await submitComplaint(subject, description);
+        }
+    });
+}
