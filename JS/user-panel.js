@@ -207,13 +207,13 @@ async function apiRequest(action, data = {}, method = 'POST') {
         const textResponse = await response.text();
         
         // Si la respuesta está vacía, manejar adecuadamente
-if (!textResponse.trim()) {
-    if (response.ok) {
-        return {}; // Respuesta exitosa vacía
-    } else {
-        throw new Error('Respuesta vacía del servidor con estado ' + response.status);
-    }
-}
+        if (!textResponse.trim()) {
+            if (response.ok) {
+                return {}; // Respuesta exitosa vacía
+            } else {
+                throw new Error('Respuesta vacía del servidor con estado ' + response.status);
+            }
+        }
         
         try {
             const result = JSON.parse(textResponse);
@@ -463,50 +463,102 @@ async function loadProfileImage() {
     }
 }
 
+// FUNCIÓN MEJORADA PARA CARGAR FAVORITOS
 async function loadFavorites() {
+    const container = document.getElementById('favoritesList');
+    
     try {
         const token = getUserToken();
         if (!token) {
             throw new Error('No autenticado');
         }
         
+        // Mostrar estado de carga
+        if (container) {
+            container.innerHTML = `
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>Cargando favoritos...</p>
+                </div>
+            `;
+        }
+        
         const response = await fetch('/api/favorites.php?action=list', {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
         });
         
-        // CORRECCIÓN: Obtener el texto de la respuesta ANTES de usarlo
-        const responseText = await response.text();
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
         
-        // Manejar respuestas vacías
-        if (response.status === 204 || !responseText.trim()) {
+        // Manejar diferentes códigos de respuesta
+        if (response.status === 204) {
+            // No hay contenido
             renderFavorites([]);
             return;
         }
         
-        // Manejar errores HTTP
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${responseText}`);
+        if (response.status === 401 || response.status === 403) {
+            throw new Error('Sesión expirada');
         }
         
-        // Intentar parsear JSON solo si hay contenido
-        const result = JSON.parse(responseText);
-        renderFavorites(result.favorites);
+        // Obtener el texto de la respuesta
+        const responseText = await response.text();
+        console.log('Response text:', responseText);
+        
+        // Verificar si hay contenido
+        if (!responseText || !responseText.trim()) {
+            console.log('Respuesta vacía del servidor');
+            renderFavorites([]);
+            return;
+        }
+        
+        // Verificar si no es JSON válido
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Error parsing JSON:', parseError);
+            console.error('Response text:', responseText);
+            throw new Error('Respuesta inválida del servidor');
+        }
+        
+        // Verificar si hay error en la respuesta
+        if (!response.ok) {
+            throw new Error(result.error || `Error ${response.status}`);
+        }
+        
+        // Renderizar favoritos
+        const favorites = result.favorites || [];
+        renderFavorites(favorites);
+        
     } catch (error) {
         console.error('Error cargando favoritos:', error);
+        
+        // Manejar errores de autenticación
+        if (error.message.includes('Sesión expirada') || 
+            error.message.includes('401') || 
+            error.message.includes('403')) {
+            clearUserSession();
+            redirectToLogin();
+            return;
+        }
+        
+        // Mostrar error en la UI
         showAlert('profileAlert', 'Error cargando favoritos: ' + error.message, 'error');
         
-        // Mostrar estado vacío si hay error
-        const container = document.getElementById('favoritesList');
+        // Mostrar estado de error
         if (container) {
             container.innerHTML = `
-                <div class="empty-state">
+                <div class="error-state">
                     <div>
-                        <i class="fi fi-rr-heart"></i>
+                        <i class="fi fi-rr-exclamation-triangle"></i>
                     </div>
                     <p>Error cargando favoritos</p>
+                    <button onclick="loadFavorites()" class="retry-btn">Reintentar</button>
                 </div>
             `;
         }

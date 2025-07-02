@@ -1,7 +1,6 @@
 <?php
 require_once '../config/connection.php';
 require_once '../config/jwt.php';
-require_once '../config/i18n.php';
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -57,12 +56,14 @@ try {
             exit;
     }
 } catch (PDOException $e) {
+    error_log("Error PDO en favorites.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['error' => 'Error de base de datos: ' . $e->getMessage()]);
+    echo json_encode(['error' => 'Error de base de datos']);
     exit;
 } catch (Exception $e) {
+    error_log("Error JWT en favorites.php: " . $e->getMessage());
     http_response_code(401);
-    echo json_encode(['error' => 'Token inválido o expirado: ' . $e->getMessage()]);
+    echo json_encode(['error' => 'Token inválido o expirado']);
     exit;
 }
 
@@ -73,9 +74,9 @@ function createFavoritesTable($pdo) {
             user_id INT NOT NULL,
             ser_id INT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE (user_id, ser_id),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (ser_id) REFERENCES seres(id) ON DELETE CASCADE
+            UNIQUE KEY unique_user_ser (user_id, ser_id),
+            INDEX idx_user_id (user_id),
+            INDEX idx_ser_id (ser_id)
         )";
         $pdo->exec($sql);
     } catch (PDOException $e) {
@@ -85,28 +86,48 @@ function createFavoritesTable($pdo) {
 
 function listFavorites($pdo, $userId) {
     try {
-        // CORRECCIÓN: Obtener el idioma actual de manera más robusta
-        $current_lang = getCurrentLanguage(); // Función de i18n.php
+        // Primero verificar si la tabla seres_translations existe
+        $stmt = $pdo->prepare("SHOW TABLES LIKE 'seres_translations'");
+        $stmt->execute();
+        $translationsExists = $stmt->fetch() !== false;
         
-        // Si no hay idioma definido, usar español por defecto
-        if (!$current_lang) {
-            $current_lang = 'es';
+        if ($translationsExists) {
+            // Si existe la tabla de traducciones, usarla
+            $current_lang = getCurrentLanguage();
+            
+            $stmt = $pdo->prepare("
+                SELECT s.id, s.imagen, st.nombre, st.tipo, st.region 
+                FROM user_favorites uf
+                INNER JOIN seres s ON uf.ser_id = s.id
+                INNER JOIN seres_translations st ON s.id = st.ser_id
+                WHERE uf.user_id = ? AND st.language_code = ?
+                ORDER BY uf.created_at DESC
+            ");
+            $stmt->execute([$userId, $current_lang]);
+        } else {
+            // Si no existe la tabla de traducciones, usar la tabla principal
+            $stmt = $pdo->prepare("
+                SELECT s.id, s.imagen, s.nombre, s.tipo, s.region 
+                FROM user_favorites uf
+                INNER JOIN seres s ON uf.ser_id = s.id
+                WHERE uf.user_id = ?
+                ORDER BY uf.created_at DESC
+            ");
+            $stmt->execute([$userId]);
         }
         
-        $stmt = $pdo->prepare("
-            SELECT s.id, s.imagen, st.nombre, st.tipo, st.region 
-            FROM user_favorites uf
-            INNER JOIN seres s ON uf.ser_id = s.id
-            INNER JOIN seres_translations st ON s.id = st.ser_id
-            WHERE uf.user_id = ? AND st.language_code = ?
-        ");
-        $stmt->execute([$userId, $current_lang]);
         $favorites = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Asegurar que siempre devolvemos un array
+        if (!is_array($favorites)) {
+            $favorites = [];
+        }
         
         echo json_encode(['favorites' => $favorites]);
     } catch (Exception $e) {
+        error_log("Error en listFavorites: " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['error' => 'Error obteniendo favoritos: ' . $e->getMessage()]);
+        echo json_encode(['error' => 'Error obteniendo favoritos']);
         exit;
     }
 }
@@ -122,20 +143,36 @@ function addFavorite($pdo, $userId) {
     
     $serId = (int) $data['serId'];
     
+    // Validar que el ser existe
     try {
+        $stmt = $pdo->prepare("SELECT id FROM seres WHERE id = ?");
+        $stmt->execute([$serId]);
+        if (!$stmt->fetch()) {
+            http_response_code(404);
+            echo json_encode(['error' => 'El ser especificado no existe']);
+            exit;
+        }
+    } catch (PDOException $e) {
+        error_log("Error validando ser: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['error' => 'Error validando datos']);
+        exit;
+    }
+    
+    try {
+        // Verificar si ya existe
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM user_favorites WHERE user_id = ? AND ser_id = ?");
         $stmt->execute([$userId, $serId]);
         if ($stmt->fetchColumn() > 0) {
-            echo json_encode(['success' => true]);
+            echo json_encode(['success' => true, 'message' => 'Ya está en favoritos']);
             exit;
         }
         
-        $pdo->beginTransaction();
+        // Insertar nuevo favorito
         $stmt = $pdo->prepare("INSERT INTO user_favorites (user_id, ser_id) VALUES (?, ?)");
         $stmt->execute([$userId, $serId]);
-        $pdo->commit();
 
-        // Get the updated count of favorites for the user
+        // Obtener contador actualizado
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM user_favorites WHERE user_id = ?");
         $stmt->execute([$userId]);
         $favoritesCount = (int)$stmt->fetchColumn();
@@ -145,9 +182,9 @@ function addFavorite($pdo, $userId) {
             'favoritesCount' => $favoritesCount
         ]);
     } catch (PDOException $e) {
-        $pdo->rollBack();
+        error_log("Error en addFavorite: " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['error' => 'Error al agregar favorito: ' . $e->getMessage()]);
+        echo json_encode(['error' => 'Error al agregar favorito']);
         exit;
     }
 }
@@ -164,22 +201,28 @@ function removeFavorite($pdo, $userId) {
     $serId = (int) $data['serId'];
     
     try {
-        $pdo->beginTransaction();
         $stmt = $pdo->prepare("DELETE FROM user_favorites WHERE user_id = ? AND ser_id = ?");
         $stmt->execute([$userId, $serId]);
         $affectedRows = $stmt->rowCount();
-        $pdo->commit();
         
         if ($affectedRows > 0) {
-            echo json_encode(['success' => true]);
+            // Obtener contador actualizado
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM user_favorites WHERE user_id = ?");
+            $stmt->execute([$userId]);
+            $favoritesCount = (int)$stmt->fetchColumn();
+            
+            echo json_encode([
+                'success' => true,
+                'favoritesCount' => $favoritesCount
+            ]);
         } else {
             http_response_code(404);
             echo json_encode(['error' => 'Favorito no encontrado']);
         }
     } catch (PDOException $e) {
-        $pdo->rollBack();
+        error_log("Error en removeFavorite: " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['error' => 'Error al eliminar favorito: ' . $e->getMessage()]);
+        echo json_encode(['error' => 'Error al eliminar favorito']);
         exit;
     }
 }
@@ -204,7 +247,6 @@ function getBearerToken() {
     return null;
 }
 
-// FUNCIÓN ADICIONAL: Si getCurrentLanguage() no existe en i18n.php
 function getCurrentLanguage() {
     // Intentar obtener el idioma de diferentes fuentes
     
