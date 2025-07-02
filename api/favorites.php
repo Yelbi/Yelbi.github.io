@@ -18,6 +18,7 @@ header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 // Manejar solicitudes OPTIONS para CORS
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
+    echo json_encode(['success' => true]);
     exit;
 }
 
@@ -53,18 +54,16 @@ try {
         default:
             http_response_code(400);
             echo json_encode(['error' => 'Acción inválida']);
-            exit;
+            break;
     }
 } catch (PDOException $e) {
     error_log("Error PDO en favorites.php: " . $e->getMessage());
     http_response_code(500);
     echo json_encode(['error' => 'Error de base de datos']);
-    exit;
 } catch (Exception $e) {
     error_log("Error JWT en favorites.php: " . $e->getMessage());
     http_response_code(401);
     echo json_encode(['error' => 'Token inválido o expirado']);
-    exit;
 }
 
 function createFavoritesTable($pdo) {
@@ -103,49 +102,42 @@ function listFavorites($pdo, $userId) {
             $favorites = [];
         }
         
-        echo json_encode(['favorites' => $favorites]);
+        echo json_encode(['success' => true, 'favorites' => $favorites]);
     } catch (Exception $e) {
         error_log("Error en listFavorites: " . $e->getMessage());
         http_response_code(500);
         echo json_encode(['error' => 'Error obteniendo favoritos: ' . $e->getMessage()]);
-        exit;
     }
 }
 
 function addFavorite($pdo, $userId) {
-    $data = json_decode(file_get_contents('php://input'), true);
-    
-    if (!$data || !isset($data['serId'])) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Falta serId o datos inválidos']);
-        exit;
-    }
-    
-    $serId = (int) $data['serId'];
-    
-    // Validar que el ser existe
     try {
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (!$data || !isset($data['serId'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Falta serId o datos inválidos']);
+            return;
+        }
+        
+        $serId = (int) $data['serId'];
+        
+        // Validar que el ser existe
         $stmt = $pdo->prepare("SELECT id FROM seres WHERE id = ?");
         $stmt->execute([$serId]);
         if (!$stmt->fetch()) {
             http_response_code(404);
             echo json_encode(['error' => 'El ser especificado no existe']);
-            exit;
+            return;
         }
-    } catch (PDOException $e) {
-        error_log("Error validando ser: " . $e->getMessage());
-        http_response_code(500);
-        echo json_encode(['error' => 'Error validando datos']);
-        exit;
-    }
-    
-    try {
+        
         // Verificar si ya existe
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM user_favorites WHERE user_id = ? AND ser_id = ?");
         $stmt->execute([$userId, $serId]);
         if ($stmt->fetchColumn() > 0) {
-            echo json_encode(['success' => true, 'message' => 'Ya está en favoritos']);
-            exit;
+            // CORRECCIÓN: Siempre devolver JSON válido
+            echo json_encode(['success' => true, 'message' => 'Ya está en favoritos', 'alreadyExists' => true]);
+            return;
         }
         
         // Insertar nuevo favorito
@@ -159,28 +151,33 @@ function addFavorite($pdo, $userId) {
         
         echo json_encode([
             'success' => true,
+            'message' => 'Favorito agregado correctamente',
             'favoritesCount' => $favoritesCount
         ]);
+        
     } catch (PDOException $e) {
         error_log("Error en addFavorite: " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['error' => 'Error al agregar favorito']);
-        exit;
+        echo json_encode(['error' => 'Error al agregar favorito: ' . $e->getMessage()]);
+    } catch (Exception $e) {
+        error_log("Error general en addFavorite: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['error' => 'Error inesperado al agregar favorito']);
     }
 }
 
 function removeFavorite($pdo, $userId) {
-    $data = json_decode(file_get_contents('php://input'), true);
-    
-    if (!$data || !isset($data['serId'])) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Falta serId o datos inválidos']);
-        exit;
-    }
-    
-    $serId = (int) $data['serId'];
-    
     try {
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (!$data || !isset($data['serId'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Falta serId o datos inválidos']);
+            return;
+        }
+        
+        $serId = (int) $data['serId'];
+        
         $stmt = $pdo->prepare("DELETE FROM user_favorites WHERE user_id = ? AND ser_id = ?");
         $stmt->execute([$userId, $serId]);
         $affectedRows = $stmt->rowCount();
@@ -193,17 +190,22 @@ function removeFavorite($pdo, $userId) {
             
             echo json_encode([
                 'success' => true,
+                'message' => 'Favorito eliminado correctamente',
                 'favoritesCount' => $favoritesCount
             ]);
         } else {
             http_response_code(404);
             echo json_encode(['error' => 'Favorito no encontrado']);
         }
+        
     } catch (PDOException $e) {
         error_log("Error en removeFavorite: " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['error' => 'Error al eliminar favorito']);
-        exit;
+        echo json_encode(['error' => 'Error al eliminar favorito: ' . $e->getMessage()]);
+    } catch (Exception $e) {
+        error_log("Error general en removeFavorite: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['error' => 'Error inesperado al eliminar favorito']);
     }
 }
 
