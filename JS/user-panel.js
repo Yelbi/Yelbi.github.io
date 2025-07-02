@@ -429,6 +429,94 @@ async function loadProfileImage() {
     }
 }
 
+async function loadFavorites() {
+    try {
+        const response = await fetch('/api/favorites.php?action=list', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${getUserToken()}`
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            renderFavorites(result.favorites);
+        } else {
+            throw new Error('Error al cargar favoritos');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('profileAlert', 'Error cargando favoritos: ' + error.message, 'error');
+    }
+}
+
+function renderFavorites(favorites) {
+    const container = document.getElementById('favoritesList');
+    if (!container) return;
+    
+    if (!favorites || favorites.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div>
+                    <i class="fi fi-rr-heart"></i>
+                </div>
+                <p>Aún no tienes elementos favoritos</p>
+                <p>Cuando marques contenido como favorito, aparecerá aquí</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = favorites.map(fav => `
+        <div class="favorite-item" data-ser-id="${fav.id}">
+            <img src="${fav.imagen}" alt="${fav.nombre}">
+            <div class="favorite-info">
+                <h4>${fav.nombre}</h4>
+                <p>${fav.tipo} • ${fav.region}</p>
+            </div>
+            <button class="remove-favorite" aria-label="Quitar de favoritos">
+                <i class="fi fi-rr-trash"></i>
+            </button>
+        </div>
+    `).join('');
+    
+    // Eventos para botones de eliminar
+    document.querySelectorAll('.remove-favorite').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const item = btn.closest('.favorite-item');
+            const serId = item.dataset.serId;
+            
+            try {
+                await removeFavorite(serId);
+                item.remove();
+                
+                // Actualizar contador si no hay favoritos
+                if (container.querySelectorAll('.favorite-item').length === 0) {
+                    renderFavorites([]);
+                }
+            } catch (error) {
+                showAlert('profileAlert', 'Error: ' + error.message, 'error');
+            }
+        });
+    });
+}
+
+async function removeFavorite(serId) {
+    const response = await fetch('/api/favorites.php?action=remove', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getUserToken()}`
+        },
+        body: JSON.stringify({ serId })
+    });
+    
+    if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Error al quitar favorito');
+    }
+}
+
 // Event Listener para formulario de quejas
 const complaintForm = document.getElementById('complaintForm');
 if (complaintForm) {

@@ -1061,3 +1061,54 @@ body {
 .card.image-loaded::after {
   display: none !important;
 }
+
+/* Botón de favorito */
+.favorite-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 3;
+    transition: all 0.3s ease;
+}
+
+.favorite-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.1);
+}
+
+.favorite-btn i {
+    color: white;
+    font-size: 18px;
+}
+
+.favorite-btn.favorited i {
+    color: #ff6b6b;
+}
+
+/* Notificación de límite */
+.favorite-limit-notice {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 50px;
+    z-index: 1000;
+    animation: fadeInOut 3s ease;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0; transform: translate(-50%, 20px); }
+    10%, 90% { opacity: 1; transform: translate(-50%, 0); }
+}

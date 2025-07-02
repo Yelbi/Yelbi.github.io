@@ -139,22 +139,18 @@
             </div>
 
             <!-- Sección de Favoritos -->
-            <div class="section favorites-section">
-                <div class="section-header">
-                    <div class="section-icon">
-                        <i class="fi fi-rr-heart"></i>
-                    </div>
-                    <h2 class="section-title">Mis Favoritos</h2>
-                </div>
-                
-                <div class="empty-state">
-                    <div>
-                        <i class="fi fi-rr-heart"></i>
-                    </div>
-                    <p>Aún no tienes elementos favoritos</p>
-                    <p>Cuando marques contenido como favorito, aparecerá aquí</p>
-                </div>
-            </div>
+<div class="section favorites-section">
+    <div class="section-header">
+        <div class="section-icon">
+            <i class="fi fi-rr-heart"></i>
+        </div>
+        <h2 class="section-title">Mis Favoritos</h2>
+    </div>
+    
+    <div class="favorites-list" id="favoritesList">
+        <!-- Los favoritos se cargarán aquí mediante JavaScript -->
+    </div>
+</div>
         </div>
     </div>
     
