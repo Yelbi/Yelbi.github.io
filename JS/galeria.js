@@ -1,3 +1,4 @@
+
 class ResponsiveGallery {
   constructor() {
     this.elements = this.initializeElements();

@@ -1,7 +1,11 @@
 <?php
-// Habilitar reporte de errores para debugging
+// Desactivar display de errores para evitar salida HTML
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+// Capturar cualquier salida no deseada
+ob_start();
 
 require_once '../config/connection.php';
 require_once '../config/jwt.php';
@@ -13,6 +17,9 @@ use Firebase\JWT\Key;
 if (!defined('JWT_SECRET')) {
     define('JWT_SECRET', '123456789Grandiel$');
 }
+
+// Limpiar cualquier salida previa
+ob_clean();
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -33,12 +40,29 @@ function logError($message, $context = []) {
 
 // Función para respuesta de error consistente
 function errorResponse($code, $message, $details = null) {
+    // Limpiar cualquier salida previa
+    if (ob_get_level()) {
+        ob_clean();
+    }
+    
     http_response_code($code);
     $response = ['error' => $message];
     if ($details) {
         $response['details'] = $details;
     }
     echo json_encode($response);
+    exit;
+}
+
+// Función para respuesta de éxito
+function successResponse($data) {
+    // Limpiar cualquier salida previa
+    if (ob_get_level()) {
+        ob_clean();
+    }
+    
+    http_response_code(200);
+    echo json_encode($data);
     exit;
 }
 
@@ -154,7 +178,7 @@ function listFavorites($pdo, $userId) {
         }
         
         logError("Favorites retrieved successfully", ['count' => count($favorites)]);
-        echo json_encode(['success' => true, 'favorites' => $favorites]);
+        successResponse(['success' => true, 'favorites' => $favorites]);
     } catch (Exception $e) {
         logError("Error in listFavorites", ['error' => $e->getMessage()]);
         errorResponse(500, "Error obteniendo favoritos");
@@ -203,8 +227,7 @@ function addFavorite($pdo, $userId) {
         $stmt->execute([$userId, $serId]);
         if ($stmt->fetchColumn() > 0) {
             logError("Favorite already exists", ['userId' => $userId, 'serId' => $serId]);
-            echo json_encode(['success' => true, 'message' => 'Ya está en favoritos', 'alreadyExists' => true]);
-            return;
+            successResponse(['success' => true, 'message' => 'Ya está en favoritos', 'alreadyExists' => true]);
         }
         
         // Insertar nuevo favorito
@@ -218,7 +241,7 @@ function addFavorite($pdo, $userId) {
         
         logError("Favorite added successfully", ['userId' => $userId, 'serId' => $serId, 'count' => $favoritesCount]);
         
-        echo json_encode([
+        successResponse([
             'success' => true,
             'message' => 'Favorito agregado correctamente',
             'favoritesCount' => $favoritesCount
@@ -273,7 +296,7 @@ function removeFavorite($pdo, $userId) {
             
             logError("Favorite removed successfully", ['userId' => $userId, 'serId' => $serId, 'count' => $favoritesCount]);
             
-            echo json_encode([
+            successResponse([
                 'success' => true,
                 'message' => 'Favorito eliminado correctamente',
                 'favoritesCount' => $favoritesCount
