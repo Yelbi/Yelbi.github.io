@@ -35,14 +35,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Función para log de errores mejorado
 function logError($message, $context = []) {
-    error_log("FAVORITES API ERROR: " . $message . " Context: " . json_encode($context));
+    $logMessage = "FAVORITES API: " . $message;
+    if (!empty($context)) {
+        $logMessage .= " | Context: " . json_encode($context);
+    }
+    error_log($logMessage);
 }
 
 // Función para respuesta de error consistente
 function errorResponse($code, $message, $details = null) {
     // Limpiar cualquier salida previa
-    if (ob_get_level()) {
-        ob_clean();
+    while (ob_get_level()) {
+        ob_end_clean();
     }
     
     http_response_code($code);
@@ -50,6 +54,8 @@ function errorResponse($code, $message, $details = null) {
     if ($details) {
         $response['details'] = $details;
     }
+    
+    header('Content-Type: application/json');
     echo json_encode($response);
     exit;
 }
@@ -57,11 +63,12 @@ function errorResponse($code, $message, $details = null) {
 // Función para respuesta de éxito
 function successResponse($data) {
     // Limpiar cualquier salida previa
-    if (ob_get_level()) {
-        ob_clean();
+    while (ob_get_level()) {
+        ob_end_clean();
     }
     
     http_response_code(200);
+    header('Content-Type: application/json');
     echo json_encode($data);
     exit;
 }
@@ -142,10 +149,11 @@ function createFavoritesTable($pdo) {
             INDEX idx_user_id (user_id),
             INDEX idx_ser_id (ser_id)
         )";
+        
         $pdo->exec($sql);
-        logError("Table created successfully");
+        logError("Favorites table created/verified successfully");
     } catch (PDOException $e) {
-        logError("Error creating table", ['error' => $e->getMessage()]);
+        logError("Error creating favorites table", ['error' => $e->getMessage()]);
         throw $e;
     }
 }
@@ -188,70 +196,91 @@ function listFavorites($pdo, $userId) {
 function addFavorite($pdo, $userId) {
     try {
         $rawInput = file_get_contents('php://input');
-        logError("Raw input received", ['input' => $rawInput]);
+        logError("Add favorite request", ['userId' => $userId, 'inputLength' => strlen($rawInput)]);
         
         if (empty($rawInput)) {
-            logError("Empty input received");
+            logError("Empty input received for add favorite");
             errorResponse(400, "No se recibieron datos");
         }
 
         $data = json_decode($rawInput, true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
-            logError("JSON decode error", ['error' => json_last_error_msg()]);
-            errorResponse(400, "Datos JSON inválidos");
+            logError("JSON decode error in add favorite", ['error' => json_last_error_msg(), 'input' => $rawInput]);
+            errorResponse(400, "Datos JSON inválidos: " . json_last_error_msg());
         }
         
-        if (!$data || !isset($data['serId'])) {
-            logError("Missing serId", ['data' => $data]);
-            errorResponse(400, "Falta serId en los datos");
+        if (!isset($data['serId'])) {
+            logError("Missing serId in add favorite", ['data' => $data]);
+            errorResponse(400, "Falta el parámetro serId");
         }
         
         $serId = (int) $data['serId'];
         
         if ($serId <= 0) {
-            logError("Invalid serId", ['serId' => $serId]);
-            errorResponse(400, "serId inválido");
+            logError("Invalid serId in add favorite", ['serId' => $serId]);
+            errorResponse(400, "El serId debe ser un número positivo");
         }
         
-        // Validar que el ser existe
+        // Verificar que el ser existe
         $stmt = $pdo->prepare("SELECT id FROM seres WHERE id = ?");
         $stmt->execute([$serId]);
         if (!$stmt->fetch()) {
-            logError("Ser not found", ['serId' => $serId]);
+            logError("Ser not found in add favorite", ['serId' => $serId]);
             errorResponse(404, "El ser especificado no existe");
         }
         
-        // Verificar si ya existe
+        // Verificar si ya existe el favorito
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM user_favorites WHERE user_id = ? AND ser_id = ?");
         $stmt->execute([$userId, $serId]);
+        
         if ($stmt->fetchColumn() > 0) {
             logError("Favorite already exists", ['userId' => $userId, 'serId' => $serId]);
-            successResponse(['success' => true, 'message' => 'Ya está en favoritos', 'alreadyExists' => true]);
+            successResponse([
+                'success' => true, 
+                'message' => 'Ya está en favoritos',
+                'alreadyExists' => true
+            ]);
         }
         
         // Insertar nuevo favorito
         $stmt = $pdo->prepare("INSERT INTO user_favorites (user_id, ser_id) VALUES (?, ?)");
-        $stmt->execute([$userId, $serId]);
-
-        // Obtener contador actualizado
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM user_favorites WHERE user_id = ?");
-        $stmt->execute([$userId]);
-        $favoritesCount = (int)$stmt->fetchColumn();
+        $result = $stmt->execute([$userId, $serId]);
         
-        logError("Favorite added successfully", ['userId' => $userId, 'serId' => $serId, 'count' => $favoritesCount]);
+        if (!$result) {
+            logError("Failed to insert favorite", ['userId' => $userId, 'serId' => $serId]);
+            errorResponse(500, "Error al guardar el favorito");
+        }
+        
+        logError("Favorite added successfully", ['userId' => $userId, 'serId' => $serId]);
         
         successResponse([
             'success' => true,
-            'message' => 'Favorito agregado correctamente',
-            'favoritesCount' => $favoritesCount
+            'message' => 'Favorito agregado correctamente'
         ]);
         
     } catch (PDOException $e) {
-        logError("PDO Error in addFavorite", ['error' => $e->getMessage(), 'code' => $e->getCode()]);
-        errorResponse(500, "Error de base de datos al agregar favorito");
+        logError("Database error in add favorite", [
+            'error' => $e->getMessage(), 
+            'code' => $e->getCode(),
+            'userId' => $userId ?? 'unknown'
+        ]);
+        
+        // Verificar si es error de duplicado
+        if ($e->getCode() == 23000) {
+            successResponse([
+                'success' => true,
+                'message' => 'Ya está en favoritos',
+                'alreadyExists' => true
+            ]);
+        } else {
+            errorResponse(500, "Error de base de datos al agregar favorito");
+        }
     } catch (Exception $e) {
-        logError("General Error in addFavorite", ['error' => $e->getMessage()]);
+        logError("Unexpected error in add favorite", [
+            'error' => $e->getMessage(),
+            'userId' => $userId ?? 'unknown'
+        ]);
         errorResponse(500, "Error inesperado al agregar favorito");
     }
 }
@@ -259,87 +288,104 @@ function addFavorite($pdo, $userId) {
 function removeFavorite($pdo, $userId) {
     try {
         $rawInput = file_get_contents('php://input');
-        logError("Raw input received for remove", ['input' => $rawInput]);
+        logError("Remove favorite request", ['userId' => $userId, 'inputLength' => strlen($rawInput)]);
         
         if (empty($rawInput)) {
+            logError("Empty input received for remove favorite");
             errorResponse(400, "No se recibieron datos");
         }
 
         $data = json_decode($rawInput, true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
-            logError("JSON decode error in remove", ['error' => json_last_error_msg()]);
-            errorResponse(400, "Datos JSON inválidos");
+            logError("JSON decode error in remove favorite", ['error' => json_last_error_msg(), 'input' => $rawInput]);
+            errorResponse(400, "Datos JSON inválidos: " . json_last_error_msg());
         }
         
-        if (!$data || !isset($data['serId'])) {
-            logError("Missing serId in remove", ['data' => $data]);
-            errorResponse(400, "Falta serId en los datos");
+        if (!isset($data['serId'])) {
+            logError("Missing serId in remove favorite", ['data' => $data]);
+            errorResponse(400, "Falta el parámetro serId");
         }
         
         $serId = (int) $data['serId'];
         
         if ($serId <= 0) {
-            logError("Invalid serId in remove", ['serId' => $serId]);
-            errorResponse(400, "serId inválido");
+            logError("Invalid serId in remove favorite", ['serId' => $serId]);
+            errorResponse(400, "El serId debe ser un número positivo");
         }
         
+        // Eliminar el favorito
         $stmt = $pdo->prepare("DELETE FROM user_favorites WHERE user_id = ? AND ser_id = ?");
-        $stmt->execute([$userId, $serId]);
+        $result = $stmt->execute([$userId, $serId]);
+        
+        if (!$result) {
+            logError("Failed to execute delete query", ['userId' => $userId, 'serId' => $serId]);
+            errorResponse(500, "Error al eliminar el favorito");
+        }
+        
         $affectedRows = $stmt->rowCount();
         
         if ($affectedRows > 0) {
-            // Obtener contador actualizado
-            $stmt = $pdo->prepare("SELECT COUNT(*) FROM user_favorites WHERE user_id = ?");
-            $stmt->execute([$userId]);
-            $favoritesCount = (int)$stmt->fetchColumn();
-            
-            logError("Favorite removed successfully", ['userId' => $userId, 'serId' => $serId, 'count' => $favoritesCount]);
-            
+            logError("Favorite removed successfully", ['userId' => $userId, 'serId' => $serId]);
             successResponse([
                 'success' => true,
-                'message' => 'Favorito eliminado correctamente',
-                'favoritesCount' => $favoritesCount
+                'message' => 'Favorito eliminado correctamente'
             ]);
         } else {
             logError("Favorite not found for removal", ['userId' => $userId, 'serId' => $serId]);
-            errorResponse(404, "Favorito no encontrado");
+            errorResponse(404, "El favorito no existe");
         }
         
     } catch (PDOException $e) {
-        logError("PDO Error in removeFavorite", ['error' => $e->getMessage(), 'code' => $e->getCode()]);
+        logError("Database error in remove favorite", [
+            'error' => $e->getMessage(), 
+            'code' => $e->getCode(),
+            'userId' => $userId ?? 'unknown'
+        ]);
         errorResponse(500, "Error de base de datos al eliminar favorito");
     } catch (Exception $e) {
-        logError("General Error in removeFavorite", ['error' => $e->getMessage()]);
+        logError("Unexpected error in remove favorite", [
+            'error' => $e->getMessage(),
+            'userId' => $userId ?? 'unknown'
+        ]);
         errorResponse(500, "Error inesperado al eliminar favorito");
     }
 }
 
 function getBearerToken() {
-    $headers = null;
+    // Revisar diferentes fuentes del token
+    $authHeader = '';
     
+    // Método 1: apache_request_headers()
     if (function_exists('apache_request_headers')) {
         $headers = apache_request_headers();
-    } else {
-        // Fallback para cuando apache_request_headers no está disponible
-        $headers = [];
+        $authHeader = $headers['Authorization'] ?? $headers['AUTHORIZATION'] ?? '';
+    }
+    
+    // Método 2: $_SERVER variables
+    if (empty($authHeader)) {
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? 
+                     $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? 
+                     '';
+    }
+    
+    // Método 3: Construir headers manualmente
+    if (empty($authHeader)) {
         foreach ($_SERVER as $key => $value) {
-            if (substr($key, 0, 5) === 'HTTP_') {
-                $header = str_replace('_', '-', substr($key, 5));
-                $headers[$header] = $value;
+            if (strtolower(substr($key, 0, 5)) === 'http_') {
+                $headerName = str_replace('_', '-', strtolower(substr($key, 5)));
+                if ($headerName === 'authorization') {
+                    $authHeader = $value;
+                    break;
+                }
             }
         }
     }
     
-    // Buscar en diferentes variantes del header Authorization
-    $authHeader = $headers['Authorization'] ?? 
-                 $headers['AUTHORIZATION'] ?? 
-                 $headers['HTTP_AUTHORIZATION'] ?? 
-                 $_SERVER['HTTP_AUTHORIZATION'] ?? 
-                 '';
+    logError("Auth header search", ['found' => !empty($authHeader), 'header' => substr($authHeader, 0, 20) . '...']);
     
     if (!empty($authHeader)) {
-        if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+        if (preg_match('/Bearer\s+(\S+)/', $authHeader, $matches)) {
             return $matches[1];
         }
     }

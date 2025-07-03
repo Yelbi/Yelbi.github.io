@@ -759,29 +759,35 @@ class ResponsiveGallery {
   }
 
   // NUEVO: Cargar favoritos iniciales y marcar botones
-  async loadInitialFavorites() {
-    try {
-      const token = this.getUserToken();
-      if (!token) return;
-      
-      const response = await fetch('/api/favorites.php?action=list', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const responseText = await response.text();
-        if (responseText) {
+async loadInitialFavorites() {
+  try {
+    const token = this.getUserToken();
+    if (!token) return;
+    
+    const response = await fetch('/api/favorites.php?action=list', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (response.ok) {
+      const responseText = await response.text();
+      if (responseText) {
+        try {
           const result = JSON.parse(responseText);
-          this.markFavorites(result.favorites);
+          if (result.favorites) {
+            this.markFavorites(result.favorites);
+          }
+        } catch (parseError) {
+          console.warn('Error parseando respuesta de favoritos:', parseError);
         }
       }
-    } catch (error) {
-      console.error('Error cargando favoritos:', error);
     }
+  } catch (error) {
+    console.error('Error cargando favoritos:', error);
   }
+}
 
   // NUEVO: Marcar botones de favoritos según la lista del servidor
   markFavorites(favorites) {
@@ -821,68 +827,93 @@ class ResponsiveGallery {
     });
   }
   
-  async addFavorite(serId) {
-    const token = this.getUserToken();
-    if (!token) {
-      throw new Error('Debes iniciar sesión para agregar favoritos');
-    }
-    
-    const response = await fetch('/api/favorites.php?action=add', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ serId })
-    });
-    
-    // Manejar respuestas vacías
+async addFavorite(serId) {
+  const token = this.getUserToken();
+  if (!token) {
+    throw new Error('Debes iniciar sesión para agregar favoritos');
+  }
+  
+  const response = await fetch('/api/favorites.php?action=add', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ serId })
+  });
+  
+  if (!response.ok) {
+    // Para errores HTTP, intentar leer el mensaje de error
     const responseText = await response.text();
-    if (!responseText) {
-      if (response.ok) {
-        return; // Éxito sin contenido
-      } else {
-        throw new Error('Respuesta vacía del servidor');
+    if (responseText) {
+      try {
+        const result = JSON.parse(responseText);
+        throw new Error(result.error || 'Error al agregar favorito');
+      } catch (parseError) {
+        throw new Error(`Error del servidor: ${response.status}`);
       }
-    }
-    
-    const result = JSON.parse(responseText);
-    
-    if (!response.ok) {
-      throw new Error(result.error || 'Error al agregar favorito');
+    } else {
+      throw new Error(`Error del servidor: ${response.status}`);
     }
   }
   
-  async removeFavorite(serId) {
-    const token = this.getUserToken();
-    if (!token) {
-      throw new Error('Debes iniciar sesión para quitar favoritos');
-    }
-    
-    const response = await fetch('/api/favorites.php?action=remove', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ serId })
-    });
-    
-    // Manejar respuestas vacías
-    const responseText = await response.text();
-    if (!responseText) {
-      if (response.ok) {
-        return; // Éxito sin contenido
-      } else {
-        throw new Error('Respuesta vacía del servidor');
-      }
-    }
-    
-    if (!response.ok) {
+  // Para respuestas exitosas, manejar contenido vacío
+  const responseText = await response.text();
+  if (responseText) {
+    try {
       const result = JSON.parse(responseText);
-      throw new Error(result.error || 'Error al quitar favorito');
+      // Opcional: usar el resultado si es necesario
+      console.log('Favorito agregado:', result);
+    } catch (parseError) {
+      console.warn('Respuesta no es JSON válido, pero la operación fue exitosa');
     }
   }
+  // Si llegamos aquí, la operación fue exitosa
+}
+
+async removeFavorite(serId) {
+  const token = this.getUserToken();
+  if (!token) {
+    throw new Error('Debes iniciar sesión para quitar favoritos');
+  }
+  
+  const response = await fetch('/api/favorites.php?action=remove', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ serId })
+  });
+  
+  if (!response.ok) {
+    // Para errores HTTP, intentar leer el mensaje de error
+    const responseText = await response.text();
+    if (responseText) {
+      try {
+        const result = JSON.parse(responseText);
+        throw new Error(result.error || 'Error al quitar favorito');
+      } catch (parseError) {
+        throw new Error(`Error del servidor: ${response.status}`);
+      }
+    } else {
+      throw new Error(`Error del servidor: ${response.status}`);
+    }
+  }
+  
+  // Para respuestas exitosas, manejar contenido vacío
+  const responseText = await response.text();
+  if (responseText) {
+    try {
+      const result = JSON.parse(responseText);
+      // Opcional: usar el resultado si es necesario
+      console.log('Favorito eliminado:', result);
+    } catch (parseError) {
+      console.warn('Respuesta no es JSON válido, pero la operación fue exitosa');
+    }
+  }
+  // Si llegamos aquí, la operación fue exitosa
+}
     
     getUserToken() {
         return localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
