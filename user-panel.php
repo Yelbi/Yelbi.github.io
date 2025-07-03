@@ -146,10 +146,6 @@
         </div>
         <h2 class="section-title"><?= __('my_favorites') ?></h2>
     </div>
-    
-    <div class="favorites-list" id="favoritesList">
-        <!-- Los favoritos se cargarán aquí mediante JavaScript -->
-    </div>
 </div>
         </div>
     </div>

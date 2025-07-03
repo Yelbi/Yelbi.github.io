@@ -202,12 +202,6 @@ try {
             </button>
           </div>
         </div>
-        <!-- Botón de favoritos actualizado -->
-        <button class="favorite-btn" 
-                data-ser-id="<?= $s['id'] ?>" 
-                aria-label="Agregar a favoritos">
-            <i class="fi fi-rr-heart"></i>
-        </button>
       </a>
     <?php endforeach; ?>
 </main>
