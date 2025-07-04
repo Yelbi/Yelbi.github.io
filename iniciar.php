@@ -160,5 +160,6 @@
     </div>
     <script src="/JS/iniciar.js"></script>
     <script src="/JS/header.js"></script>
+    <script src="/JS/language.js"></script>
 </body>
 </html>

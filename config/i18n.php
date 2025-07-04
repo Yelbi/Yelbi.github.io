@@ -39,28 +39,30 @@ class I18n {
     /**
      * Detecta el idioma basado en prioridades
      */
-    private function detectLanguage() {
-        // 1. Parámetro URL (máxima prioridad)
-        if (isset($_GET['lang']) && $this->isValidLanguage($_GET['lang'])) {
-            $lang = $_GET['lang'];
-            $this->setLanguageCookie($lang);
-            return $lang;
-        }
-        
-        // 2. Cookie existente
-        if (isset($_COOKIE['lang']) && $this->isValidLanguage($_COOKIE['lang'])) {
-            return $_COOKIE['lang'];
-        }
-        
-        // 3. Detección por cabecera HTTP del navegador
-        $browserLang = $this->detectBrowserLanguage();
-        if ($browserLang) {
-            return $browserLang;
-        }
-        
-        // 4. Idioma por defecto
-        return $this->defaultLang;
+private function detectLanguage() {
+    // 1. Parámetro URL (máxima prioridad)
+    if (isset($_GET['lang']) && $this->isValidLanguage($_GET['lang'])) {
+        $lang = $_GET['lang'];
+        $this->setLanguageCookie($lang);
+        return $lang;
     }
+
+    // 2. Cookie existente
+    if (isset($_COOKIE['lang']) && $this->isValidLanguage($_COOKIE['lang'])) {
+        return $_COOKIE['lang'];
+    }
+
+    // 3. Detección por cabecera HTTP del navegador
+    $browserLang = $this->detectBrowserLanguage();
+    if ($browserLang) {
+        // ADD THIS: Persist browser-detected language in cookie
+        $this->setLanguageCookie($browserLang);
+        return $browserLang;
+    }
+
+    // 4. Idioma por defecto
+    return $this->defaultLang;
+}
     
     /**
      * Detecta el idioma del navegador de manera más robusta

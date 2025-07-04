@@ -225,6 +225,7 @@ const translations = {
 
 <script src="/JS/galeria.js"></script>
 <script src="/JS/header.js"></script>
+<script src="/JS/language.js"></script>
 
 </body>
 </html>

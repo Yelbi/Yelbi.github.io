@@ -152,5 +152,6 @@
     
     <script src="/JS/user-panel.js"></script>
     <script src="/JS/header.js"></script>
+    <script src="/JS/language.js"></script>
 </body>
 </html>
