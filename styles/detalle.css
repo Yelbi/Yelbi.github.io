@@ -253,6 +253,8 @@ html {
   position: relative;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   break-inside: avoid;
+  opacity: 0; /* Inicialmente oculto para animación */
+  transform: translateY(20px);
 }
 
 .masonry-item:hover {
@@ -267,6 +269,12 @@ html {
   display: block;
   transition: all 0.4s ease;
   object-fit: cover;
+  opacity: 0; /* Inicialmente oculto */
+  transition: opacity 0.6s ease;
+}
+
+.masonry-item img.loaded {
+  opacity: 1 !important;
 }
 
 .masonry-item:hover img {
@@ -328,6 +336,7 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .masonry-item.loading::before {
@@ -338,11 +347,34 @@ html {
   border-top: 3px solid rgba(255, 255, 255, 0.8);
   border-radius: 50%;
   animation: spin 1s linear infinite;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Información adicional de la galería */
+.gallery-info {
+  text-align: center;
+  margin-top: 2rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.gallery-count {
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
 }
 
 /* Alturas dinámicas para efecto Pinterest */
@@ -620,6 +652,13 @@ html {
   .masonry-item:nth-child(7n+3) {
     grid-row-end: auto;
   }
+  
+  .masonry-item::after {
+    font-size: 12px;
+    padding: 6px 8px;
+    top: 8px;
+    right: 8px;
+  }
 }
 
 /* Móvil */
@@ -682,10 +721,10 @@ html {
   }
   
   .masonry-item::after {
-    font-size: 12px;
-    padding: 6px 8px;
-    top: 8px;
-    right: 8px;
+    font-size: 11px;
+    padding: 5px 7px;
+    top: 6px;
+    right: 6px;
   }
   
   .nav-buttons {
@@ -757,7 +796,7 @@ html {
   }
   
   .masonry-item img {
-    transition: none;
+    transition: opacity 0.3s ease;
   }
   
   .masonry-item:hover img {

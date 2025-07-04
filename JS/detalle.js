@@ -27,25 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
     observer.observe(card);
   });
 
-  // Lazy loading con Intersection Observer
-  const imgObserver = new IntersectionObserver((entries, imgObs) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const img = entry.target;
-        const dataSrc = img.dataset.src;
-        if (dataSrc) {
-          img.src = dataSrc;
-          img.removeAttribute('data-src');
-        }
-        img.classList.add('loaded');
-        imgObs.unobserve(img);
-      }
-    });
-  }, { rootMargin: '0px 0px 100px 0px' });
-
-  galleryItems.forEach(img => {
-    if (img.dataset.src) imgObserver.observe(img);
-  });
+  // Configurar la galería Pinterest mejorada
+  setupPinterestGallery();
 
   // Parallax y escala en scroll
   let ticking = false;
@@ -75,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Preload imágenes críticas
   const preload = [];
-  document.querySelectorAll('.main-image, .masonry-item img').forEach(img => {
+  document.querySelectorAll('.main-image, .portrait-image').forEach(img => {
     if (img.src) preload.push(img.src);
   });
   preload.slice(0, 3).forEach(src => new Image().src = src);
@@ -97,30 +80,20 @@ document.addEventListener('DOMContentLoaded', function() {
   navButtons.forEach(btn => {
     btn.addEventListener('keydown', e => {
       if (["Enter", "Space", " "].includes(e.key)) {
-        e.preventDefault(); btn.click();
-      }
-    });
-  });
-  
-  document.querySelectorAll('.masonry-item').forEach(item => {
-    item.setAttribute('tabindex', '0');
-    item.setAttribute('role', 'button');
-    item.addEventListener('keydown', e => {
-      if (["Enter", "Space", " "].includes(e.key)) {
         e.preventDefault(); 
-        const img = item.querySelector('img');
-        if (img) openModal(img);
+        btn.click();
       }
     });
   });
 
+  // Error handling para imágenes de características
   document.querySelectorAll('.characteristics-image img').forEach(img => {
     img.addEventListener('error', function() {
-        const grid = this.closest('.characteristics-grid');
-        if (grid) {
-            grid.classList.add('single-column');
-            this.remove();
-        }
+      const grid = this.closest('.characteristics-grid');
+      if (grid) {
+        grid.classList.add('single-column');
+        this.remove();
+      }
     });
   });
 
@@ -145,6 +118,8 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupPinterestGallery() {
   const galleryItems = document.querySelectorAll('.masonry-item');
   
+  console.log('Configurando galería Pinterest, items encontrados:', galleryItems.length);
+  
   // Lazy loading mejorado para galería
   const galleryObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -152,31 +127,53 @@ function setupPinterestGallery() {
         const item = entry.target;
         const img = item.querySelector('img');
         
-        if (img && img.dataset.src) {
-          // Mostrar indicador de carga
-          item.classList.add('loading');
+        console.log('Item visible:', item, 'Imagen:', img);
+        
+        if (img) {
+          const dataSrc = img.dataset.src;
+          console.log('data-src:', dataSrc);
           
-          // Crear imagen temporal para precargar
-          const tempImg = new Image();
-          tempImg.onload = () => {
-            img.src = img.dataset.src;
-            img.removeAttribute('data-src');
-            item.classList.remove('loading');
-            img.classList.add('loaded');
+          if (dataSrc) {
+            // Mostrar indicador de carga
+            item.classList.add('loading');
             
-            // Añadir animación de entrada
-            setTimeout(() => {
+            // Crear imagen temporal para precargar
+            const tempImg = new Image();
+            tempImg.onload = () => {
+              console.log('Imagen cargada exitosamente:', dataSrc);
+              img.src = dataSrc;
+              img.removeAttribute('data-src');
+              item.classList.remove('loading');
+              img.classList.add('loaded');
+              
+              // Mostrar imagen
+              img.style.opacity = '1';
+              
+              // Añadir animación de entrada
+              setTimeout(() => {
+                item.style.opacity = '1';
+                item.style.transform = 'translateY(0)';
+              }, 100);
+            };
+            
+            tempImg.onerror = () => {
+              console.error('Error al cargar imagen:', dataSrc);
+              item.classList.remove('loading');
+              // En lugar de ocultar, mostrar placeholder
+              img.src = '/Img/placeholder.jpg'; // Asegurate de tener esta imagen
+              img.alt = 'Imagen no disponible';
+              img.style.opacity = '0.5';
               item.style.opacity = '1';
-              item.style.transform = 'translateY(0)';
-            }, 100);
-          };
-          
-          tempImg.onerror = () => {
-            item.classList.remove('loading');
-            item.style.display = 'none';
-          };
-          
-          tempImg.src = img.dataset.src;
+            };
+            
+            tempImg.src = dataSrc;
+          } else if (img.src) {
+            // Si ya tiene src, solo mostrar
+            console.log('Imagen ya tiene src:', img.src);
+            img.style.opacity = '1';
+            item.style.opacity = '1';
+            item.style.transform = 'translateY(0)';
+          }
         }
         
         galleryObserver.unobserve(item);
@@ -192,13 +189,12 @@ function setupPinterestGallery() {
     const img = item.querySelector('img');
     
     if (img) {
-      // Configurar lazy loading si tiene data-src
-      if (img.dataset.src) {
-        item.style.opacity = '0';
-        item.style.transform = 'translateY(20px)';
-        item.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        galleryObserver.observe(item);
-      }
+      console.log(`Configurando item ${index}:`, img);
+      
+      // Configurar estilos iniciales
+      item.style.opacity = '0';
+      item.style.transform = 'translateY(20px)';
+      item.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
       
       // Añadir delay escalonado para animaciones
       item.style.animationDelay = `${index * 0.1}s`;
@@ -211,13 +207,20 @@ function setupPinterestGallery() {
       // Event listeners mejorados
       item.addEventListener('click', (e) => {
         e.preventDefault();
-        openModal(img);
+        // Usar la imagen src actual, no data-src
+        const imgToShow = img.src || img.dataset.src;
+        if (imgToShow) {
+          openModal(img);
+        }
       });
       
       item.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          openModal(img);
+          const imgToShow = img.src || img.dataset.src;
+          if (imgToShow) {
+            openModal(img);
+          }
         }
       });
       
@@ -229,11 +232,16 @@ function setupPinterestGallery() {
       item.addEventListener('mouseleave', () => {
         item.style.zIndex = '1';
       });
+      
+      // Observar para lazy loading
+      galleryObserver.observe(item);
     }
   });
   
   // Reorganizar galería dinámicamente
-  reorganizeGallery();
+  setTimeout(() => {
+    reorganizeGallery();
+  }, 100);
   
   // Reorganizar en resize
   let resizeTimeout;
@@ -259,7 +267,7 @@ function reorganizeGallery() {
   setTimeout(() => {
     items.forEach((item, index) => {
       const img = item.querySelector('img');
-      if (img && img.complete) {
+      if (img && (img.complete || img.naturalWidth > 0)) {
         const aspectRatio = img.naturalHeight / img.naturalWidth;
         
         // Calcular spans basado en aspect ratio
@@ -285,6 +293,8 @@ function setupImageModal() {
     '.portrait-image, .characteristics-image img, .masonry-item img'
   );
 
+  console.log('Configurando modal para', clickableImages.length, 'imágenes');
+
   clickableImages.forEach(img => {
     // Hacer la imagen clickeable
     img.style.cursor = 'pointer';
@@ -299,7 +309,7 @@ function setupImageModal() {
     // Añadir accessibility
     img.setAttribute('tabindex', '0');
     img.setAttribute('role', 'button');
-    img.setAttribute('aria-label', `${TRANSLATIONS.enlarge_image}: ${img.alt || 'Imagen'}`);
+    img.setAttribute('aria-label', `Ampliar imagen: ${img.alt || 'Imagen'}`);
     
     // Keyboard support
     img.addEventListener('keydown', function(e) {
@@ -315,33 +325,41 @@ function openModal(img) {
   const modal = document.getElementById('imageModal');
   const modalImg = document.getElementById('modalImage');
   
-  if (!modal || !modalImg) return;
+  if (!modal || !modalImg) {
+    console.error('Modal o modalImage no encontrados');
+    return;
+  }
   
   // Encontrar todas las imágenes de la galería
   const galleryImages = Array.from(document.querySelectorAll('.masonry-item img'));
   const currentIndex = galleryImages.indexOf(img);
   
+  console.log('Abriendo modal para imagen:', img.src || img.dataset.src);
+  
   // Configurar la imagen del modal
-  modalImg.src = img.src;
-  modalImg.alt = img.alt || 'Imagen ampliada';
-  modalImg.dataset.currentIndex = currentIndex;
-  
-  // Mostrar el modal
-  modal.style.display = 'block';
-  document.body.style.overflow = 'hidden';
-  
-  // Añadir navegación con teclado
-  modal.setAttribute('tabindex', '-1');
-  modal.focus();
-  
-  // Animación de entrada
-  setTimeout(() => {
-    modal.classList.add('modal-open');
-  }, 10);
-  
-  // Añadir controles de navegación si hay múltiples imágenes
-  if (galleryImages.length > 1) {
-    addModalNavigation(galleryImages, currentIndex);
+  const imgSrc = img.src || img.dataset.src;
+  if (imgSrc) {
+    modalImg.src = imgSrc;
+    modalImg.alt = img.alt || 'Imagen ampliada';
+    modalImg.dataset.currentIndex = currentIndex;
+    
+    // Mostrar el modal
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    // Añadir navegación con teclado
+    modal.setAttribute('tabindex', '-1');
+    modal.focus();
+    
+    // Animación de entrada
+    setTimeout(() => {
+      modal.classList.add('modal-open');
+    }, 10);
+    
+    // Añadir controles de navegación si hay múltiples imágenes
+    if (galleryImages.length > 1) {
+      addModalNavigation(galleryImages, currentIndex);
+    }
   }
 }
 
@@ -369,19 +387,25 @@ function addModalNavigation(images, currentIndex) {
     prevBtn.addEventListener('click', () => {
       const newIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
       const newImg = images[newIndex];
-      modalImg.src = newImg.src;
-      modalImg.alt = newImg.alt || 'Imagen ampliada';
-      modalImg.dataset.currentIndex = newIndex;
-      currentIndex = newIndex;
+      const newImgSrc = newImg.src || newImg.dataset.src;
+      if (newImgSrc) {
+        modalImg.src = newImgSrc;
+        modalImg.alt = newImg.alt || 'Imagen ampliada';
+        modalImg.dataset.currentIndex = newIndex;
+        currentIndex = newIndex;
+      }
     });
     
     nextBtn.addEventListener('click', () => {
       const newIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
       const newImg = images[newIndex];
-      modalImg.src = newImg.src;
-      modalImg.alt = newImg.alt || 'Imagen ampliada';
-      modalImg.dataset.currentIndex = newIndex;
-      currentIndex = newIndex;
+      const newImgSrc = newImg.src || newImg.dataset.src;
+      if (newImgSrc) {
+        modalImg.src = newImgSrc;
+        modalImg.alt = newImg.alt || 'Imagen ampliada';
+        modalImg.dataset.currentIndex = newIndex;
+        currentIndex = newIndex;
+      }
     });
     
     modal.appendChild(prevBtn);
@@ -428,18 +452,20 @@ document.addEventListener('keydown', e => {
         if (e.key === 'ArrowLeft') {
           newIndex = currentIndex > 0 ? currentIndex - 1 : galleryImages.length - 1;
         } else {
-          newIndex = currentIndex < galleryImages.length - 1 ? currentIndex + 1 : 0;
+          newIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
         }
         
         const newImg = galleryImages[newIndex];
-        modalImg.src = newImg.src;
-        modalImg.alt = newImg.alt || 'Imagen ampliada';
-        modalImg.dataset.currentIndex = newIndex;
+        const newImgSrc = newImg.src || newImg.dataset.src;
+        if (newImgSrc) {
+          modalImg.src = newImgSrc;
+          modalImg.alt = newImg.alt || 'Imagen ampliada';
+          modalImg.dataset.currentIndex = newIndex;
+        }
       }
     }
   }
 });
-
 
 // Prevenir scroll del body cuando el modal está abierto
 document.addEventListener('wheel', e => {
