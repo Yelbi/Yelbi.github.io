@@ -197,28 +197,21 @@ try {
     <?php endif; ?>
 
     <!-- Galería de imágenes estilo Pinterest -->
-<?php if (!empty($imagenes)): ?>
-<section class="gallery-section">
-    <h2 class="section-title"><?= __('image_gallery') ?></h2>
-    <div class="masonry-gallery">
-        <?php foreach ($imagenes as $index => $img): ?>
-        <div class="masonry-item" data-index="<?= $index ?>">
-            <img data-src="<?= htmlspecialchars($img['imagen_url']) ?>" 
-                 alt="<?= htmlspecialchars($ser['nombre']) ?> - <?= __('image') ?> <?= $index + 1 ?>" 
-                 loading="lazy"
-                 style="opacity: 0;">
+    <?php if (!empty($imagenes)): ?>
+    <section class="gallery-section">
+        <h2 class="section-title"><?= __('image_gallery') ?></h2>
+        <div class="masonry-gallery">
+            <?php foreach ($imagenes as $img): ?>
+            <div class="masonry-item">
+                <img src="<?= htmlspecialchars($img['imagen_url']) ?>" 
+                     alt="<?= htmlspecialchars($ser['nombre']) ?>" 
+                     loading="lazy" 
+                     onclick="openModal(this)">
+            </div>
+            <?php endforeach; ?>
         </div>
-        <?php endforeach; ?>
-    </div>
-    
-    <!-- Información adicional de la galería -->
-    <div class="gallery-info">
-        <p class="gallery-count">
-            <?= count($imagenes) ?> <?= count($imagenes) == 1 ? __('image') : __('images') ?>
-        </p>
-    </div>
-</section>
-<?php endif; ?>
+    </section>
+    <?php endif; ?>
 
 <section class="navigation-section">
     <div class="nav-buttons">
