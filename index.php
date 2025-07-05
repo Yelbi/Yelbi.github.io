@@ -98,7 +98,7 @@
                 </a>
             <div>
                 <a href="/survey.php" class="btn">
-                    <i class="fi fi-rr-form"></i> <?= __('quick_survey') ?>
+                    <i class="fi fi-rr-form"></i> <?= __('test_of_beings') ?>
                 </a>
             </div>
         </section>
