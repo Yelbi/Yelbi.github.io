@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/styles/header.css">
     <link rel="stylesheet" href="/styles/survey.css">
     <link rel="shortcut icon" href="/Img/favicon.ico" type="image/x-icon" />
-    <title><?= __('quick_survey') ?> - <?= __('site_title') ?></title>
+    <title><?= __('site_title') ?></title>
 </head>
 <body>
     <!-- Header -->
