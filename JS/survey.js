@@ -12,8 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalQuestions = questions.length;
     const answers = {};
 
-    // Mostrar primera pregunta
-    document.querySelector('.survey-question.visible').style.display = 'block';
+    // Inicializar
+    updateNavigation();
 
     // Manejar clic en opciones
     document.querySelectorAll('.option-item').forEach(item => {
@@ -22,21 +22,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const questionNum = questionContainer.dataset.question;
             const input = item.querySelector('input');
             
-            // Marcar como seleccionado
+            // Limpiar selección anterior
             questionContainer.querySelectorAll('.option-item').forEach(opt => {
                 opt.classList.remove('selected');
             });
+            
+            // Marcar como seleccionado
             item.classList.add('selected');
             input.checked = true;
             
             // Guardar respuesta
             answers[`q${questionNum}`] = input.value;
             
-            // Habilitar siguiente
-            if (currentQuestion === totalQuestions) {
-                nextBtn.textContent = 'Finalizar';
-            }
-            nextBtn.disabled = false;
+            // Actualizar navegación
+            updateNavigation();
         });
     });
 
@@ -66,15 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const newQuestion = document.querySelector(`[data-question="${newIndex}"]`);
         
         oldQuestion.classList.remove('visible');
-        setTimeout(() => {
-            oldQuestion.style.display = 'none';
-            newQuestion.style.display = 'block';
-            setTimeout(() => {
-                newQuestion.classList.add('visible');
-                currentQuestion = newIndex;
-                updateNavigation();
-            }, 50);
-        }, 300);
+        newQuestion.classList.add('visible');
+        
+        currentQuestion = newIndex;
+        updateNavigation();
     }
 
     function updateNavigation() {
@@ -86,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Actualizar botones
         prevBtn.disabled = currentQuestion === 1;
         nextBtn.disabled = !answers[`q${currentQuestion}`];
-        nextBtn.textContent = currentQuestion === totalQuestions ? 'Finalizar' : 'Siguiente';
+        nextBtn.textContent = currentQuestion === totalQuestions ? 'Finalizar' : 'Siguiente →';
     }
 
     function showCompletion() {
@@ -94,14 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('.survey-navigation').style.display = 'none';
         document.querySelector('.survey-header').style.display = 'none';
         completionScreen.style.display = 'block';
-        
-        // Animación de estrellas
-        document.querySelectorAll('.completion-stars span').forEach((star, i) => {
-            star.style.animation = `twinkle 3s ${i * 0.5}s infinite`;
-        });
     }
 
-    // Teclado
+    // Navegación con teclado
     document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft' && !prevBtn.disabled) prevBtn.click();
         if (e.key === 'ArrowRight' && !nextBtn.disabled) nextBtn.click();
