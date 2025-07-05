@@ -96,11 +96,11 @@
                 <a href="/random_ser.php" class="btn random-btn">
                     <i class="fi fi-rr-shuffle"></i> <?= __('discover_random') ?>
                 </a>
-                <div class="survey-section">
-                    <button class="survey-trigger" id="surveyTrigger">
+                <div>
+                    <button>
                         <i class="fi fi-rr-form"></i> <?= __('quick_survey') ?>
                     </button>
-            </div>
+                </div>
         </section>
 
         <!-- Sección 3 -->
