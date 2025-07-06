@@ -4,7 +4,7 @@ const API_BASE_URL = 'https://seres.blog/api/auth.php';
 document.addEventListener('DOMContentLoaded', async () => {
     await loadProfile();
     await loadAdminMessages();
-    await loadVotingResults(); // Añadir esta línea
+    await loadVotingResults();
 });
 
 async function loadProfile() {
@@ -76,8 +76,12 @@ async function apiRequest(action, data = {}, method = 'POST') {
         };
 
         const url = `${API_BASE_URL}?action=${action}`;
+        console.log(`Making request to: ${url}`); // Debug log
+        
         const response = await fetch(url, options);
         const textResponse = await response.text();
+        
+        console.log(`Response for ${action}:`, textResponse); // Debug log
         
         try {
             const result = JSON.parse(textResponse);
@@ -154,11 +158,9 @@ async function loadAdminMessages() {
             }
             
             const formattedDate = formatMessageDate(complaint.created_at);
-                // Usar avatar del usuario si está disponible
-    const avatarImage = complaint.user_profile_image || '/Img/default-avatar.png';
-    const avatar = `<div class="sender-avatar">
-        <img src="${avatarImage}" alt="${complaint.user_email}">
-    </div>`;
+            // Usar avatar del usuario si está disponible
+            const avatarImage = complaint.user_profile_image || '/Img/default-avatar.png';
+            const avatar = `<img src="${avatarImage}" alt="${complaint.user_email}">`;
             
             messageElement.innerHTML = `
                 <div class="message-header" onclick="toggleMessageDetail(${complaint.id})">
@@ -217,9 +219,17 @@ async function loadAdminMessages() {
     }
 }
 
+// FUNCIÓN CORREGIDA PARA CARGAR RESULTADOS DE VOTACIÓN
 async function loadVotingResults() {
     try {
         const container = document.getElementById('votingResultsContainer');
+        
+        // Verificar que el contenedor existe
+        if (!container) {
+            console.error('No se encontró el contenedor votingResultsContainer');
+            return;
+        }
+        
         container.innerHTML = `
             <div class="loading-container">
                 <div class="loading-spinner"></div>
@@ -227,46 +237,96 @@ async function loadVotingResults() {
             </div>
         `;
         
-        // Timeout de 10 segundos
-        const timeout = setTimeout(() => {
+        console.log('Solicitando resultados de votación...'); // Debug log
+        
+        // Timeout de 15 segundos (aumentado)
+        const timeoutId = setTimeout(() => {
             container.innerHTML = `
                 <div class="error-state">
                     <div class="error-icon">⚠️</div>
                     <h3>Timeout al cargar resultados</h3>
+                    <p>La solicitud tardó demasiado en responder</p>
                     <button class="btn-retry" onclick="loadVotingResults()">Reintentar</button>
                 </div>
             `;
-        }, 10000);
+        }, 15000);
 
+        // Hacer la petición
         const result = await apiRequest('get-vote-results', {}, 'GET');
-        clearTimeout(timeout);
+        clearTimeout(timeoutId);
         
-        if (!result.results || result.results.length === 0) {
+        console.log('Respuesta de resultados:', result); // Debug log
+        
+        // Verificar estructura de la respuesta
+        if (!result) {
+            throw new Error('No se recibió respuesta del servidor');
+        }
+        
+        // Manejar diferentes estructuras de respuesta
+        let votingData = null;
+        let totalVotes = 0;
+        
+        if (result.results) {
+            votingData = result.results;
+            totalVotes = result.total || 0;
+        } else if (result.data && result.data.results) {
+            votingData = result.data.results;
+            totalVotes = result.data.total || 0;
+        } else if (Array.isArray(result)) {
+            votingData = result;
+            totalVotes = result.reduce((sum, item) => sum + (item.votes || 0), 0);
+        } else {
+            console.log('Estructura de respuesta no reconocida:', result);
+            throw new Error('Estructura de respuesta no válida');
+        }
+        
+        if (!votingData || !Array.isArray(votingData) || votingData.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <i class="fi fi-rr-pie-chart"></i>
-                    <p>No hay votos registrados aún</p>
+                    <div class="empty-icon">📊</div>
+                    <h3>No hay votos registrados</h3>
+                    <p>Cuando los usuarios voten, los resultados aparecerán aquí.</p>
+                    <button class="btn-retry" onclick="loadVotingResults()">Actualizar</button>
                 </div>
             `;
             return;
         }
         
+        // Ordenar por número de votos (descendente)
+        const sortedResults = [...votingData].sort((a, b) => (b.votes || 0) - (a.votes || 0));
+        
         let html = `
             <div class="results-summary">
-                <div class="total-votes">Total de votos: ${result.total}</div>
+                <div class="total-votes">
+                    <i class="fi fi-rr-users"></i>
+                    Total de votos: <strong>${totalVotes}</strong>
+                </div>
+                <div class="last-updated">
+                    Última actualización: ${new Date().toLocaleString('es-ES')}
+                </div>
             </div>
             <div class="results-list">
         `;
         
-        result.results.forEach(item => {
+        sortedResults.forEach((item, index) => {
+            const votes = item.votes || 0;
+            const percentage = totalVotes > 0 ? ((votes / totalVotes) * 100).toFixed(1) : 0;
+            const mythology = item.mythology || item.name || 'Sin nombre';
+            
             html += `
-                <div class="result-item">
-                    <div class="mythology-name">${item.mythology}</div>
+                <div class="result-item" style="animation-delay: ${index * 0.1}s">
+                    <div class="result-header">
+                        <div class="mythology-name">
+                            <span class="rank">#${index + 1}</span>
+                            ${mythology}
+                        </div>
+                        <div class="vote-percentage">${percentage}%</div>
+                    </div>
                     <div class="vote-bar-container">
-                        <div class="vote-bar" style="width: ${item.percentage}%"></div>
+                        <div class="vote-bar" style="width: ${percentage}%"></div>
                     </div>
                     <div class="vote-count">
-                        ${item.votes} votos (${item.percentage}%)
+                        ${votes} ${votes === 1 ? 'voto' : 'votos'}
                     </div>
                 </div>
             `;
@@ -275,16 +335,55 @@ async function loadVotingResults() {
         html += '</div>';
         container.innerHTML = html;
         
+        // Animar las barras
+        setTimeout(() => {
+            const bars = container.querySelectorAll('.vote-bar');
+            bars.forEach(bar => {
+                bar.style.transition = 'width 0.8s ease-out';
+            });
+        }, 100);
+        
     } catch (error) {
         console.error('Error loading voting results:', error);
-        document.getElementById('votingResultsContainer').innerHTML = `
-            <div class="error-state">
-                <div class="error-icon">⚠️</div>
-                <h3>Error al cargar resultados</h3>
-                <p>${error.message}</p>
-                <button class="btn-retry" onclick="loadVotingResults()">Reintentar</button>
-            </div>
-        `;
+        const container = document.getElementById('votingResultsContainer');
+        if (container) {
+            container.innerHTML = `
+                <div class="error-state">
+                    <div class="error-icon">⚠️</div>
+                    <h3>Error al cargar resultados</h3>
+                    <p>${error.message}</p>
+                    <div class="error-actions">
+                        <button class="btn-retry" onclick="loadVotingResults()">Reintentar</button>
+                        <button class="btn-debug" onclick="debugVotingResults()">Debug</button>
+                    </div>
+                </div>
+            `;
+        }
+    }
+}
+
+// Función de debug para votación
+async function debugVotingResults() {
+    console.log('=== DEBUG VOTING RESULTS ===');
+    try {
+        const token = localStorage.getItem('jwt_token');
+        console.log('Token exists:', !!token);
+        console.log('Token preview:', token ? token.substring(0, 20) + '...' : 'No token');
+        
+        // Probar diferentes endpoints
+        const endpoints = ['get-vote-results', 'get-votes', 'voting-results'];
+        
+        for (const endpoint of endpoints) {
+            try {
+                console.log(`Probando endpoint: ${endpoint}`);
+                const result = await apiRequest(endpoint, {}, 'GET');
+                console.log(`Resultado de ${endpoint}:`, result);
+            } catch (error) {
+                console.log(`Error en ${endpoint}:`, error.message);
+            }
+        }
+    } catch (error) {
+        console.error('Error en debug:', error);
     }
 }
 
@@ -470,3 +569,5 @@ function truncateText(text, maxLength) {
 window.toggleMessageDetail = toggleMessageDetail;
 window.deleteMessage = deleteMessage;
 window.loadAdminMessages = loadAdminMessages;
+window.loadVotingResults = loadVotingResults;
+window.debugVotingResults = debugVotingResults;
