@@ -1,39 +1,47 @@
 class ResponsiveGallery {
   constructor() {
-    this.elements = this.initializeElements();
+    this.cache = new Map();
     this.deviceInfo = this.detectDevice();
     this.config = this.generateConfig();
     this.state = this.initializeState();
     this.observers = new Map();
     this.timers = new Map();
     this.loadedImages = new Set();
+    this.visibleCards = new Set();
     
+    // Cache de elementos DOM
+    this.initializeElements();
+    
+    // Inicializar inmediatamente
     this.init();
   }
 
   initializeElements() {
-    const selectors = {
-      cards: '.card',
-      images: 'img[loading="lazy"]',
-      searchInput: '#searchInput',
-      tipoFilter: '#tipoFilter',
-      regionFilter: '#regionFilter',
-      clearFiltersBtn: '#clearFilters',
-      toggleFiltersBtn: '#toggleFilters',
-      resultsCount: '#resultsCount',
-      noResults: '#noResults',
-      filterPanel: '.filter-panel',
-      galeriaGrid: '#galeriaGrid'
+    // Usar una sola consulta para mejorar rendimiento
+    const elements = {
+      cards: document.querySelectorAll('.card'),
+      images: document.querySelectorAll('img[loading="lazy"]'),
+      searchInput: document.getElementById('searchInput'),
+      tipoFilter: document.getElementById('tipoFilter'),
+      regionFilter: document.getElementById('regionFilter'),
+      clearFiltersBtn: document.getElementById('clearFilters'),
+      toggleFiltersBtn: document.getElementById('toggleFilters'),
+      resultsCount: document.getElementById('resultsCount'),
+      noResults: document.getElementById('noResults'),
+      filterPanel: document.querySelector('.filter-panel'),
+      galeriaGrid: document.getElementById('galeriaGrid')
     };
 
-    const elements = {};
-    for (const [key, selector] of Object.entries(selectors)) {
-      elements[key] = (key === 'cards' || key === 'images') 
-        ? document.querySelectorAll(selector)
-        : document.getElementById(selector.slice(1)) || document.querySelector(selector);
-    }
-    
-    return elements;
+    // Cachear datos de las tarjetas para evitar accesos DOM repetidos
+    this.cardsData = Array.from(elements.cards).map(card => ({
+      element: card,
+      nombre: (card.dataset.nombre || '').toLowerCase(),
+      tipo: card.dataset.tipo || '',
+      region: card.dataset.region || '',
+      img: card.querySelector('img')
+    }));
+
+    this.elements = elements;
   }
 
   detectDevice() {
@@ -56,21 +64,9 @@ class ResponsiveGallery {
   }
 
   detectLowPerformance() {
+    // Detección simplificada
     if (navigator.deviceMemory && navigator.deviceMemory < 4) return true;
-    
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      
-      if (gl) {
-        const renderer = gl.getParameter(gl.RENDERER);
-        canvas.remove();
-        return /Mali|PowerVR|Adreno [23]/.test(renderer);
-      }
-    } catch (e) {
-      return true;
-    }
-    
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) return true;
     return false;
   }
 
@@ -78,17 +74,16 @@ class ResponsiveGallery {
     const { isMobile, isLowPerformance, prefersReducedMotion } = this.deviceInfo;
     
     return {
-      searchDebounce: isMobile ? 400 : 300,
-      animationDelay: isLowPerformance ? 0 : (isMobile ? 30 : 50),
-      resizeDebounce: 250,
-      intersectionThreshold: isMobile ? 0.05 : 0.1,
-      lazyLoadMargin: isMobile ? '50px' : '100px',
+      searchDebounce: isMobile ? 400 : 250,
+      animationDelay: isLowPerformance ? 0 : 20,
+      resizeDebounce: 200,
+      intersectionThreshold: 0.1,
+      lazyLoadMargin: isMobile ? '50px' : '150px',
       enableAnimations: !prefersReducedMotion && !isLowPerformance,
-      enableHoverEffects: this.deviceInfo.supportsHover && !this.deviceInfo.isTouchDevice,
-      enableParallax: this.deviceInfo.isDesktop && !isLowPerformance,
-      preloadCount: this.deviceInfo.isSlowConnection ? 2 : (isMobile ? 4 : 8),
-      filterBatchSize: isLowPerformance ? 5 : 10,
-      imageTimeout: 3000 // Reducido de 5000 a 3000ms
+      enableHoverEffects: this.deviceInfo.supportsHover,
+      preloadCount: this.deviceInfo.isSlowConnection ? 3 : 6,
+      batchSize: isLowPerformance ? 8 : 16,
+      imageTimeout: 4000
     };
   }
 
@@ -97,66 +92,85 @@ class ResponsiveGallery {
       filters: { search: '', tipo: '', region: '' },
       isFilterPanelVisible: false,
       lastScrollY: 0,
-      visibleCards: 0,
-      isProcessing: false
+      visibleCount: 0,
+      isProcessing: false,
+      activeFilters: new Set()
     };
   }
 
+  // Filtrado optimizado usando requestIdleCallback
   async applyFilters() {
     if (this.state.isProcessing) return;
     
     this.state.isProcessing = true;
+    const { search, tipo, region } = this.state.filters;
     let visibleCount = 0;
-    const cards = Array.from(this.elements.cards);
-    const batchSize = this.config.filterBatchSize;
     
-    for (let i = 0; i < cards.length; i += batchSize) {
-      const batch = cards.slice(i, i + batchSize);
-      
-      await new Promise(resolve => {
-        requestAnimationFrame(() => {
-          batch.forEach((card, batchIndex) => {
-            const isVisible = this.evaluateCardFilters(card);
+    // Preparar filtros una sola vez
+    const hasSearch = search.length > 0;
+    const searchLower = hasSearch ? search.toLowerCase() : '';
+    const hasTipo = tipo.length > 0;
+    const hasRegion = region.length > 0;
+    
+    // Procesar en lotes más eficientes
+    const processCards = (cards) => {
+      return new Promise(resolve => {
+        const processBatch = (startIndex) => {
+          const endIndex = Math.min(startIndex + this.config.batchSize, cards.length);
+          
+          for (let i = startIndex; i < endIndex; i++) {
+            const cardData = cards[i];
+            const isVisible = this.evaluateCardFiltersOptimized(
+              cardData, hasSearch, searchLower, hasTipo, tipo, hasRegion, region
+            );
             
             if (isVisible) {
-              this.showCard(card, i + batchIndex);
+              this.showCardOptimized(cardData.element, visibleCount);
               visibleCount++;
+              this.visibleCards.add(cardData.element);
             } else {
-              this.hideCard(card);
+              this.hideCardOptimized(cardData.element);
+              this.visibleCards.delete(cardData.element);
             }
-          });
-          resolve();
-        });
+          }
+          
+          if (endIndex < cards.length) {
+            // Continuar con el siguiente lote
+            requestAnimationFrame(() => processBatch(endIndex));
+          } else {
+            resolve();
+          }
+        };
+        
+        processBatch(0);
       });
-    }
+    };
 
+    await processCards(this.cardsData);
+    
     this.updateResultsDisplay(visibleCount);
     this.updateURL();
     this.state.isProcessing = false;
   }
 
-  evaluateCardFilters(card) {
-    const { search, tipo, region } = this.state.filters;
-    const nombre = (card.dataset.nombre || '').toLowerCase();
-    
-    return (!search || nombre.includes(search.toLowerCase())) &&
-           (!tipo || card.dataset.tipo === tipo) &&
-           (!region || card.dataset.region === region);
+  evaluateCardFiltersOptimized(cardData, hasSearch, searchLower, hasTipo, tipo, hasRegion, region) {
+    return (!hasSearch || cardData.nombre.includes(searchLower)) &&
+           (!hasTipo || cardData.tipo === tipo) &&
+           (!hasRegion || cardData.region === region);
   }
 
-  showCard(card, index) {
-    const timerKey = card;
-    if (this.timers.has(timerKey)) {
-      clearTimeout(this.timers.get(timerKey));
-      this.timers.delete(timerKey);
+  showCardOptimized(card, index) {
+    if (this.timers.has(card)) {
+      clearTimeout(this.timers.get(card));
+      this.timers.delete(card);
     }
     
     card.style.display = 'block';
     card.classList.remove('filtering-hide');
     card.classList.add('filtering-show');
 
-    if (this.config.enableAnimations) {
-      const delay = index * this.config.animationDelay;
+    if (this.config.enableAnimations && index < 20) { // Limitar animaciones
+      const delay = Math.min(index * this.config.animationDelay, 200);
       setTimeout(() => {
         card.style.opacity = '1';
         card.style.transform = 'translateY(0)';
@@ -167,27 +181,24 @@ class ResponsiveGallery {
     }
   }
 
-  hideCard(card) {
+  hideCardOptimized(card) {
     card.classList.remove('filtering-show');
     card.classList.add('filtering-hide');
-
-    const hideTimeout = this.config.enableAnimations ? 300 : 0;
-    const timerKey = card;
     
-    if (this.timers.has(timerKey)) {
-      clearTimeout(this.timers.get(timerKey));
+    if (this.timers.has(card)) {
+      clearTimeout(this.timers.get(card));
     }
     
-    this.timers.set(timerKey, setTimeout(() => {
+    this.timers.set(card, setTimeout(() => {
       if (card.classList.contains('filtering-hide')) {
         card.style.display = 'none';
       }
-      this.timers.delete(timerKey);
-    }, hideTimeout));
+      this.timers.delete(card);
+    }, this.config.enableAnimations ? 200 : 0));
   }
 
   updateResultsDisplay(count) {
-    this.state.visibleCards = count;
+    this.state.visibleCount = count;
     
     if (this.elements.resultsCount) {
       this.elements.resultsCount.textContent = count;
@@ -221,6 +232,7 @@ class ResponsiveGallery {
       debouncedSearch(e.target.value);
     });
 
+    // Mejorar UX en móviles
     if (this.deviceInfo.isMobile) {
       this.elements.searchInput.addEventListener('focus', () => {
         setTimeout(() => {
@@ -234,21 +246,18 @@ class ResponsiveGallery {
   }
 
   setupFilterSelects() {
-    const filterMap = { tipoFilter: 'tipo', regionFilter: 'region' };
+    const filterHandler = (filterKey) => (e) => {
+      this.state.filters[filterKey] = e.target.value;
+      this.applyFilters();
+    };
 
-    Object.entries(filterMap).forEach(([elementKey, filterKey]) => {
-      const element = this.elements[elementKey];
-      if (!element) return;
-
-      element.addEventListener('change', (e) => {
-        this.state.filters[filterKey] = e.target.value;
-        this.applyFilters();
-      });
-
-      if (this.deviceInfo.isTouchDevice) {
-        this.addTouchFeedback(element);
-      }
-    });
+    if (this.elements.tipoFilter) {
+      this.elements.tipoFilter.addEventListener('change', filterHandler('tipo'));
+    }
+    
+    if (this.elements.regionFilter) {
+      this.elements.regionFilter.addEventListener('change', filterHandler('region'));
+    }
   }
 
   setupClearButton() {
@@ -256,7 +265,6 @@ class ResponsiveGallery {
 
     this.elements.clearFiltersBtn.addEventListener('click', () => {
       this.clearAllFilters();
-      this.addClickFeedback(this.elements.clearFiltersBtn);
     });
   }
 
@@ -278,9 +286,6 @@ class ResponsiveGallery {
       if (e.key === 'Escape') {
         if (document.activeElement === this.elements.searchInput) {
           this.elements.searchInput.blur();
-          if (this.deviceInfo.isMobile) {
-            this.collapseFilterPanel();
-          }
         } else {
           this.clearAllFilters();
         }
@@ -307,229 +312,162 @@ class ResponsiveGallery {
   }
 
   setupCardInteractions() {
-    this.elements.cards.forEach((card, index) => {
+    // Usar delegación de eventos para mejor rendimiento
+    this.elements.galeriaGrid.addEventListener('click', (e) => {
+      const card = e.target.closest('.card');
+      if (card) {
+        // Manejar click en card
+        this.handleCardClick(card, e);
+      }
+    });
+
+    // Configurar accesibilidad una sola vez
+    this.cardsData.forEach(({ element: card }) => {
       card.setAttribute('tabindex', '0');
       card.setAttribute('role', 'button');
-      card.setAttribute('aria-label', `Ver detalles ${card.dataset.nombre}`);
-
+      
       if (this.config.enableHoverEffects) {
         this.addHoverEffects(card);
       }
-
-      if (this.deviceInfo.isTouchDevice) {
-        this.addTouchEffects(card);
-      }
-
-      this.addKeyboardNavigation(card);
     });
   }
 
+  handleCardClick(card, e) {
+    // Verificar si el click fue en un badge
+    const badge = e.target.closest('.badge');
+    if (badge) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const filterType = badge.dataset.filter;
+      const filterValue = badge.dataset.value;
+      
+      this.state.filters[filterType] = filterValue;
+      
+      if (filterType === 'tipo' && this.elements.tipoFilter) {
+        this.elements.tipoFilter.value = filterValue;
+      } else if (filterType === 'region' && this.elements.regionFilter) {
+        this.elements.regionFilter.value = filterValue;
+      }
+      
+      this.applyFilters();
+    }
+  }
+
   addHoverEffects(card) {
+    if (!this.deviceInfo.supportsHover) return;
+
     const onMouseEnter = () => {
-      card.style.zIndex = '10';
       if (this.config.enableAnimations) {
-        card.style.transform = 'translateY(-5px) scale(1.02)';
-        card.style.filter = 'brightness(1.05)';
+        card.style.transform = 'translateY(-5px)';
+        card.style.zIndex = '10';
       }
     };
 
     const onMouseLeave = () => {
-      card.style.zIndex = '1';
       card.style.transform = '';
-      card.style.filter = '';
+      card.style.zIndex = '1';
     };
 
     card.addEventListener('mouseenter', onMouseEnter);
     card.addEventListener('mouseleave', onMouseLeave);
   }
 
-  addTouchEffects(card) {
-    let touchStart = 0;
-
-    card.addEventListener('touchstart', () => {
-      touchStart = Date.now();
-      if (this.config.enableAnimations) {
-        card.style.transform = 'scale(0.98)';
-      }
-    }, { passive: true });
-
-    card.addEventListener('touchend', () => {
-      const touchDuration = Date.now() - touchStart;
-      
-      if (touchDuration < 200 && this.config.enableAnimations) {
-        setTimeout(() => card.style.transform = '', 150);
-      } else {
-        card.style.transform = '';
-      }
-    }, { passive: true });
-
-    card.addEventListener('touchmove', () => {
-      card.style.transform = '';
-    }, { passive: true });
-  }
-
-  addKeyboardNavigation(card) {
-    card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        card.click();
-        
-        if (this.config.enableAnimations) {
-          card.style.transform = 'scale(0.98)';
-          setTimeout(() => card.style.transform = '', 100);
-        }
-      }
-    });
-  }
-
-  // CORRECCIÓN PRINCIPAL: Simplificar y corregir el lazy loading
+  // Lazy loading optimizado con IntersectionObserver
   setupLazyLoading() {
-    // Primero, manejar imágenes ya cargadas o que deberían precargarse
-    this.elements.images.forEach((img, index) => {
-      const card = img.closest('.card');
-      
-      // Si ya está marcada como loaded en el HTML o es de las primeras
-      if (img.classList.contains('loaded') || index < this.config.preloadCount) {
-        this.handleImageLoaded(img, card);
-        return;
-      }
-      
-      // Si ya se completó la carga naturalmente
-      if (img.complete && img.naturalHeight !== 0) {
-        this.handleImageLoaded(img, card);
-        return;
-      }
-      
-      // Configurar lazy loading para el resto
-      this.setupImageLazyLoad(img, card);
-    });
-  }
-  
-  setupImageLazyLoad(img, card) {
-    // Crear observer para esta imagen
+    // Configurar observer una sola vez
     const imageObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          this.loadImageWithTimeout(entry.target);
+          this.loadImage(entry.target);
           imageObserver.unobserve(entry.target);
         }
       });
     }, {
       rootMargin: this.config.lazyLoadMargin,
-      threshold: 0.01
+      threshold: this.config.intersectionThreshold
     });
-    
-    imageObserver.observe(img);
-    this.observers.set(img, imageObserver);
+
+    // Procesar todas las imágenes
+    this.cardsData.forEach(({ element: card, img }, index) => {
+      if (!img) return;
+
+      // Precargar las primeras imágenes
+      if (index < this.config.preloadCount) {
+        this.loadImage(img);
+      } else if (img.complete && img.naturalHeight > 0) {
+        this.handleImageLoaded(img, card);
+      } else {
+        imageObserver.observe(img);
+      }
+    });
+
+    this.observers.set('images', imageObserver);
   }
-  
-  loadImageWithTimeout(img) {
+
+  loadImage(img) {
     const card = img.closest('.card');
-    const imageId = img.src || img.dataset.src;
     
-    if (this.loadedImages.has(imageId)) return;
-    
-    // Mostrar estado de carga
-    if (card) {
-      card.classList.add('loading');
-    }
-    
-    // Configurar timeout
-    const loadingTimeout = setTimeout(() => {
-      this.handleImageError(img, card);
-    }, this.config.imageTimeout);
-    
-    // Eventos de carga
-    const handleLoad = () => {
-      clearTimeout(loadingTimeout);
+    if (img.complete && img.naturalHeight > 0) {
       this.handleImageLoaded(img, card);
-    };
-    
-    const handleError = () => {
-      clearTimeout(loadingTimeout);
-      this.handleImageError(img, card);
-    };
-    
-    // Limpiar eventos anteriores
-    img.removeEventListener('load', handleLoad);
-    img.removeEventListener('error', handleError);
-    
-    // Agregar nuevos eventos
-    img.addEventListener('load', handleLoad, { once: true });
-    img.addEventListener('error', handleError, { once: true });
-    
-    // Si la imagen ya está cargada, ejecutar inmediatamente
-    if (img.complete && img.naturalHeight !== 0) {
-      handleLoad();
+      return;
     }
+
+    card?.classList.add('loading');
+    
+    const loadPromise = new Promise((resolve, reject) => {
+      const handleLoad = () => {
+        img.removeEventListener('load', handleLoad);
+        img.removeEventListener('error', handleError);
+        resolve();
+      };
+      
+      const handleError = () => {
+        img.removeEventListener('load', handleLoad);
+        img.removeEventListener('error', handleError);
+        reject();
+      };
+      
+      img.addEventListener('load', handleLoad, { once: true });
+      img.addEventListener('error', handleError, { once: true });
+    });
+
+    // Timeout para imágenes que no cargan
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Timeout')), this.config.imageTimeout);
+    });
+
+    Promise.race([loadPromise, timeoutPromise])
+      .then(() => this.handleImageLoaded(img, card))
+      .catch(() => this.handleImageError(img, card));
   }
 
   handleImageLoaded(img, card) {
-    const imageId = img.src || img.dataset.src;
-    this.loadedImages.add(imageId);
+    if (img.src) {
+      this.loadedImages.add(img.src);
+    }
 
-    // Asegurar visibilidad
     img.style.opacity = '1';
     img.classList.add('loaded');
     
     if (card) {
       card.classList.remove('loading');
       card.classList.add('image-loaded');
-      // Forzar repintado
-      card.offsetHeight;
     }
   }
 
   handleImageError(img, card) {
-    const imageId = img.src || img.dataset.src;
-    this.loadedImages.add(imageId);
+    if (img.src) {
+      this.loadedImages.add(img.src);
+    }
 
-    // Crear placeholder
     img.style.opacity = '0.5';
-    img.src = this.generatePlaceholderSVG();
     img.classList.add('loaded', 'error');
     
     if (card) {
       card.classList.remove('loading');
       card.classList.add('image-error');
-      card.offsetHeight;
     }
-  }
-
-  // Método mejorado para verificar y corregir estados
-  checkAndFixStuckLoadingStates() {
-    this.elements.cards.forEach(card => {
-      if (card.classList.contains('loading')) {
-        const img = card.querySelector('img');
-        
-        if (img) {
-          // Si la imagen ya se cargó naturalmente
-          if (img.complete && img.naturalHeight !== 0) {
-            this.handleImageLoaded(img, card);
-          }
-          // Si han pasado más de 5 segundos, forzar error
-          else if (!img.classList.contains('loaded')) {
-            setTimeout(() => {
-              if (card.classList.contains('loading')) {
-                this.handleImageError(img, card);
-              }
-            }, 100);
-          }
-        }
-      }
-    });
-  }
-
-  generatePlaceholderSVG() {
-    return 'data:image/svg+xml;base64,' + btoa(`
-      <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="200" height="200" fill="#f3f4f6"/>
-        <path d="M85 85h30v30H85z" fill="#d1d5db"/>
-        <text x="100" y="130" text-anchor="middle" fill="#6b7280" font-family="Arial" font-size="12">
-          Imagen no disponible
-        </text>
-      </svg>
-    `);
   }
 
   clearAllFilters() {
@@ -545,28 +483,19 @@ class ResponsiveGallery {
   toggleFilterPanel() {
     if (!this.elements.filterPanel) return;
 
-    const wasCollapsed = this.elements.filterPanel.classList.contains('collapsed');
+    const isCollapsed = this.elements.filterPanel.classList.contains('collapsed');
     this.elements.filterPanel.classList.toggle('collapsed');
-    this.state.isFilterPanelVisible = !wasCollapsed;
+    this.state.isFilterPanelVisible = isCollapsed;
     
-    this.updateToggleButton(wasCollapsed);
-    this.addHapticFeedback();
+    this.updateToggleButton(isCollapsed);
   }
 
   updateToggleButton(collapsed) {
     if (!this.elements.toggleFiltersBtn) return;
 
     const icon = this.elements.toggleFiltersBtn.querySelector('i');
-    const textContent = collapsed ? 'Mostrar Filtros' : 'Ocultar Filtros';
-    
     if (icon) {
       icon.className = collapsed ? 'fi fi-rr-angle-down' : 'fi fi-rr-angle-up';
-    }
-    
-    const textNode = Array.from(this.elements.toggleFiltersBtn.childNodes)
-      .find(node => node.nodeType === Node.TEXT_NODE);
-    if (textNode) {
-      textNode.textContent = textContent;
     }
   }
 
@@ -576,10 +505,6 @@ class ResponsiveGallery {
     
     if (oldDeviceInfo.isMobile !== this.deviceInfo.isMobile) {
       this.config = this.generateConfig();
-      
-      if (this.deviceInfo.isMobile && this.state.isFilterPanelVisible) {
-        this.collapseFilterPanel();
-      }
     }
   }
 
@@ -589,12 +514,7 @@ class ResponsiveGallery {
     
     if (this.deviceInfo.isMobile && scrollingDown && 
         this.state.isFilterPanelVisible && scrollY > 200) {
-      this.collapseFilterPanel();
-    }
-
-    if (this.config.enableParallax) {
-      const rate = scrollY * -0.2;
-      document.body.style.backgroundPosition = `center ${rate}px`;
+      this.toggleFilterPanel();
     }
 
     this.state.lastScrollY = scrollY;
@@ -613,18 +533,21 @@ class ResponsiveGallery {
     const newURL = window.location.pathname + 
                   (params.toString() ? '?' + params.toString() : '');
     
-    window.history.replaceState({}, '', newURL);
+    window.history.replaceState(null, '', newURL);
   }
 
   loadFiltersFromURL() {
     try {
       const params = new URLSearchParams(window.location.search);
-      const elementMap = { search: 'searchInput', tipo: 'tipoFilter', region: 'regionFilter' };
+      const elementMap = { 
+        search: 'searchInput', 
+        tipo: 'tipoFilter', 
+        region: 'regionFilter' 
+      };
       
-      ['search', 'tipo', 'region'].forEach(key => {
+      Object.keys(elementMap).forEach(key => {
         if (params.has(key)) {
           this.state.filters[key] = params.get(key);
-          
           const element = this.elements[elementMap[key]];
           if (element) {
             element.value = this.state.filters[key];
@@ -632,53 +555,45 @@ class ResponsiveGallery {
         }
       });
 
-      this.applyFilters();
+      if (Object.values(this.state.filters).some(Boolean)) {
+        this.applyFilters();
+      }
     } catch (error) {
       console.warn('Error loading filters from URL:', error);
     }
   }
 
-  addTouchFeedback(element) {
-    element.addEventListener('touchstart', () => {
-      if (this.config.enableAnimations) {
-        element.style.transform = 'scale(0.98)';
-      }
-    }, { passive: true });
-
-    element.addEventListener('touchend', () => {
-      setTimeout(() => element.style.transform = '', 150);
-    }, { passive: true });
-  }
-
-  addClickFeedback(element) {
-    if (this.config.enableAnimations) {
-      element.style.transform = 'scale(0.95)';
-      setTimeout(() => element.style.transform = '', 150);
-    }
-    this.addHapticFeedback();
-  }
-
-  addHapticFeedback(intensity = 50) {
-    if ('vibrate' in navigator && this.deviceInfo.isTouchDevice) {
-      navigator.vibrate(intensity);
+  focusSearch() {
+    if (this.elements.searchInput) {
+      this.elements.searchInput.focus();
     }
   }
 
+  cleanup() {
+    // Limpiar observers
+    this.observers.forEach(observer => observer.disconnect());
+    this.observers.clear();
+
+    // Limpiar timers
+    this.timers.forEach(timer => clearTimeout(timer));
+    this.timers.clear();
+
+    // Limpiar cache
+    this.cache.clear();
+  }
+
+  // Utilidades optimizadas
   debounce(func, wait) {
     let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func.apply(this, args);
-      };
+    return (...args) => {
       clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
+      timeout = setTimeout(() => func.apply(this, args), wait);
     };
   }
 
   throttle(func, limit) {
     let inThrottle;
-    return function executedFunction(...args) {
+    return (...args) => {
       if (!inThrottle) {
         func.apply(this, args);
         inThrottle = true;
@@ -687,100 +602,22 @@ class ResponsiveGallery {
     };
   }
 
-  focusSearch() {
-    if (this.elements.searchInput) {
-      this.elements.searchInput.focus();
-      if (this.deviceInfo.isMobile && 
-          this.elements.filterPanel?.classList.contains('collapsed')) {
-        this.toggleFilterPanel();
-      }
-    }
-  }
-
-  collapseFilterPanel() {
-    if (this.elements.filterPanel) {
-      this.elements.filterPanel.classList.add('collapsed');
-      this.state.isFilterPanelVisible = false;
-      this.updateToggleButton(true);
-    }
-  }
-
-  cleanup() {
-    this.observers.forEach(observer => observer.disconnect());
-    this.observers.clear();
-
-    this.timers.forEach(timer => clearTimeout(timer));
-    this.timers.clear();
-
-    this.elements.cards.forEach(card => {
-      card.style.transition = 'none';
-    });
-  }
-
-  forceReloadStuckImages() {
-    const stuckCards = Array.from(this.elements.cards).filter(card => 
-      card.classList.contains('loading')
-    );
-    
-    stuckCards.forEach(card => {
-      const img = card.querySelector('img');
-      if (img) {
-        const originalSrc = img.src;
-        img.src = '';
-        setTimeout(() => img.src = originalSrc, 100);
-      }
-    });
-    
-    return stuckCards.length;
-  }
-
-  setupBadgeFilters() {
-    document.querySelectorAll('.badge').forEach(badge => {
-      badge.addEventListener('click', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        
-        const filterType = badge.dataset.filter;
-        const filterValue = badge.dataset.value;
-        
-        this.state.filters[filterType] = filterValue;
-        
-        if (filterType === 'tipo' && this.elements.tipoFilter) {
-          this.elements.tipoFilter.value = filterValue;
-        } else if (filterType === 'region' && this.elements.regionFilter) {
-          this.elements.regionFilter.value = filterValue;
-        }
-        
-        this.applyFilters();
-        this.addClickFeedback(badge);
-      });
-    });
-  }
-
+  // Inicialización optimizada
   init() {
     try {
+      // Configurar en el orden óptimo
       this.loadFiltersFromURL();
       this.setupEventListeners();
       this.setupCardInteractions();
       this.setupLazyLoading();
-      this.setupBadgeFilters();
       
-      if (this.elements.filterPanel) {
-        if (this.state.isFilterPanelVisible) {
-          this.elements.filterPanel.classList.remove('collapsed');
-        }
-        this.updateToggleButton(!this.state.isFilterPanelVisible);
-      }
-      
-      // Verificar imágenes después de un breve delay
-      setTimeout(() => this.checkAndFixStuckLoadingStates(), 1000);
-      
+      // Cleanup al cerrar
       window.addEventListener('beforeunload', () => this.cleanup());
       
-      console.log('Galería responsiva inicializada:', {
-        cards: this.elements.cards.length,
-        device: this.deviceInfo,
-        config: this.config
+      console.log('Galería optimizada inicializada:', {
+        cards: this.cardsData.length,
+        device: this.deviceInfo.isMobile ? 'mobile' : 'desktop',
+        performance: this.deviceInfo.isLowPerformance ? 'low' : 'normal'
       });
     } catch (error) {
       console.error('Error inicializando galería:', error);
@@ -788,19 +625,24 @@ class ResponsiveGallery {
   }
 }
 
+// Inicialización con mejor control de errores
 document.addEventListener('DOMContentLoaded', () => {
-  window.galleryInstance = new ResponsiveGallery();
+  try {
+    window.galleryInstance = new ResponsiveGallery();
+  } catch (error) {
+    console.error('Error creating gallery instance:', error);
+  }
 });
 
+// API simplificada
 window.GalleryAPI = {
   getInstance: () => window.galleryInstance,
   clearFilters: () => window.galleryInstance?.clearAllFilters(),
   applyFilter: (type, value) => {
-    if (window.galleryInstance && window.galleryInstance.state.filters.hasOwnProperty(type)) {
-      window.galleryInstance.state.filters[type] = value;
-      window.galleryInstance.applyFilters();
+    const instance = window.galleryInstance;
+    if (instance && instance.state.filters.hasOwnProperty(type)) {
+      instance.state.filters[type] = value;
+      instance.applyFilters();
     }
-  },
-  fixStuckCards: () => window.galleryInstance?.checkAndFixStuckLoadingStates(),
-  forceReload: () => window.galleryInstance?.forceReloadStuckImages()
+  }
 };
