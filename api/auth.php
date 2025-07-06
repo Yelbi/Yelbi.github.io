@@ -64,6 +64,9 @@ switch ($method) {
             case 'update-profile-image':
                 updateProfileImage();
                 break;
+            case 'submit-vote':
+                submitVote($input);
+                break;
             case 'request-password-reset':
                 try {
                     $data = json_decode(file_get_contents('php://input'), true);
@@ -124,6 +127,12 @@ switch ($method) {
                 break;
             case 'get-profile-image':
                 getProfileImage();
+                break;
+            case 'check-vote':
+                checkUserVote();
+                break;
+            case 'get-vote-results':
+                getVoteResults();
                 break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
@@ -812,4 +821,106 @@ function cleanExpiredTokens($pdo) {
     $stmt = $pdo->prepare("DELETE FROM password_resets WHERE expires_at < NOW()");
     $stmt->execute();
     return $stmt->rowCount();
+}
+
+function submitVote($input) {
+    global $db;
+    
+    try {
+        $authData = authenticateJWT();
+        $userId = $authData['sub'];
+        
+        if (!isset($input['mythology'])) {
+            jsonResponse(['success' => false, 'error' => 'Mitología requerida'], 400);
+        }
+        
+        $mythology = Security::sanitizeInput($input['mythology']);
+        
+        // Verificar si ya votó
+        $stmt = $db->prepare("SELECT id FROM votes WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        if ($stmt->fetch()) {
+            jsonResponse(['success' => false, 'error' => 'Ya has votado anteriormente'], 400);
+        }
+        
+        // Registrar voto
+        $stmt = $db->prepare("INSERT INTO votes (user_id, mythology) VALUES (?, ?)");
+        $success = $stmt->execute([$userId, $mythology]);
+        
+        if ($success) {
+            jsonResponse([
+                'success' => true,
+                'message' => 'Voto registrado exitosamente'
+            ]);
+        } else {
+            // Obtener detalles del error de PDO
+            $errorInfo = $stmt->errorInfo();
+            throw new Exception('Error en la base de datos: ' . $errorInfo[2]);
+        }
+        
+    } catch (Exception $e) {
+        jsonResponse([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+function checkUserVote() {
+    global $db;
+    
+    try {
+        $authData = authenticateJWT();
+        $userId = $authData['sub'];
+        
+        $stmt = $db->prepare("SELECT mythology FROM votes WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        $vote = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        jsonResponse([
+            'hasVoted' => ($vote !== false),
+            'mythology' => $vote ? $vote['mythology'] : null
+        ]);
+        
+    } catch (Exception $e) {
+        jsonResponse(['error' => $e->getMessage()], 500);
+    }
+}
+
+function getVoteResults() {
+    global $db, $user;
+    
+    try {
+        $authData = authenticateJWT();
+        
+        // Solo para administradores
+        $userData = $user->getById($authData['sub']);
+        if (!$userData || $userData['role'] !== 'admin') {
+            jsonResponse(['error' => 'No autorizado'], 403);
+        }
+        
+        $stmt = $db->query("
+            SELECT mythology, COUNT(*) as votes 
+            FROM votes 
+            GROUP BY mythology 
+            ORDER BY votes DESC
+        ");
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Obtener total de votos
+        $total = 0;
+        foreach ($results as $result) {
+            $total += $result['votes'];
+        }
+        
+        // Calcular porcentajes
+        foreach ($results as &$result) {
+            $result['percentage'] = $total > 0 ? round(($result['votes'] / $total) * 100) : 0;
+        }
+        
+        jsonResponse(['success' => true, 'results' => $results, 'total' => $total]);
+        
+    } catch (Exception $e) {
+        jsonResponse(['error' => $e->getMessage()], 500);
+    }
 }

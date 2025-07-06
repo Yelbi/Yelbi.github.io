@@ -107,6 +107,16 @@
                         <!-- Mensajes se cargarán aquí -->
                     </div>
                 </div>
+
+                <div class="voting-results-section">
+    <h3><i class="fi fi-rr-chart-pie"></i> Resultados de Votación</h3>
+    <div id="votingResultsContainer">
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <span>Cargando resultados...</span>
+        </div>
+    </div>
+</div>
                 
                 <button class="btn" onclick="logout()"><?= __('logout') ?></button>
             </div>

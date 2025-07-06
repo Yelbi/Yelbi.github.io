@@ -4,6 +4,7 @@ const API_BASE_URL = 'https://seres.blog/api/auth.php';
 document.addEventListener('DOMContentLoaded', async () => {
     await loadProfile();
     await loadAdminMessages();
+    await loadVotingResults(); // Añadir esta línea
 });
 
 async function loadProfile() {
@@ -213,6 +214,60 @@ async function loadAdminMessages() {
             </div>
         `;
         showAlert('profileAlert', 'Error cargando mensajes', 'error');
+    }
+}
+
+async function loadVotingResults() {
+    try {
+        const container = document.getElementById('votingResultsContainer');
+        container.innerHTML = `
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <span>Cargando resultados...</span>
+            </div>
+        `;
+        
+        const result = await apiRequest('get-vote-results', {}, 'GET');
+        
+        if (!result.results || result.results.length === 0) {
+            container.innerHTML = '<div class="empty-state">No hay votos registrados aún</div>';
+            return;
+        }
+        
+        let html = `
+            <div class="results-summary">
+                <div class="total-votes">Total de votos: ${result.total}</div>
+            </div>
+            <div class="results-list">
+        `;
+        
+        result.results.forEach(item => {
+            html += `
+                <div class="result-item">
+                    <div class="mythology-name">${item.mythology}</div>
+                    <div class="vote-bar-container">
+                        <div class="vote-bar" style="width: ${item.percentage}%"></div>
+                    </div>
+                    <div class="vote-count">
+                        ${item.votes} votos (${item.percentage}%)
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error loading voting results:', error);
+        document.getElementById('votingResultsContainer').innerHTML = `
+            <div class="error-state">
+                <div class="error-icon">⚠️</div>
+                <h3>Error al cargar resultados</h3>
+                <p>${error.message}</p>
+                <button class="btn-retry" onclick="loadVotingResults()">Reintentar</button>
+            </div>
+        `;
     }
 }
 

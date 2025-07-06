@@ -73,5 +73,129 @@ Vue.component('card', {
 });
 
 const app = new Vue({
-  el: '#app'
+  el: '#app',
+  data: {
+    options: [
+      {
+        title: 'Mitología Eslava',
+        description: 'Bosques, Espíritus y Ancestros',
+        image: 'https://i.pinimg.com/736x/db/62/86/db628698b9e588926246c6309e30e588.jpg',
+        value: 'Mitología Eslava'
+      },
+      {
+        title: 'Mitología Azteca',
+        description: 'Sacrificio, Guerra y Sol',
+        image: 'https://i.pinimg.com/736x/b1/e7/f3/b1e7f3aa3207248b933f488642d9c2d9.jpg',
+        value: 'Mitología Azteca'
+      },
+      {
+        title: 'Hinduismo',
+        description: 'Karma, Dharma y Moksha',
+        image: 'https://i.pinimg.com/736x/3d/6d/b2/3d6db2f75afdd70fcb8befc6ed7c2c75.jpg',
+        value: 'Hinduismo'
+      },
+      {
+        title: 'Mitología Japonesa',
+        description: 'Kami, Naturaleza y Armonía',
+        image: 'https://i.pinimg.com/736x/ed/ae/fb/edaefbe97bdf09b5ba412bfc80574df7.jpg',
+        value: 'Mitología Japonesa'
+      }
+    ],
+    selectedOption: null,
+    isSubmitting: false,
+    hasVoted: false
+  },
+  methods: {
+    selectOption(index) {
+      if (this.hasVoted) return;
+      this.selectedOption = index;
+    },
+    
+    showAlert(message, type = 'error') {
+      const alertDiv = document.getElementById('voteAlert');
+      alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+      
+      setTimeout(() => {
+        alertDiv.innerHTML = '';
+      }, 5000);
+    },
+    
+    async submitVote() {
+      if (this.selectedOption === null) {
+        this.showAlert('Por favor selecciona una opción');
+        return;
+      }
+
+      this.isSubmitting = true;
+      const selectedMythology = this.options[this.selectedOption].value;
+
+      try {
+        const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
+        if (!token) {
+          window.location.href = '/iniciar.php';
+          return;
+        }
+
+        const response = await fetch('https://seres.blog/api/auth.php?action=submit-vote', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ mythology: selectedMythology })
+        });
+
+        // Manejar respuesta basada en estado HTTP
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            this.hasVoted = true;
+            this.showAlert('¡Gracias por tu voto! Tu selección ha sido registrada.', 'success');
+          } else {
+            throw new Error(result.error || 'Error al procesar el voto');
+          }
+        } else {
+          // Manejar errores HTTP
+          const errorData = await response.json();
+          if (response.status === 401 || response.status === 403) {
+            // Token inválido o expirado
+            this.showAlert('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 'error');
+            setTimeout(() => {
+              window.location.href = '/iniciar.php';
+            }, 3000);
+          } else {
+            throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        this.showAlert('Error: ' + error.message);
+      } finally {
+        this.isSubmitting = false;
+      }
+    }
+  },
+  async mounted() {
+    // Verificar si ya votó
+    try {
+      const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
+      if (token) {
+        const response = await fetch('https://seres.blog/api/auth.php?action=check-vote', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          this.hasVoted = result.hasVoted;
+          if (this.hasVoted) {
+            this.showAlert('Ya has votado anteriormente. Gracias por participar!', 'success');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking vote status:', error);
+    }
+  }
 });

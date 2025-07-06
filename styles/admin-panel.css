@@ -515,3 +515,49 @@ body {
 .mailbox-container::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
+
+.voting-results-section {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.results-summary {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    font-weight: 600;
+    color: #5D4037;
+}
+
+.result-item {
+    margin-bottom: 15px;
+}
+
+.mythology-name {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.vote-bar-container {
+    height: 10px;
+    background: #f0f0f0;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.vote-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #5D4037, #8D6E63);
+    border-radius: 5px;
+    transition: width 0.5s ease;
+}
+
+.vote-count {
+    font-size: 14px;
+    color: #666;
+}
