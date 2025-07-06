@@ -120,60 +120,52 @@ const app = new Vue({
       }, 5000);
     },
     
-    async submitVote() {
-      if (this.selectedOption === null) {
+async submitVote() {
+    if (this.selectedOption === null) {
         this.showAlert('Por favor selecciona una opción');
         return;
-      }
+    }
 
-      this.isSubmitting = true;
-      const selectedMythology = this.options[this.selectedOption].value;
+    this.isSubmitting = true;
+    const selectedMythology = this.options[this.selectedOption].value;
 
-      try {
+    try {
         const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
         if (!token) {
-          window.location.href = '/iniciar.php';
-          return;
+            window.location.href = '/iniciar.php';
+            return;
         }
 
         const response = await fetch('https://seres.blog/api/auth.php?action=submit-vote', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ mythology: selectedMythology })
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ mythology: selectedMythology })
         });
 
-        // Manejar respuesta basada en estado HTTP
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success) {
-            this.hasVoted = true;
-            this.showAlert('¡Gracias por tu voto! Tu selección ha sido registrada.', 'success');
-          } else {
-            throw new Error(result.error || 'Error al procesar el voto');
-          }
-        } else {
-          // Manejar errores HTTP
-          const errorData = await response.json();
-          if (response.status === 401 || response.status === 403) {
-            // Token inválido o expirado
-            this.showAlert('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 'error');
-            setTimeout(() => {
-              window.location.href = '/iniciar.php';
-            }, 3000);
-          } else {
-            throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
-          }
+        // Manejar errores HTTP
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Error ${response.status}`);
         }
-      } catch (error) {
+
+        const result = await response.json();
+        if (result.success) {
+            this.hasVoted = true;
+            this.showAlert('¡Gracias por tu voto!', 'success');
+        } else {
+            throw new Error(result.error || 'Error al procesar el voto');
+        }
+
+    } catch (error) {
         console.error('Error:', error);
         this.showAlert('Error: ' + error.message);
-      } finally {
+    } finally {
         this.isSubmitting = false;
-      }
     }
+}
   },
   async mounted() {
     // Verificar si ya votó

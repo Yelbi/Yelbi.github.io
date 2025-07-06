@@ -95,14 +95,12 @@
 
     <!-- Botón para enviar voto -->
     <div class="submit-container">
-        <button 
-            class="submit-btn" 
-            :disabled="selectedOption === null || isSubmitting"
-            @click="submitVote"
-        >
-            <span v-if="!isSubmitting">Enviar mi voto</span>
-            <span v-else>Enviando...</span>
-        </button>
+<button class="submit-btn" :disabled="isSubmitting">
+    <span v-if="!isSubmitting">Enviar mi voto</span>
+    <span v-else>
+        <i class="fi fi-rr-spinner animate-spin"></i> Enviando...
+    </span>
+</button>
         <p class="vote-info">Solo puedes votar una vez. Tu selección es permanente.</p>
         <div id="voteAlert"></div>
     </div>

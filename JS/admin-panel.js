@@ -227,10 +227,27 @@ async function loadVotingResults() {
             </div>
         `;
         
+        // Timeout de 10 segundos
+        const timeout = setTimeout(() => {
+            container.innerHTML = `
+                <div class="error-state">
+                    <div class="error-icon">⚠️</div>
+                    <h3>Timeout al cargar resultados</h3>
+                    <button class="btn-retry" onclick="loadVotingResults()">Reintentar</button>
+                </div>
+            `;
+        }, 10000);
+
         const result = await apiRequest('get-vote-results', {}, 'GET');
+        clearTimeout(timeout);
         
         if (!result.results || result.results.length === 0) {
-            container.innerHTML = '<div class="empty-state">No hay votos registrados aún</div>';
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fi fi-rr-pie-chart"></i>
+                    <p>No hay votos registrados aún</p>
+                </div>
+            `;
             return;
         }
         

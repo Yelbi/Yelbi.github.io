@@ -826,7 +826,19 @@ function cleanExpiredTokens($pdo) {
 function submitVote($input) {
     global $db;
     
-    try {
+try {
+    $db->query("SELECT 1 FROM votes LIMIT 1");
+} catch (PDOException $e) {
+        // Crear tabla si no existe
+        $db->exec("
+            CREATE TABLE IF NOT EXISTS votes (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                mythology VARCHAR(50) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB;
+        ");
+
         $authData = authenticateJWT();
         $userId = $authData['sub'];
         
@@ -853,12 +865,12 @@ function submitVote($input) {
                 'message' => 'Voto registrado exitosamente'
             ]);
         } else {
-            // Obtener detalles del error de PDO
             $errorInfo = $stmt->errorInfo();
             throw new Exception('Error en la base de datos: ' . $errorInfo[2]);
         }
         
     } catch (Exception $e) {
+        error_log('Error en submitVote: ' . $e->getMessage());
         jsonResponse([
             'success' => false,
             'error' => $e->getMessage()
@@ -888,14 +900,13 @@ function checkUserVote() {
 }
 
 function getVoteResults() {
-    global $db, $user;
+    global $db;
     
     try {
         $authData = authenticateJWT();
         
-        // Solo para administradores
-        $userData = $user->getById($authData['sub']);
-        if (!$userData || $userData['role'] !== 'admin') {
+        // Verificar si es administrador usando JWT
+        if (!isset($authData['is_admin']) || !$authData['is_admin']) {
             jsonResponse(['error' => 'No autorizado'], 403);
         }
         
@@ -907,13 +918,11 @@ function getVoteResults() {
         ");
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Obtener total de votos
         $total = 0;
         foreach ($results as $result) {
             $total += $result['votes'];
         }
         
-        // Calcular porcentajes
         foreach ($results as &$result) {
             $result['percentage'] = $total > 0 ? round(($result['votes'] / $total) * 100) : 0;
         }
@@ -921,6 +930,7 @@ function getVoteResults() {
         jsonResponse(['success' => true, 'results' => $results, 'total' => $total]);
         
     } catch (Exception $e) {
+        error_log('Error en getVoteResults: ' . $e->getMessage());
         jsonResponse(['error' => $e->getMessage()], 500);
     }
 }
