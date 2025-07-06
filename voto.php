@@ -95,7 +95,7 @@
 
     <!-- Botón para enviar voto -->
     <div class="submit-container">
-<button class="submit-btn" :disabled="isSubmitting">
+<button class="submit-btn" :disabled="isSubmitting" @click="submitVote">
     <span v-if="!isSubmitting">Enviar mi voto</span>
     <span v-else>
         <i class="fi fi-rr-spinner animate-spin"></i> Enviando...
