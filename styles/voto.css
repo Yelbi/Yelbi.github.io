@@ -1,6 +1,6 @@
 body {
   margin: 40px 0;
-  font-family: "Raleway";
+  font-family: "Raleway", sans-serif;
   font-size: 14px;
   font-weight: 500;
   background-color: #BCAAA4;
@@ -8,7 +8,7 @@ body {
 }
 
 .title {
-  font-family: "Raleway";
+  font-family: "Raleway", sans-serif;
   font-size: 24px;
   font-weight: 700;
   color: #5D4037;
@@ -91,6 +91,7 @@ h1 + p, p + p {
   position: absolute;
   bottom: 0;
   color: #fff;
+  transform: translateY(40px);
   transition: 0.3s cubic-bezier(0.215, 0.61, 0.355, 1); 
 }
 .card-info p {
@@ -117,7 +118,7 @@ h1 + p, p + p {
 }
 
 .card-info h1 {
-  font-family: "Playfair Display";
+  font-family: "Playfair Display", serif;
   font-size: 36px;
   font-weight: 700;
   text-shadow: rgba(0, 0, 0, 0.5) 0 10px 10px;
