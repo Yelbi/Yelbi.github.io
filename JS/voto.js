@@ -126,13 +126,21 @@ async submitVote() {
         return;
     }
 
+    if (this.hasVoted) {
+        this.showAlert('Ya has votado anteriormente');
+        return;
+    }
+
     this.isSubmitting = true;
     const selectedMythology = this.options[this.selectedOption].value;
 
     try {
         const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
         if (!token) {
-            window.location.href = '/iniciar.php';
+            this.showAlert('Debes iniciar sesión para votar');
+            setTimeout(() => {
+                window.location.href = '/iniciar.php';
+            }, 2000);
             return;
         }
 
@@ -145,18 +153,22 @@ async submitVote() {
             body: JSON.stringify({ mythology: selectedMythology })
         });
 
-        // Manejar errores HTTP
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `Error ${response.status}`);
+        const responseText = await response.text();
+        console.log('Response:', responseText); // Para debugging
+
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (e) {
+            console.error('Error parsing JSON:', responseText);
+            throw new Error('Respuesta inválida del servidor');
         }
 
-        const result = await response.json();
-        if (result.success) {
+        if (response.ok && result.success) {
             this.hasVoted = true;
             this.showAlert('¡Gracias por tu voto!', 'success');
         } else {
-            throw new Error(result.error || 'Error al procesar el voto');
+            throw new Error(result.error || `Error ${response.status}`);
         }
 
     } catch (error) {

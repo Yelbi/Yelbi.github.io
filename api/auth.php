@@ -826,19 +826,25 @@ function cleanExpiredTokens($pdo) {
 function submitVote($input) {
     global $db;
     
-try {
-    $db->query("SELECT 1 FROM votes LIMIT 1");
-} catch (PDOException $e) {
-        // Crear tabla si no existe
-        $db->exec("
-            CREATE TABLE IF NOT EXISTS votes (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NOT NULL,
-                mythology VARCHAR(50) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB;
-        ");
+    try {
+        // Verificar si la tabla existe, si no, crearla
+        try {
+            $db->query("SELECT 1 FROM votes LIMIT 1");
+        } catch (PDOException $e) {
+            // Crear tabla si no existe
+            $db->exec("
+                CREATE TABLE IF NOT EXISTS votes (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    mythology VARCHAR(50) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE KEY unique_user_vote (user_id),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB;
+            ");
+        }
 
+        // Autenticar usuario
         $authData = authenticateJWT();
         $userId = $authData['sub'];
         
