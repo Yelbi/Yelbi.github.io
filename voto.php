@@ -81,28 +81,68 @@
     <h1 class="title">Vota por tu mitología favorita</h1>
 
     <div id="app" class="container">
-        <card 
-            v-for="(option, index) in options" 
-            :key="index"
-            :data-image="option.image"
-            @click.native="selectOption(index)"
-            :class="{ selected: selectedOption === index }"
-        >
-            <h1 slot="header">{{ option.title }}</h1>
-            <p slot="content">{{ option.description }}</p>
-        </card>
-    </div>
+        <!-- Loading state -->
+        <div v-if="isLoading" class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>Cargando estado de votación...</p>
+        </div>
 
-    <!-- Botón para enviar voto -->
-    <div class="submit-container">
-<button class="submit-btn" :disabled="isSubmitting" @click="submitVote">
-    <span v-if="!isSubmitting">Enviar mi voto</span>
-    <span v-else>
-        <i class="fi fi-rr-spinner animate-spin"></i> Enviando...
-    </span>
-</button>
-        <p class="vote-info">Solo puedes votar una vez. Tu selección es permanente.</p>
-        <div id="voteAlert"></div>
+        <!-- Voting interface -->
+        <div v-else>
+            <!-- Cards container -->
+            <div class="cards-container" :class="{ 'disabled': hasVoted }">
+                <card 
+                    v-for="(option, index) in options" 
+                    :key="index"
+                    :data-image="option.image"
+                    @click.native="selectOption(index)"
+                    :class="{ 
+                        selected: selectedOption === index,
+                        disabled: hasVoted
+                    }"
+                >
+                    <h1 slot="header">{{ option.title }}</h1>
+                    <p slot="content">{{ option.description }}</p>
+                </card>
+            </div>
+
+            <!-- Vote status indicator -->
+            <div v-if="hasVoted" class="vote-status">
+                <div class="vote-complete">
+                    <i class="fi fi-rr-check-circle"></i>
+                    <h3>¡Gracias por votar!</h3>
+                    <p>Tu voto ha sido registrado exitosamente.</p>
+                </div>
+            </div>
+
+            <!-- Submit button -->
+            <div v-else class="submit-container">
+                <button 
+                    class="submit-btn" 
+                    :disabled="!canVote || isSubmitting" 
+                    @click="submitVote"
+                    :class="{ 
+                        'loading': isSubmitting,
+                        'disabled': !canVote 
+                    }"
+                >
+                    <span v-if="!isSubmitting">
+                        {{ selectedOption !== null ? 'Enviar mi voto' : 'Selecciona una opción' }}
+                    </span>
+                    <span v-else>
+                        <i class="fi fi-rr-spinner animate-spin"></i> Enviando...
+                    </span>
+                </button>
+                
+                <p class="vote-info">
+                    <i class="fi fi-rr-info"></i>
+                    Solo puedes votar una vez. Tu selección es permanente.
+                </p>
+            </div>
+        </div>
+
+        <!-- Alert container -->
+        <div id="voteAlert" class="alert-container"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>

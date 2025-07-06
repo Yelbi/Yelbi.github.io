@@ -103,103 +103,213 @@ const app = new Vue({
     ],
     selectedOption: null,
     isSubmitting: false,
-    hasVoted: false
+    hasVoted: false,
+    isLoading: true,
+    debugMode: false // Para mostrar logs adicionales
+  },
+  computed: {
+    canVote() {
+      return !this.hasVoted && !this.isSubmitting && this.selectedOption !== null;
+    }
   },
   methods: {
     selectOption(index) {
-      if (this.hasVoted) return;
+      if (this.hasVoted) {
+        this.showAlert('Ya has votado anteriormente', 'warning');
+        return;
+      }
       this.selectedOption = index;
+      this.debugLog(`Opción seleccionada: ${this.options[index].title}`);
     },
     
     showAlert(message, type = 'error') {
       const alertDiv = document.getElementById('voteAlert');
+      if (!alertDiv) {
+        console.error('Elemento voteAlert no encontrado');
+        return;
+      }
+      
       alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
       
+      // Auto-hide después de 5 segundos
       setTimeout(() => {
         alertDiv.innerHTML = '';
       }, 5000);
     },
     
-async submitVote() {
-    if (this.selectedOption === null) {
+    debugLog(message) {
+      if (this.debugMode) {
+        console.log(`[DEBUG] ${message}`);
+      }
+    },
+    
+    getAuthToken() {
+      // Buscar token en localStorage y sessionStorage
+      const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
+      this.debugLog(`Token encontrado: ${token ? 'Sí' : 'No'}`);
+      return token;
+    },
+    
+    async makeApiRequest(action, data = {}, method = 'POST') {
+      const token = this.getAuthToken();
+      
+      if (!token) {
+        throw new Error('No se encontró token de autenticación');
+      }
+      
+      const url = `https://seres.blog/api/auth.php?action=${action}`;
+      this.debugLog(`Realizando petición a: ${url}`);
+      
+      const options = {
+        method: method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      };
+      
+      if (method !== 'GET' && Object.keys(data).length > 0) {
+        options.body = JSON.stringify(data);
+        this.debugLog(`Datos enviados: ${JSON.stringify(data)}`);
+      }
+      
+      const response = await fetch(url, options);
+      const responseText = await response.text();
+      
+      this.debugLog(`Respuesta del servidor: ${responseText}`);
+      
+      if (!responseText.trim()) {
+        throw new Error('Respuesta vacía del servidor');
+      }
+      
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Error parsing JSON:', responseText);
+        throw new Error(`Respuesta inválida del servidor: ${responseText.substring(0, 100)}...`);
+      }
+      
+      if (!response.ok) {
+        throw new Error(result.error || `Error HTTP ${response.status}`);
+      }
+      
+      return result;
+    },
+    
+    async checkVoteStatus() {
+      try {
+        this.isLoading = true;
+        const token = this.getAuthToken();
+        
+        if (!token) {
+          this.debugLog('No hay token, usuario no autenticado');
+          this.isLoading = false;
+          return;
+        }
+        
+        const result = await this.makeApiRequest('check-vote', {}, 'GET');
+        
+        if (result.success !== undefined) {
+          this.hasVoted = result.hasVoted || false;
+          this.debugLog(`Estado de voto: ${this.hasVoted ? 'Ya votó' : 'No ha votado'}`);
+          
+          if (this.hasVoted) {
+            this.showAlert('Ya has votado anteriormente. ¡Gracias por participar!', 'success');
+          }
+        } else {
+          this.debugLog('Respuesta inesperada del servidor para check-vote');
+        }
+        
+      } catch (error) {
+        console.error('Error checking vote status:', error);
+        this.debugLog(`Error verificando estado de voto: ${error.message}`);
+        
+        // Si hay error 401/403, redirigir al login
+        if (error.message.includes('401') || error.message.includes('403')) {
+          this.showAlert('Sesión expirada. Redirigiendo al login...', 'warning');
+          setTimeout(() => {
+            window.location.href = '/iniciar.php';
+          }, 2000);
+        }
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    
+    async submitVote() {
+      // Validaciones previas
+      if (this.selectedOption === null) {
         this.showAlert('Por favor selecciona una opción');
         return;
-    }
+      }
 
-    if (this.hasVoted) {
+      if (this.hasVoted) {
         this.showAlert('Ya has votado anteriormente');
         return;
-    }
-
-    this.isSubmitting = true;
-    const selectedMythology = this.options[this.selectedOption].value;
-
-    try {
-        const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
-        if (!token) {
-            this.showAlert('Debes iniciar sesión para votar');
-            setTimeout(() => {
-                window.location.href = '/iniciar.php';
-            }, 2000);
-            return;
-        }
-
-        const response = await fetch('https://seres.blog/api/auth.php?action=submit-vote', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ mythology: selectedMythology })
-        });
-
-        const responseText = await response.text();
-        console.log('Response:', responseText); // Para debugging
-
-        let result;
-        try {
-            result = JSON.parse(responseText);
-        } catch (e) {
-            console.error('Error parsing JSON:', responseText);
-            throw new Error('Respuesta inválida del servidor');
-        }
-
-        if (response.ok && result.success) {
-            this.hasVoted = true;
-            this.showAlert('¡Gracias por tu voto!', 'success');
-        } else {
-            throw new Error(result.error || `Error ${response.status}`);
-        }
-
-    } catch (error) {
-        console.error('Error:', error);
-        this.showAlert('Error: ' + error.message);
-    } finally {
-        this.isSubmitting = false;
-    }
-}
-  },
-  async mounted() {
-    // Verificar si ya votó
-    try {
-      const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
-      if (token) {
-        const response = await fetch('https://seres.blog/api/auth.php?action=check-vote', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          this.hasVoted = result.hasVoted;
-          if (this.hasVoted) {
-            this.showAlert('Ya has votado anteriormente. Gracias por participar!', 'success');
-          }
-        }
       }
-    } catch (error) {
-      console.error('Error checking vote status:', error);
+      
+      if (this.isSubmitting) {
+        this.showAlert('Ya se está procesando tu voto');
+        return;
+      }
+
+      this.isSubmitting = true;
+      const selectedMythology = this.options[this.selectedOption].value;
+      
+      this.debugLog(`Enviando voto para: ${selectedMythology}`);
+
+      try {
+        const token = this.getAuthToken();
+        
+        if (!token) {
+          this.showAlert('Debes iniciar sesión para votar');
+          setTimeout(() => {
+            window.location.href = '/iniciar.php';
+          }, 2000);
+          return;
+        }
+
+        const result = await this.makeApiRequest('submit-vote', { 
+          mythology: selectedMythology 
+        });
+
+        if (result.success) {
+          this.hasVoted = true;
+          this.showAlert('¡Gracias por tu voto! Tu selección ha sido registrada.', 'success');
+          
+          // Opcional: Deshabilitar la selección visualmente
+          this.selectedOption = null;
+          
+          this.debugLog('Voto enviado exitosamente');
+        } else {
+          throw new Error(result.error || 'Error desconocido al enviar el voto');
+        }
+
+      } catch (error) {
+        console.error('Error submitting vote:', error);
+        this.debugLog(`Error enviando voto: ${error.message}`);
+        
+        // Manejar errores específicos
+        if (error.message.includes('401') || error.message.includes('403')) {
+          this.showAlert('Sesión expirada. Redirigiendo al login...', 'warning');
+          setTimeout(() => {
+            window.location.href = '/iniciar.php';
+          }, 2000);
+        } else if (error.message.includes('already voted')) {
+          this.hasVoted = true;
+          this.showAlert('Ya has votado anteriormente');
+        } else {
+          this.showAlert('Error al enviar el voto: ' + error.message);
+        }
+      } finally {
+        this.isSubmitting = false;
+      }
     }
+  },
+  
+  async mounted() {
+    this.debugLog('Componente montado, verificando estado de voto...');
+    await this.checkVoteStatus();
   }
 });
