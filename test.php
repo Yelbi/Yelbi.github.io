@@ -70,182 +70,220 @@ require 'config/i18n.php';
         <h1><?= __('personality_test') ?></h1>
         
         <?php if (!isset($_POST['submit'])): ?>
+        <!-- Barra de progreso -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">0 / 10 <?= __('questions_completed') ?></div>
+        </div>
+
         <form method="post" id="personalityTest">
             <!-- Pregunta 1 -->
-            <div class="question">
-                <h3>1. <?= __('question_1') ?></h3>
-                <label>
+            <div class="question active" data-question="1">
+                <h3>
+                    <span class="question-number"><span>1</span></span>
+                    <?= __('question_1') ?>
+                </h3>
+                <label style="--index: 0">
                     <input type="radio" name="q1" value="a" required>
                     <?= __('q1_option_a') ?>
                 </label>
-                <label>
+                <label style="--index: 1">
                     <input type="radio" name="q1" value="b">
                     <?= __('q1_option_b') ?>
                 </label>
-                <label>
+                <label style="--index: 2">
                     <input type="radio" name="q1" value="c">
                     <?= __('q1_option_c') ?>
                 </label>
             </div>
 
             <!-- Pregunta 2 -->
-            <div class="question">
-                <h3>2. <?= __('question_2') ?></h3>
-                <label>
+            <div class="question" data-question="2">
+                <h3>
+                    <span class="question-number"><span>2</span></span>
+                    <?= __('question_2') ?>
+                </h3>
+                <label style="--index: 0">
                     <input type="radio" name="q2" value="a" required>
                     <?= __('q2_option_a') ?>
                 </label>
-                <label>
+                <label style="--index: 1">
                     <input type="radio" name="q2" value="b">
                     <?= __('q2_option_b') ?>
                 </label>
-                <label>
+                <label style="--index: 2">
                     <input type="radio" name="q2" value="c">
                     <?= __('q2_option_c') ?>
                 </label>
-                <label>
+                <label style="--index: 3">
                     <input type="radio" name="q2" value="d">
                     <?= __('q2_option_d') ?>
                 </label>
             </div>
 
             <!-- Pregunta 3 -->
-            <div class="question">
-                <h3>3. <?= __('question_3') ?></h3>
-                <label>
+            <div class="question" data-question="3">
+                <h3>
+                    <span class="question-number"><span>3</span></span>
+                    <?= __('question_3') ?>
+                </h3>
+                <label style="--index: 0">
                     <input type="radio" name="q3" value="a" required>
                     <?= __('q3_option_a') ?>
                 </label>
-                <label>
+                <label style="--index: 1">
                     <input type="radio" name="q3" value="b">
                     <?= __('q3_option_b') ?>
                 </label>
-                <label>
+                <label style="--index: 2">
                     <input type="radio" name="q3" value="c">
                     <?= __('q3_option_c') ?>
                 </label>
             </div>
 
             <!-- Pregunta 4 -->
-            <div class="question">
-                <h3>4. <?= __('question_4') ?></h3>
-                <label>
+            <div class="question" data-question="4">
+                <h3>
+                    <span class="question-number"><span>4</span></span>
+                    <?= __('question_4') ?>
+                </h3>
+                <label style="--index: 0">
                     <input type="radio" name="q4" value="a" required>
                     <?= __('q4_option_a') ?>
                 </label>
-                <label>
+                <label style="--index: 1">
                     <input type="radio" name="q4" value="b">
                     <?= __('q4_option_b') ?>
                 </label>
-                <label>
+                <label style="--index: 2">
                     <input type="radio" name="q4" value="c">
                     <?= __('q4_option_c') ?>
                 </label>
             </div>
 
             <!-- Pregunta 5 -->
-            <div class="question">
-                <h3>5. <?= __('question_5') ?></h3>
-                <label>
+            <div class="question" data-question="5">
+                <h3>
+                    <span class="question-number"><span>5</span></span>
+                    <?= __('question_5') ?>
+                </h3>
+                <label style="--index: 0">
                     <input type="radio" name="q5" value="a" required>
                     <?= __('q5_option_a') ?>
                 </label>
-                <label>
+                <label style="--index: 1">
                     <input type="radio" name="q5" value="b">
                     <?= __('q5_option_b') ?>
                 </label>
-                <label>
+                <label style="--index: 2">
                     <input type="radio" name="q5" value="c">
                     <?= __('q5_option_c') ?>
                 </label>
             </div>
 
             <!-- Pregunta 6 -->
-            <div class="question">
-                <h3>6. <?= __('question_6') ?></h3>
-                <label>
+            <div class="question" data-question="6">
+                <h3>
+                    <span class="question-number"><span>6</span></span>
+                    <?= __('question_6') ?>
+                </h3>
+                <label style="--index: 0">
                     <input type="radio" name="q6" value="a" required>
                     <?= __('q6_option_a') ?>
                 </label>
-                <label>
+                <label style="--index: 1">
                     <input type="radio" name="q6" value="b">
                     <?= __('q6_option_b') ?>
                 </label>
-                <label>
+                <label style="--index: 2">
                     <input type="radio" name="q6" value="c">
                     <?= __('q6_option_c') ?>
                 </label>
             </div>
 
             <!-- Pregunta 7 -->
-            <div class="question">
-                <h3>7. <?= __('question_7') ?></h3>
-                <label>
+            <div class="question" data-question="7">
+                <h3>
+                    <span class="question-number"><span>7</span></span>
+                    <?= __('question_7') ?>
+                </h3>
+                <label style="--index: 0">
                     <input type="radio" name="q7" value="a" required>
                     <?= __('q7_option_a') ?>
                 </label>
-                <label>
+                <label style="--index: 1">
                     <input type="radio" name="q7" value="b">
                     <?= __('q7_option_b') ?>
                 </label>
-                <label>
+                <label style="--index: 2">
                     <input type="radio" name="q7" value="c">
                     <?= __('q7_option_c') ?>
                 </label>
             </div>
 
             <!-- Pregunta 8 -->
-            <div class="question">
-                <h3>8. <?= __('question_8') ?></h3>
-                <label>
+            <div class="question" data-question="8">
+                <h3>
+                    <span class="question-number"><span>8</span></span>
+                    <?= __('question_8') ?>
+                </h3>
+                <label style="--index: 0">
                     <input type="radio" name="q8" value="a" required>
                     <?= __('q8_option_a') ?>
                 </label>
-                <label>
+                <label style="--index: 1">
                     <input type="radio" name="q8" value="b">
                     <?= __('q8_option_b') ?>
                 </label>
-                <label>
+                <label style="--index: 2">
                     <input type="radio" name="q8" value="c">
                     <?= __('q8_option_c') ?>
                 </label>
             </div>
 
             <!-- Pregunta 9 -->
-            <div class="question">
-                <h3>9. <?= __('question_9') ?></h3>
-                <label>
+            <div class="question" data-question="9">
+                <h3>
+                    <span class="question-number"><span>9</span></span>
+                    <?= __('question_9') ?>
+                </h3>
+                <label style="--index: 0">
                     <input type="radio" name="q9" value="a" required>
                     <?= __('q9_option_a') ?>
                 </label>
-                <label>
+                <label style="--index: 1">
                     <input type="radio" name="q9" value="b">
                     <?= __('q9_option_b') ?>
                 </label>
-                <label>
+                <label style="--index: 2">
                     <input type="radio" name="q9" value="c">
                     <?= __('q9_option_c') ?>
                 </label>
             </div>
 
             <!-- Pregunta 10 -->
-            <div class="question">
-                <h3>10. <?= __('question_10') ?></h3>
-                <label>
+            <div class="question" data-question="10">
+                <h3>
+                    <span class="question-number"><span>10</span></span>
+                    <?= __('question_10') ?>
+                </h3>
+                <label style="--index: 0">
                     <input type="radio" name="q10" value="a" required>
                     <?= __('q10_option_a') ?>
                 </label>
-                <label>
+                <label style="--index: 1">
                     <input type="radio" name="q10" value="b">
                     <?= __('q10_option_b') ?>
                 </label>
-                <label>
+                <label style="--index: 2">
                     <input type="radio" name="q10" value="c">
                     <?= __('q10_option_c') ?>
                 </label>
             </div>
 
-            <button type="submit" name="submit" class="btn-submit"><?= __('submit_test') ?></button>
+            <button type="submit" name="submit" class="btn-submit" id="submitBtn"><?= __('submit_test') ?></button>
         </form>
         
         <?php else: 
@@ -361,6 +399,34 @@ require 'config/i18n.php';
             
             <a href="test.php" class="btn retake-btn"><?= __('retake_test') ?></a>
         </div>
+        
+        <!-- Efecto confetti -->
+        <div class="confetti" id="confetti"></div>
+        
+        <script>
+            // Crear efecto confetti
+            function createConfetti() {
+                const confetti = document.getElementById('confetti');
+                const colors = ['#f1c40f', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#e67e22'];
+                
+                for (let i = 0; i < 50; i++) {
+                    const piece = document.createElement('div');
+                    piece.className = 'confetti-piece';
+                    piece.style.left = Math.random() * 100 + '%';
+                    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    piece.style.animationDelay = Math.random() * 3 + 's';
+                    piece.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                    confetti.appendChild(piece);
+                }
+                
+                setTimeout(() => {
+                    confetti.innerHTML = '';
+                }, 5000);
+            }
+            
+            // Ejecutar confetti al cargar la página de resultados
+            createConfetti();
+        </script>
         <?php endif; ?>
     </main>
 
