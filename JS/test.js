@@ -4,6 +4,7 @@ class PersonalityTest {
         this.totalQuestions = 10;
         this.answers = {};
         this.questions = [];
+        this.isSubmitting = false; // Prevenir múltiples envíos
         this.init();
     }
 
@@ -61,7 +62,10 @@ class PersonalityTest {
         }
 
         if (submitBtn) {
-            submitBtn.addEventListener('click', () => this.submitTest());
+            submitBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.submitTest();
+            });
         }
 
         if (form) {
@@ -173,44 +177,71 @@ class PersonalityTest {
 
         if (submitBtn) {
             const allAnswered = this.questions.every(q => q.answered);
-            submitBtn.disabled = !allAnswered;
+            submitBtn.disabled = !allAnswered || this.isSubmitting;
             submitBtn.style.display = this.currentQuestion === this.totalQuestions - 1 ? 'inline-flex' : 'none';
         }
     }
 
-    submitTest() {
-        const allAnswered = this.questions.every(q => q.answered);
-        
-        if (!allAnswered) {
-            this.showNotification('Por favor, responde todas las preguntas antes de enviar el test.', 'warning');
-            return;
-        }
+submitTest() {
+    if (this.isSubmitting) return;
 
-        const form = document.getElementById('personalityTest');
-        if (form) {
-            const submitInput = document.createElement('input');
-            submitInput.type = 'hidden';
-            submitInput.name = 'submit';
-            submitInput.value = '1';
-            form.appendChild(submitInput);
-
-            this.showLoading();
-            form.submit();
-        }
+    const allAnswered = this.questions.every(q => q.answered);
+    if (!allAnswered) {
+        this.showNotification('Por favor, responde todas las preguntas antes de enviar el test.', 'warning');
+        return;
     }
 
+    this.isSubmitting = true;
+    const form = document.getElementById('personalityTest');
+    
+    if (form) {
+        // Crear input oculto para indicar el envío
+        const submitInput = document.createElement('input');
+        submitInput.type = 'hidden';
+        submitInput.name = 'submitted';
+        submitInput.value = '1';
+        form.appendChild(submitInput);
+
+        // Actualizar estado del botón
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Enviando...';
+        }
+
+        this.showLoading();
+        
+        // Usar el método nativo de envío
+        form.submit();
+    }
+}
+
     showNotification(message, type = 'info') {
+        // Remover notificación anterior si existe
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
         notification.textContent = message;
         document.body.appendChild(notification);
 
         setTimeout(() => {
-            notification.remove();
+            if (notification.parentNode) {
+                notification.remove();
+            }
         }, 3000);
     }
 
     showLoading() {
+        // Remover loading anterior si existe
+        const existingLoading = document.querySelector('.loading-overlay');
+        if (existingLoading) {
+            existingLoading.remove();
+        }
+
         const loading = document.createElement('div');
         loading.className = 'loading-overlay';
         loading.innerHTML = `
@@ -222,16 +253,31 @@ class PersonalityTest {
         document.body.appendChild(loading);
     }
 
+    hideLoading() {
+        const loading = document.querySelector('.loading-overlay');
+        if (loading) {
+            loading.remove();
+        }
+    }
+
     // Navegación por teclado
     handleKeyPress(event) {
+        // No procesar teclas si se está enviando
+        if (this.isSubmitting) {
+            return;
+        }
+
         switch(event.key) {
             case 'ArrowLeft':
+                event.preventDefault();
                 this.previousQuestion();
                 break;
             case 'ArrowRight':
+                event.preventDefault();
                 this.nextQuestion();
                 break;
             case 'Enter':
+                event.preventDefault();
                 if (this.currentQuestion === this.totalQuestions - 1) {
                     this.submitTest();
                 } else {
@@ -242,6 +288,7 @@ class PersonalityTest {
             case '2':
             case '3':
             case '4':
+                event.preventDefault();
                 const optionIndex = parseInt(event.key) - 1;
                 const currentQuestion = this.questions[this.currentQuestion];
                 const options = currentQuestion.element.querySelectorAll('.option');
@@ -260,18 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Navegación por teclado
         document.addEventListener('keydown', (e) => test.handleKeyPress(e));
-        
-        // Ayuda de teclado
-        const helpText = document.createElement('div');
-        helpText.className = 'keyboard-help';
-        helpText.innerHTML = `
-            <small>💡 Usa las flechas ← → para navegar o los números 1-4 para seleccionar</small>
-        `;
-        
-        const container = document.querySelector('.test-container');
-        if (container) {
-            container.appendChild(helpText);
-        }
     }
 });
 

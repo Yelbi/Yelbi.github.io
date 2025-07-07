@@ -69,7 +69,7 @@ require 'config/i18n.php';
     <main class="test-container">
         <h1><?= __('personality_test') ?></h1>
         
-        <?php if (!isset($_POST['submit'])): ?>
+        <?php if (!isset($_POST['submitted'])): ?>
         <!-- Barra de progreso -->
         <div class="progress-container">
             <div class="progress-bar">
@@ -295,7 +295,7 @@ require 'config/i18n.php';
             <?= __('next') ?> <i class="fi fi-rr-arrow-right"></i>
         </button>
         
-        <button type="submit" name="submit" id="submitBtn" class="btn btn-primary" style="display: none;">
+        <button type="submit" id="submitBtn" class="btn btn-primary" style="display: none;">
             <?= __('submit_test') ?>
         </button>
     </div>
