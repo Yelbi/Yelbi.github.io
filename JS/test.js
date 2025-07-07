@@ -14,79 +14,56 @@ class PersonalityTest {
         this.showQuestion(0);
     }
 
-setupQuestions() {
-    // Obtener todas las preguntas del DOM
-    const questionElements = document.querySelectorAll('.question');
-    questionElements.forEach((question, index) => {
-        this.questions.push({
-            element: question,
-            answered: false
-        });
-        
-        // Agregar índice a cada pregunta
-        const questionNumber = question.querySelector('h3');
-        if (questionNumber) {
-            const numberSpan = document.createElement('span');
-            numberSpan.className = 'question-number';
-            numberSpan.textContent = `Pregunta ${index + 1} de ${this.totalQuestions}`;
-            question.insertBefore(numberSpan, questionNumber);
-        }
-        
-        // Crear contenedor de opciones
-        const labels = question.querySelectorAll('label');
-        const optionsContainer = document.createElement('div');
-        optionsContainer.className = 'options';
-        
-        labels.forEach((label, optIndex) => {
-            const option = document.createElement('div');
-            option.className = 'option';
-            option.dataset.value = label.querySelector('input').value;
-            option.dataset.question = index + 1;
-            
-            // Obtener solo el texto del label, sin el input
-            const inputElement = label.querySelector('input');
-            const labelText = label.textContent || label.innerText;
-            option.textContent = labelText;
-            
-            // Agregar evento de clic
-            option.addEventListener('click', () => {
-                this.selectOption(index + 1, option.dataset.value, option);
+    setupQuestions() {
+        const questionElements = document.querySelectorAll('.question');
+        questionElements.forEach((question, index) => {
+            this.questions.push({
+                element: question,
+                answered: false
             });
             
-            optionsContainer.appendChild(option);
+            // Crear opciones clickeables
+            const labels = question.querySelectorAll('label');
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'options';
+            
+            labels.forEach((label) => {
+                const option = document.createElement('div');
+                option.className = 'option';
+                const input = label.querySelector('input');
+                option.dataset.value = input.value;
+                option.dataset.question = index + 1;
+                option.textContent = label.textContent.trim();
+                
+                option.addEventListener('click', () => {
+                    this.selectOption(index + 1, input.value, option);
+                });
+                
+                optionsContainer.appendChild(option);
+            });
+            
+            question.appendChild(optionsContainer);
         });
-        
-        // Agregar las opciones al final de la pregunta
-        question.appendChild(optionsContainer);
-        
-        // Ocultar labels originales
-        labels.forEach(label => {
-            label.style.display = 'none';
-        });
-    });
-}
+    }
 
     setupEventListeners() {
-        // Botón anterior
         const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const form = document.getElementById('personalityTest');
+
         if (prevBtn) {
             prevBtn.addEventListener('click', () => this.previousQuestion());
         }
 
-        // Botón siguiente
-        const nextBtn = document.getElementById('nextBtn');
         if (nextBtn) {
             nextBtn.addEventListener('click', () => this.nextQuestion());
         }
 
-        // Botón enviar
-        const submitBtn = document.getElementById('submitBtn');
         if (submitBtn) {
             submitBtn.addEventListener('click', () => this.submitTest());
         }
 
-        // Prevenir envío del formulario por defecto
-        const form = document.getElementById('personalityTest');
         if (form) {
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
@@ -96,45 +73,37 @@ setupQuestions() {
     }
 
     selectOption(questionNumber, value, optionElement) {
-        // Remover selección anterior
+        // Limpiar selección anterior
         const questionContainer = optionElement.closest('.question');
         questionContainer.querySelectorAll('.option').forEach(opt => {
             opt.classList.remove('selected');
         });
 
-        // Agregar selección actual
+        // Seleccionar nueva opción
         optionElement.classList.add('selected');
-        
-        // Guardar respuesta
         this.answers[`q${questionNumber}`] = value;
-        
-        // Marcar pregunta como respondida
         this.questions[questionNumber - 1].answered = true;
 
-        // Actualizar el input radio correspondiente
+        // Marcar el radio correspondiente
         const radioInput = questionContainer.querySelector(`input[value="${value}"]`);
         if (radioInput) {
             radioInput.checked = true;
         }
 
-        // Actualizar botones
         this.updateNavigationButtons();
 
-        // Auto-avanzar después de un breve delay si no es la última pregunta
+        // Auto-avance después de seleccionar (excepto en la última pregunta)
         if (this.currentQuestion < this.totalQuestions - 1) {
             setTimeout(() => {
                 this.nextQuestion();
-            }, 800);
+            }, 500);
         }
     }
 
     showQuestion(index) {
         // Ocultar todas las preguntas
-        this.questions.forEach((question, i) => {
-            question.element.classList.remove('active', 'prev');
-            if (i < index) {
-                question.element.classList.add('prev');
-            }
+        this.questions.forEach(question => {
+            question.element.classList.remove('active');
         });
 
         // Mostrar pregunta actual
@@ -142,11 +111,8 @@ setupQuestions() {
             this.questions[index].element.classList.add('active');
         }
 
-        // Actualizar progreso
         this.updateProgressBar();
         this.updateNavigationButtons();
-
-        // Restaurar selección si existe
         this.restoreSelection(index);
     }
 
@@ -191,35 +157,26 @@ setupQuestions() {
         }
     }
 
-updateNavigationButtons() {
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const submitBtn = document.getElementById('submitBtn');
+    updateNavigationButtons() {
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
 
-    // Botón anterior
-    if (prevBtn) {
-        prevBtn.disabled = this.currentQuestion === 0;
-    }
+        if (prevBtn) {
+            prevBtn.disabled = this.currentQuestion === 0;
+        }
 
-    // Botón siguiente
-    if (nextBtn) {
-        nextBtn.disabled = this.currentQuestion === this.totalQuestions - 1;
-        nextBtn.style.display = this.currentQuestion === this.totalQuestions - 1 ? 'none' : 'inline-flex';
-    }
+        if (nextBtn) {
+            nextBtn.disabled = this.currentQuestion === this.totalQuestions - 1;
+            nextBtn.style.display = this.currentQuestion === this.totalQuestions - 1 ? 'none' : 'inline-flex';
+        }
 
-    // Botón enviar
-    if (submitBtn) {
-        const allAnswered = this.questions.every(q => q.answered);
-        submitBtn.disabled = !allAnswered;
-        
-        // Mostrar solo en la última pregunta
-        if (this.currentQuestion === this.totalQuestions - 1) {
-            submitBtn.style.display = 'inline-flex';
-        } else {
-            submitBtn.style.display = 'none';
+        if (submitBtn) {
+            const allAnswered = this.questions.every(q => q.answered);
+            submitBtn.disabled = !allAnswered;
+            submitBtn.style.display = this.currentQuestion === this.totalQuestions - 1 ? 'inline-flex' : 'none';
         }
     }
-}
 
     submitTest() {
         const allAnswered = this.questions.every(q => q.answered);
@@ -229,20 +186,15 @@ updateNavigationButtons() {
             return;
         }
 
-        // Crear y enviar formulario
         const form = document.getElementById('personalityTest');
         if (form) {
-            // Crear botón de envío temporal
             const submitInput = document.createElement('input');
             submitInput.type = 'hidden';
             submitInput.name = 'submit';
             submitInput.value = '1';
             form.appendChild(submitInput);
 
-            // Mostrar loading
             this.showLoading();
-
-            // Enviar formulario
             form.submit();
         }
     }
@@ -251,18 +203,6 @@ updateNavigationButtons() {
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
         notification.textContent = message;
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 1rem 1.5rem;
-            background: ${type === 'warning' ? '#f39c12' : '#3498db'};
-            color: white;
-            border-radius: 10px;
-            z-index: 1000;
-            animation: slideIn 0.3s ease;
-        `;
-
         document.body.appendChild(notification);
 
         setTimeout(() => {
@@ -276,53 +216,13 @@ updateNavigationButtons() {
         loading.innerHTML = `
             <div class="loading-spinner">
                 <div class="spinner"></div>
-                <p>Calculando tu resultado...</p>
+                <p>Procesando resultados...</p>
             </div>
         `;
-        loading.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        `;
-
-        const spinnerStyles = `
-            .loading-spinner {
-                text-align: center;
-            }
-            .spinner {
-                width: 50px;
-                height: 50px;
-                border: 4px solid #f3f3f3;
-                border-top: 4px solid #667eea;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-                margin: 0 auto 1rem;
-            }
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-        `;
-
-        const style = document.createElement('style');
-        style.textContent = spinnerStyles;
-        document.head.appendChild(style);
-
         document.body.appendChild(loading);
     }
 
-    // Métodos para navegación por teclado
+    // Navegación por teclado
     handleKeyPress(event) {
         switch(event.key) {
             case 'ArrowLeft':
@@ -353,29 +253,19 @@ updateNavigationButtons() {
     }
 }
 
-// Inicializar el test cuando el DOM esté listo
+// Inicializar el test
 document.addEventListener('DOMContentLoaded', () => {
-    // Solo inicializar si estamos en la página del test y no en los resultados
     if (document.getElementById('personalityTest') && !document.querySelector('.test-result')) {
         const test = new PersonalityTest();
         
-        // Agregar navegación por teclado
+        // Navegación por teclado
         document.addEventListener('keydown', (e) => test.handleKeyPress(e));
         
-        // Agregar indicador de navegación por teclado
+        // Ayuda de teclado
         const helpText = document.createElement('div');
         helpText.className = 'keyboard-help';
         helpText.innerHTML = `
-            <small>💡 Usa las flechas ← → para navegar, Enter para continuar, o números 1-4 para seleccionar opciones</small>
-        `;
-        helpText.style.cssText = `
-            text-align: center;
-            margin-top: 1rem;
-            padding: 0.5rem;
-            background: rgba(102, 126, 234, 0.1);
-            border-radius: 10px;
-            color: #667eea;
-            font-size: 0.9rem;
+            <small>💡 Usa las flechas ← → para navegar o los números 1-4 para seleccionar</small>
         `;
         
         const container = document.querySelector('.test-container');
@@ -385,12 +275,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Función para manejar el cambio de idioma en tiempo real
-function updateLanguage() {
-    // Esta función se puede expandir para cambiar dinámicamente el idioma
-    // sin recargar la página si es necesario
-    console.log('Idioma actualizado');
+// Confetti simple para resultados
+function createSimpleConfetti() {
+    const confetti = document.getElementById('confetti');
+    if (!confetti) return;
+    
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+    
+    for (let i = 0; i < 30; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = Math.random() * 2 + 's';
+        piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        confetti.appendChild(piece);
+    }
+    
+    setTimeout(() => {
+        confetti.innerHTML = '';
+    }, 4000);
 }
 
-// Exportar para uso global si es necesario
+// Exportar para uso global
 window.PersonalityTest = PersonalityTest;
+window.createSimpleConfetti = createSimpleConfetti;
