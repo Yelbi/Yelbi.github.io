@@ -14,7 +14,6 @@
     <title><?= __('site_title') ?> - Votación</title>
 </head>
 <body>
-
     <header class="header">
         <a href="/index.php" class="logo">
             <img src="/Img/logo.png" alt="<?= __('site_title') ?>">
@@ -28,34 +27,27 @@
             <i class="fi fi-rr-menu-burger"></i>
         </div>
         
-        <!-- Botón unificado de usuario/idioma -->
         <div class="unified-menu">
-            <!-- Botón principal (visible cuando no autenticado) -->
             <div class="user-btn" id="unifiedButton">
                 <i class="fi fi-rr-user"></i>
             </div>
             
-            <!-- Menú de perfil (visible solo cuando autenticado) -->
             <div class="profile-icon" id="profileIcon" style="display: none;">
                 <img src="/Img/default-avatar.png" alt="<?= __('profile_picture') ?>" id="profileImage">
             </div>
             
-            <!-- Menú desplegable unificado -->
             <div class="dropdown-menu" id="dropdownMenu">
-                <!-- Header para usuarios autenticados -->
                 <div class="dropdown-header" id="userHeader" style="display: none;">
                     <img src="/Img/default-avatar.png" alt="<?= __('profile_picture') ?>" id="dropdownProfileImage">
                     <span class="dropdown-user-name" id="dropdownUserName"><?= __('user') ?></span>
                 </div>
                 
-                <!-- Opciones para usuarios no autenticados -->
                 <div class="guest-options" id="guestOptions">
                     <a href="/iniciar.php" class="dropdown-item">
                         <i class="fi fi-rr-sign-in"></i> <?= __('login') ?>
                     </a>
                 </div>
                 
-                <!-- Opciones para usuarios autenticados -->
                 <div class="user-options" id="userOptions" style="display: none;">
                     <a href="/user-panel.php" class="dropdown-item">
                         <i class="fi fi-rr-user"></i> <?= __('my_profile') ?>
@@ -66,7 +58,6 @@
                     </a>
                 </div>
                 
-                <!-- Opción de idioma mejorada -->
                 <div class="divider"></div>
                 <a href="#" class="dropdown-item language-toggle" id="languageOption" 
                    title="<?= __('switch_to') ?> <?= lang_name(alt_lang()) ?>">
@@ -78,72 +69,78 @@
         </div>
     </header>
 
-    <h1 class="title">Vota por tu favorita</h1>
-
-    <div id="app" class="container">
-        <!-- Loading state -->
-        <div v-if="isLoading" class="loading-container">
-            <div class="loading-spinner"></div>
-            <p>Cargando estado de votación...</p>
+    <main class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">Vota por tu favorita</h1>
+            <p class="page-subtitle">El mas votado saldra proximamente</p>
         </div>
 
-        <!-- Voting interface -->
-        <div v-else>
-            <!-- Cards container -->
-            <div class="cards-container" :class="{ 'disabled': hasVoted }">
-                <card 
-                    v-for="(option, index) in options" 
-                    :key="index"
-                    :data-image="option.image"
-                    @click.native="selectOption(index)"
-                    :class="{ 
-                        selected: selectedOption === index,
-                        disabled: hasVoted
-                    }"
-                >
-                    <h1 slot="header">{{ option.title }}</h1>
-                    <p slot="content">{{ option.description }}</p>
-                </card>
+        <div id="app">
+            <!-- Loading State -->
+            <div v-if="isLoading" class="loading-section">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Cargando estado de votación...</p>
             </div>
 
-            <!-- Vote status indicator -->
-            <div v-if="hasVoted" class="vote-status">
-                <div class="vote-complete">
-                    <i class="fi fi-rr-check-circle"></i>
-                    <h3>¡Gracias por votar!</h3>
-                    <p>Tu voto ha sido registrado exitosamente.</p>
+            <!-- Main Voting Interface -->
+            <div v-else class="voting-interface">
+                <!-- Cards Grid -->
+                <div class="cards-grid" :class="{ 'disabled': hasVoted }">
+                    <card 
+                        v-for="(option, index) in options" 
+                        :key="index"
+                        :data-image="option.image"
+                        @click.native="selectOption(index)"
+                        :class="{ 
+                            selected: selectedOption === index,
+                            disabled: hasVoted
+                        }"
+                    >
+                        <h1 slot="header">{{ option.title }}</h1>
+                        <p slot="content">{{ option.description }}</p>
+                    </card>
+                </div>
+
+                <!-- Vote Success Message -->
+                <div v-if="hasVoted" class="success-section">
+                    <div class="success-card">
+                        <i class="fi fi-rr-check-circle success-icon"></i>
+                        <h3 class="success-title">¡Gracias por votar!</h3>
+                        <p class="success-message">Tu voto ha sido registrado exitosamente.</p>
+                    </div>
+                </div>
+
+                <!-- Vote Controls -->
+                <div v-else class="vote-controls">
+                    <button 
+                        class="vote-btn" 
+                        :disabled="!canVote || isSubmitting" 
+                        @click="submitVote"
+                        :class="{ 
+                            'loading': isSubmitting,
+                            'disabled': !canVote 
+                        }"
+                    >
+                        <span v-if="!isSubmitting">
+                            {{ selectedOption !== null ? 'Enviar mi voto' : 'Selecciona una opción' }}
+                        </span>
+                        <span v-else class="loading-content">
+                            <i class="fi fi-rr-spinner animate-spin"></i> 
+                            Enviando...
+                        </span>
+                    </button>
+                    
+                    <div class="vote-info">
+                        <i class="fi fi-rr-info"></i>
+                        Solo puedes votar una vez. Tu selección es permanente.
+                    </div>
                 </div>
             </div>
 
-            <!-- Submit button -->
-            <div v-else class="submit-container">
-                <button 
-                    class="submit-btn" 
-                    :disabled="!canVote || isSubmitting" 
-                    @click="submitVote"
-                    :class="{ 
-                        'loading': isSubmitting,
-                        'disabled': !canVote 
-                    }"
-                >
-                    <span v-if="!isSubmitting">
-                        {{ selectedOption !== null ? 'Enviar mi voto' : 'Selecciona una opción' }}
-                    </span>
-                    <span v-else>
-                        <i class="fi fi-rr-spinner animate-spin"></i> Enviando...
-                    </span>
-                </button>
-                
-                <p class="vote-info">
-                    <i class="fi fi-rr-info"></i>
-                    Solo puedes votar una vez. Tu selección es permanente.
-                </p>
-            </div>
+            <!-- Alert Container -->
+            <div id="voteAlert" class="alert-container"></div>
         </div>
-
-        <!-- Alert container -->
-        <div id="voteAlert" class="alert-container"></div>
-    </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
     <script src="/JS/header.js"></script>

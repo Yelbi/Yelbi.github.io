@@ -1,7 +1,146 @@
-La historia de Skadi comienza con la muerte de su padre, el gigante Thjazi, quien es asesinado por los dioses aesir. En busca de justicia, Skadi viaja sola a Asgard, armada y decidida a exigir compensación por la muerte de su padre. Admirados por su valentía, los dioses aceptan negociar con ella. Como reparación, le ofrecen elegir a un esposo entre los dioses, pero debe hacerlo únicamente observando los pies de los candidatos. Creyendo que el par de pies más hermosos pertenecía a Baldur, el dios más hermoso, elige en realidad a Njörðr, el dios del mar, padre de Freyr y Freya.
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fondo Estelar Mejorado</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+    canvas#spaceCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      display: block;
+    }
+    .nebula {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      background: radial-gradient(
+        circle at center,
+        rgba(5, 5, 20, 0.9) 0%,
+        rgba(1, 1, 10, 0.9) 40%,
+        rgba(0, 0, 0, 1) 70%
+      );
+    }
+  </style>
+</head>
+<body>
+  <div class="nebula"></div>
+  <canvas id="spaceCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById("spaceCanvas");
+    const ctx = canvas.getContext("2d");
+    let stars = [], animId;
 
-El matrimonio entre Skadi y Njörðr resulta complicado desde el principio, pues cada uno ama su propio reino: Njörðr adora el mar y sus costas, mientras que Skadi prefiere las montañas nevadas. Intentan compartir el tiempo entre ambos hogares, pero su amor no soporta las diferencias irreconciliables, y finalmente deciden vivir separados, manteniendo el respeto mutuo pero siguiendo caminos distintos.
+    const config = {
+      starCount: 2000,
+      rotationSpeed: 0.5,
+      twinkleFactor: 0.3,
+      baseSize: 1.5,
+      fixedSize: 1.5,
+      galaxyCenter: { x: 0, y: 0 },
+    };
 
-Además de este matrimonio, Skadi se convierte en una figura cercana a los aesir. En algunos relatos, se menciona que Loki, para hacerla reír como parte del acuerdo de compensación, ata los testículos de una cabra a su barba, provocando una escena absurda que arranca finalmente una sonrisa de la orgullosa diosa.
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+      config.galaxyCenter = { x: w / 2, y: h / 2 };
+    }
 
-Skadi permanece como un símbolo de la autonomía, el derecho a la justicia y la fuerza femenina en la mitología nórdica. Aunque no participa directamente en los eventos del Ragnarök, su figura encarna la firmeza de la naturaleza frente a los vaivenes del destino de los dioses.
+    function createStars(count) {
+      stars = [];
+      const maxOrbit = Math.hypot(window.innerWidth, window.innerHeight);
+      for (let i = 0; i < count; i++) {
+        const speed = Math.random() * 0.6 + 0.1;
+        const depth = Math.random();
+        const orbit = Math.random() * maxOrbit;
+        stars.push({
+          angle: Math.random() * 2 * Math.PI,
+          orbit,
+          speed,
+          depth,
+          color: `rgba(255,255,255,${Math.random() * 0.7 + 0.3})`,
+          twinkleRate: Math.random() * 0.015 + 0.005,
+          twinkleOffset: Math.random() * 2 * Math.PI,
+        });
+      }
+    }
+
+    function animate(ts = 0) {
+      const now = ts * 0.001;
+      const { x: cx, y: cy } = config.galaxyCenter;
+      const { rotationSpeed, twinkleFactor, fixedSize } = config;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "rgba(0,0,5,0.08)";
+      ctx.fillRect(0, 0, w, h);
+
+      for (const s of stars) {
+        s.angle += s.speed * rotationSpeed * 0.008;
+        const dp = 0.4 + s.depth * 0.6;
+        const x = cx + Math.cos(s.angle) * s.orbit * dp;
+        const y = cy + Math.sin(s.angle) * s.orbit * dp;
+
+        const tw = Math.sin(now * s.twinkleRate + s.twinkleOffset) * twinkleFactor * 0.5 + 0.5;
+        const curSize = fixedSize * tw;
+
+        if (x > -50 && x < w + 50 && y > -50 && y < h + 50) {
+          ctx.fillStyle = s.color;
+          ctx.beginPath();
+          ctx.arc(x, y, curSize, 0, 2 * Math.PI);
+          ctx.fill();
+          if (curSize > 1.5) {
+            ctx.globalAlpha = 0.15 * tw;
+            ctx.beginPath();
+            ctx.arc(x, y, curSize * 1.8, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          }
+        }
+      }
+      animId = requestAnimationFrame(animate);
+    }
+
+    window.addEventListener("resize", () => {
+      cancelAnimationFrame(animId);
+      resizeCanvas();
+      createStars(config.starCount);
+      animate();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) cancelAnimationFrame(animId);
+      else animate();
+    });
+
+    resizeCanvas();
+    createStars(config.starCount);
+    animate();
+  </script>
+</body>
+</html>
