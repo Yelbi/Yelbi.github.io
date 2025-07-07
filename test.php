@@ -79,6 +79,7 @@ require 'config/i18n.php';
         </div>
 
         <form method="post" id="personalityTest">
+            <div class="questions-container">
             <!-- Pregunta 1 -->
             <div class="question active" data-question="1">
                 <h3>
@@ -282,8 +283,22 @@ require 'config/i18n.php';
                     <?= __('q10_option_c') ?>
                 </label>
             </div>
-
-            <button type="submit" name="submit" class="btn-submit" id="submitBtn"><?= __('submit_test') ?></button>
+    </div>
+    
+    <!-- 2. Agregar botones de navegación -->
+    <div class="navigation">
+        <button type="button" id="prevBtn" class="btn btn-secondary" disabled>
+            <i class="fi fi-rr-arrow-left"></i> <?= __('previous') ?>
+        </button>
+        
+        <button type="button" id="nextBtn" class="btn btn-primary">
+            <?= __('next') ?> <i class="fi fi-rr-arrow-right"></i>
+        </button>
+        
+        <button type="submit" name="submit" id="submitBtn" class="btn btn-primary" style="display: none;">
+            <?= __('submit_test') ?>
+        </button>
+    </div>
         </form>
         
         <?php else: 

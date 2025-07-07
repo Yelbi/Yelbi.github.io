@@ -10,6 +10,7 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     color: #333;
+    padding-top: 80px;
 }
 
 .test-container {
@@ -38,7 +39,7 @@ body {
 .test-container h1 {
     text-align: center;
     font-size: 2.5rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     background: linear-gradient(135deg, #667eea, #764ba2);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -96,7 +97,7 @@ body {
 /* Contenedor de preguntas */
 .questions-container {
     position: relative;
-    min-height: 400px;
+    min-height: 500px;
     margin-bottom: 2rem;
 }
 
@@ -113,6 +114,7 @@ body {
     border-radius: 15px;
     border: 1px solid #e8ecf3;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    min-height: 400px;
 }
 
 .question.active {
@@ -144,11 +146,16 @@ body {
     margin-bottom: 1rem;
 }
 
+.question label {
+    display: none !important;
+}
+
 /* Opciones de respuesta */
 .options {
     display: grid;
     gap: 1rem;
     margin-top: 1.5rem;
+    width: 100%;
 }
 
 .option {
@@ -165,6 +172,8 @@ body {
     align-items: center;
     gap: 1rem;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .option:hover {
@@ -212,9 +221,13 @@ body {
     margin-top: 2rem;
     padding-top: 2rem;
     border-top: 1px solid #e8ecf3;
+    position: relative;
+    z-index: 10;
 }
 
-.btn {
+.btn-submit {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
     padding: 1rem 2rem;
     border: none;
     border-radius: 50px;
@@ -222,15 +235,16 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    position: relative;
-    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    display: none; /* Oculto por defecto, se mostrará con JS */
 }
 
-.btn::before {
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.btn-submit::before {
     content: '';
     position: absolute;
     top: 0;
@@ -241,7 +255,7 @@ body {
     transition: left 0.5s;
 }
 
-.btn:hover::before {
+.btn-submit:hover::before {
     left: 100%;
 }
 
@@ -395,17 +409,22 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+    body {
+        padding-top: 70px; /* Menos espacio en móvil */
+    }
+    
     .test-container {
         margin: 1rem;
         padding: 1.5rem;
     }
     
-    .test-container h1 {
-        font-size: 2rem;
+    .questions-container {
+        min-height: 450px; /* Altura mínima mayor en móvil */
     }
     
-    .question h3 {
-        font-size: 1.3rem;
+    .question {
+        min-height: 350px;
+        padding: 1.5rem;
     }
     
     .option {
@@ -421,11 +440,6 @@ body {
     .btn {
         width: 100%;
         justify-content: center;
-    }
-    
-    .god-image img {
-        width: 150px;
-        height: 150px;
     }
 }
 
@@ -460,4 +474,33 @@ body {
 
 .option.selected:hover {
     background: linear-gradient(135deg, #764ba2, #667eea);
+}
+
+.confetti {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #f1c40f;
+    animation: confetti-fall linear infinite;
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+    }
 }

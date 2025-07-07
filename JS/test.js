@@ -14,48 +14,57 @@ class PersonalityTest {
         this.showQuestion(0);
     }
 
-    setupQuestions() {
-        // Obtener todas las preguntas del DOM
-        const questionElements = document.querySelectorAll('.question');
-        questionElements.forEach((question, index) => {
-            this.questions.push({
-                element: question,
-                answered: false
-            });
-            
-            // Agregar índice a cada pregunta
-            const questionNumber = question.querySelector('h3');
-            if (questionNumber) {
-                const numberSpan = document.createElement('span');
-                numberSpan.className = 'question-number';
-                numberSpan.textContent = `Pregunta ${index + 1} de ${this.totalQuestions}`;
-                question.insertBefore(numberSpan, questionNumber);
-            }
-            
-            // Crear contenedor de opciones
-            const labels = question.querySelectorAll('label');
-            const optionsContainer = document.createElement('div');
-            optionsContainer.className = 'options';
-            
-            labels.forEach((label, optIndex) => {
-                const option = document.createElement('div');
-                option.className = 'option';
-                option.dataset.value = label.querySelector('input').value;
-                option.dataset.question = index + 1;
-                option.innerHTML = label.innerHTML;
-                
-                // Agregar evento de clic
-                option.addEventListener('click', () => {
-                    this.selectOption(index + 1, option.dataset.value, option);
-                });
-                
-                optionsContainer.appendChild(option);
-                label.style.display = 'none';
-            });
-            
-            question.appendChild(optionsContainer);
+setupQuestions() {
+    // Obtener todas las preguntas del DOM
+    const questionElements = document.querySelectorAll('.question');
+    questionElements.forEach((question, index) => {
+        this.questions.push({
+            element: question,
+            answered: false
         });
-    }
+        
+        // Agregar índice a cada pregunta
+        const questionNumber = question.querySelector('h3');
+        if (questionNumber) {
+            const numberSpan = document.createElement('span');
+            numberSpan.className = 'question-number';
+            numberSpan.textContent = `Pregunta ${index + 1} de ${this.totalQuestions}`;
+            question.insertBefore(numberSpan, questionNumber);
+        }
+        
+        // Crear contenedor de opciones
+        const labels = question.querySelectorAll('label');
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'options';
+        
+        labels.forEach((label, optIndex) => {
+            const option = document.createElement('div');
+            option.className = 'option';
+            option.dataset.value = label.querySelector('input').value;
+            option.dataset.question = index + 1;
+            
+            // Obtener solo el texto del label, sin el input
+            const inputElement = label.querySelector('input');
+            const labelText = label.textContent || label.innerText;
+            option.textContent = labelText;
+            
+            // Agregar evento de clic
+            option.addEventListener('click', () => {
+                this.selectOption(index + 1, option.dataset.value, option);
+            });
+            
+            optionsContainer.appendChild(option);
+        });
+        
+        // Agregar las opciones al final de la pregunta
+        question.appendChild(optionsContainer);
+        
+        // Ocultar labels originales
+        labels.forEach(label => {
+            label.style.display = 'none';
+        });
+    });
+}
 
     setupEventListeners() {
         // Botón anterior
@@ -182,33 +191,35 @@ class PersonalityTest {
         }
     }
 
-    updateNavigationButtons() {
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const submitBtn = document.getElementById('submitBtn');
+updateNavigationButtons() {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
 
-        // Botón anterior
-        if (prevBtn) {
-            prevBtn.disabled = this.currentQuestion === 0;
-        }
+    // Botón anterior
+    if (prevBtn) {
+        prevBtn.disabled = this.currentQuestion === 0;
+    }
 
-        // Botón siguiente
-        if (nextBtn) {
-            nextBtn.disabled = this.currentQuestion === this.totalQuestions - 1;
-        }
+    // Botón siguiente
+    if (nextBtn) {
+        nextBtn.disabled = this.currentQuestion === this.totalQuestions - 1;
+        nextBtn.style.display = this.currentQuestion === this.totalQuestions - 1 ? 'none' : 'inline-flex';
+    }
 
-        // Botón enviar
-        if (submitBtn) {
-            const allAnswered = this.questions.every(q => q.answered);
-            submitBtn.disabled = !allAnswered;
-            submitBtn.style.display = this.currentQuestion === this.totalQuestions - 1 ? 'inline-flex' : 'none';
-        }
-
-        // Ocultar botón siguiente en la última pregunta
-        if (nextBtn) {
-            nextBtn.style.display = this.currentQuestion === this.totalQuestions - 1 ? 'none' : 'inline-flex';
+    // Botón enviar
+    if (submitBtn) {
+        const allAnswered = this.questions.every(q => q.answered);
+        submitBtn.disabled = !allAnswered;
+        
+        // Mostrar solo en la última pregunta
+        if (this.currentQuestion === this.totalQuestions - 1) {
+            submitBtn.style.display = 'inline-flex';
+        } else {
+            submitBtn.style.display = 'none';
         }
     }
+}
 
     submitTest() {
         const allAnswered = this.questions.every(q => q.answered);
