@@ -1,0 +1,85 @@
+.test-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+.question {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border-radius: 8px;
+    background: #f9f9f9;
+}
+
+.question h3 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+label {
+    display: block;
+    margin: 0.8rem 0;
+    padding: 1rem;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid #eee;
+}
+
+label:hover {
+    background: #f0f7ff;
+    border-color: #3498db;
+}
+
+.btn-submit {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-submit:hover {
+    background: #2980b9;
+}
+
+.test-result {
+    text-align: center;
+}
+
+.god-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 2rem 0;
+}
+
+.god-image img {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 5px solid #f1c40f;
+}
+
+.god-info {
+    max-width: 600px;
+    margin-top: 1.5rem;
+}
+
+.retake-btn {
+    background: #2ecc71;
+    color: white;
+    padding: 0.8rem 1.5rem;
+    text-decoration: none;
+    border-radius: 5px;
+    display: inline-block;
+    margin-top: 1rem;
+}

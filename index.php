@@ -96,7 +96,7 @@
                 <a href="/random_ser.php" class="btn random-btn">
                     <i class="fi fi-rr-shuffle"></i> <?= __('discover_random') ?>
                 </a>
-                <a href="/survey.php" class="btn">
+                <a href="/test.php" class="btn">
                     <i class="fi fi-rr-form"></i> <?= __('test_of_beings') ?>
                 </a>
                 <a href="/voto.php" class="btn">
