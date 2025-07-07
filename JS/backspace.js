@@ -7,7 +7,7 @@ let animationId;
 const params = {
     starCount: 800, // Reducido para mejor rendimiento
     speed: 2.0,
-    twinkle: 0.2,
+    twinkle: 0.1,
     size: 1.0
 };
 

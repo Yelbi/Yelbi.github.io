@@ -6,13 +6,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Configuración optimizada
     const config = {
-        starCount: 400, // Reducido para mejor rendimiento
-        speed: 1.0,
-        twinkle: 0.3,
-        size: 1.0,
-        infinitySpeed: 0.012,
-        targetFPS: 30,
-        trailLength: 5
+        starCount: 1000, // Reducido para mejor rendimiento
+        speed: 0.8,
+        twinkle: 0.2,
+        size: 1,
+        infinitySpeed: 0.01,
+        targetFPS: 40,
+        trailLength: 4
     };
     
     let stars = [];
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         centerX = canvasWidth * 0.5;
         centerY = canvasHeight * 0.5;
-        infinityScale = Math.min(canvasWidth, canvasHeight) * 0.2;
+        infinityScale = Math.min(canvasWidth, canvasHeight) * 0.4;
         
         createStars();
     }
