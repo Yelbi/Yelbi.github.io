@@ -78,7 +78,7 @@
         </div>
     </header>
 
-    <h1 class="title">Vota por tu mitología favorita</h1>
+    <h1 class="title">Vota por tu favorita</h1>
 
     <div id="app" class="container">
         <!-- Loading state -->

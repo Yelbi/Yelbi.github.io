@@ -239,7 +239,7 @@ async function loadVotingResults() {
         
         console.log('Solicitando resultados de votación...'); // Debug log
         
-        // Timeout de 15 segundos (aumentado)
+        // Timeout reducido a 10 segundos
         const timeoutId = setTimeout(() => {
             container.innerHTML = `
                 <div class="error-state">
@@ -249,38 +249,64 @@ async function loadVotingResults() {
                     <button class="btn-retry" onclick="loadVotingResults()">Reintentar</button>
                 </div>
             `;
-        }, 15000);
+        }, 10000);
 
-        // Hacer la petición
-        const result = await apiRequest('get-vote-results', {}, 'GET');
+        // Probar múltiples endpoints posibles
+        let result = null;
+        const possibleEndpoints = ['get-vote-results', 'voting-results', 'get-votes', 'vote-results'];
+        
+        for (const endpoint of possibleEndpoints) {
+            try {
+                console.log(`Probando endpoint: ${endpoint}`);
+                result = await apiRequest(endpoint, {}, 'GET');
+                console.log(`Éxito con endpoint ${endpoint}:`, result);
+                break;
+            } catch (error) {
+                console.log(`Error con endpoint ${endpoint}:`, error.message);
+                // Continuar con el siguiente endpoint
+            }
+        }
+        
         clearTimeout(timeoutId);
+        
+        if (!result) {
+            throw new Error('No se pudo obtener datos de ningún endpoint de votación');
+        }
         
         console.log('Respuesta de resultados:', result); // Debug log
         
-        // Verificar estructura de la respuesta
-        if (!result) {
-            throw new Error('No se recibió respuesta del servidor');
-        }
-        
-        // Manejar diferentes estructuras de respuesta
+        // Manejar diferentes estructuras de respuesta de manera más robusta
         let votingData = null;
         let totalVotes = 0;
         
-        if (result.results) {
+        // Intentar extraer los datos de votación
+        if (result.success && result.data) {
+            // Estructura: { success: true, data: { results: [...], total: X } }
+            votingData = result.data.results || result.data;
+            totalVotes = result.data.total || 0;
+        } else if (result.results) {
+            // Estructura: { results: [...], total: X }
             votingData = result.results;
             totalVotes = result.total || 0;
-        } else if (result.data && result.data.results) {
-            votingData = result.data.results;
-            totalVotes = result.data.total || 0;
         } else if (Array.isArray(result)) {
+            // Estructura: [{ mythology: "...", votes: X }, ...]
             votingData = result;
-            totalVotes = result.reduce((sum, item) => sum + (item.votes || 0), 0);
+            totalVotes = result.reduce((sum, item) => sum + (parseInt(item.votes) || 0), 0);
+        } else if (result.data && Array.isArray(result.data)) {
+            // Estructura: { data: [{ mythology: "...", votes: X }, ...] }
+            votingData = result.data;
+            totalVotes = result.data.reduce((sum, item) => sum + (parseInt(item.votes) || 0), 0);
         } else {
             console.log('Estructura de respuesta no reconocida:', result);
             throw new Error('Estructura de respuesta no válida');
         }
         
-        if (!votingData || !Array.isArray(votingData) || votingData.length === 0) {
+        // Validar que tenemos datos válidos
+        if (!votingData || !Array.isArray(votingData)) {
+            throw new Error('Los datos de votación no están en formato de array');
+        }
+        
+        if (votingData.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-icon">📊</div>
@@ -292,8 +318,19 @@ async function loadVotingResults() {
             return;
         }
         
+        // Normalizar datos y calcular total si no se proporcionó
+        const normalizedData = votingData.map(item => ({
+            mythology: item.mythology || item.name || item.option || 'Sin nombre',
+            votes: parseInt(item.votes) || parseInt(item.count) || 0
+        }));
+        
+        // Recalcular total si es necesario
+        if (totalVotes === 0) {
+            totalVotes = normalizedData.reduce((sum, item) => sum + item.votes, 0);
+        }
+        
         // Ordenar por número de votos (descendente)
-        const sortedResults = [...votingData].sort((a, b) => (b.votes || 0) - (a.votes || 0));
+        const sortedResults = [...normalizedData].sort((a, b) => b.votes - a.votes);
         
         let html = `
             <div class="results-summary">
@@ -309,9 +346,9 @@ async function loadVotingResults() {
         `;
         
         sortedResults.forEach((item, index) => {
-            const votes = item.votes || 0;
+            const votes = item.votes;
             const percentage = totalVotes > 0 ? ((votes / totalVotes) * 100).toFixed(1) : 0;
-            const mythology = item.mythology || item.name || 'Sin nombre';
+            const mythology = item.mythology;
             
             html += `
                 <div class="result-item" style="animation-delay: ${index * 0.1}s">
@@ -370,18 +407,41 @@ async function debugVotingResults() {
         console.log('Token exists:', !!token);
         console.log('Token preview:', token ? token.substring(0, 20) + '...' : 'No token');
         
+        // Verificar conectividad básica
+        console.log('Verificando conectividad...');
+        const basicTest = await fetch('https://seres.blog/api/auth.php?action=profile', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        console.log('Estado de conectividad:', basicTest.status);
+        
         // Probar diferentes endpoints
-        const endpoints = ['get-vote-results', 'get-votes', 'voting-results'];
+        const endpoints = ['get-vote-results', 'voting-results', 'get-votes', 'vote-results'];
         
         for (const endpoint of endpoints) {
             try {
-                console.log(`Probando endpoint: ${endpoint}`);
+                console.log(`\n--- Probando endpoint: ${endpoint} ---`);
                 const result = await apiRequest(endpoint, {}, 'GET');
-                console.log(`Resultado de ${endpoint}:`, result);
+                console.log(`✅ Éxito con ${endpoint}:`, result);
+                
+                // Analizar estructura
+                console.log(`Tipo de respuesta: ${typeof result}`);
+                console.log(`Es array: ${Array.isArray(result)}`);
+                console.log(`Propiedades: ${Object.keys(result)}`);
+                
             } catch (error) {
-                console.log(`Error en ${endpoint}:`, error.message);
+                console.log(`❌ Error en ${endpoint}:`, error.message);
             }
         }
+        
+        // Mostrar información adicional
+        console.log('\n=== INFORMACIÓN ADICIONAL ===');
+        console.log('User Agent:', navigator.userAgent);
+        console.log('Timestamp:', new Date().toISOString());
+        console.log('URL actual:', window.location.href);
+        
     } catch (error) {
         console.error('Error en debug:', error);
     }

@@ -100,7 +100,7 @@
                     <i class="fi fi-rr-form"></i> <?= __('test_of_beings') ?>
                 </a>
                 <a href="/voto.php" class="btn">
-                    <i class="fi fi-rr-form"></i> <?= __('vote_for_your_favorite') ?>
+                    <i class="fi fi-rr-vote-yea"></i> <?= __('vote_for_your_favorite') ?>
                 </a>
         </section>
 
