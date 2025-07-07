@@ -313,13 +313,13 @@ require 'config/i18n.php';
             
             // Obtener imagen desde la base de datos
             $imagen = '/Img/default-god.jpg'; // Imagen por defecto
+            $slug = ''; // Slug vacío por defecto
             try {
                 // Mapear nombres especiales (como Ma'at)
                 $godNameForDB = str_replace("'", "''", $topGod); // Escapar apóstrofes
-                $godNameForDB = str_replace('ó', 'o', $godNameForDB); // Normalizar caracteres
                 
                 $stmt = $pdo->prepare("
-                    SELECT s.imagen 
+                    SELECT s.slug, s.imagen 
                     FROM seres s
                     JOIN seres_translations st ON s.id = st.ser_id
                     WHERE st.nombre = :nombre 
@@ -332,12 +332,13 @@ require 'config/i18n.php';
                     ':lang' => $current_lang
                 ]);
                 
-                $imagen_db = $stmt->fetchColumn();
-                if ($imagen_db) {
-                    $imagen = $imagen_db;
+                $serData = $stmt->fetch();
+                if ($serData) {
+                    $imagen = $serData['imagen'];
+                    $slug = $serData['slug'];
                 }
             } catch (PDOException $e) {
-                error_log("Error al obtener imagen: " . $e->getMessage());
+                error_log("Error al obtener imagen y slug: " . $e->getMessage());
             }
         ?>
         
@@ -350,7 +351,11 @@ require 'config/i18n.php';
                 <div class="god-info">
                     <h3><?= $topGod ?></h3>
                     <p><?= $descriptions[$topGod] ?></p>
-                    <a href="/mito.php?god=<?= urlencode($topGod) ?>" class="btn"><?= __('learn_more') ?></a>
+                    <?php if (!empty($slug)): ?>
+                        <a href="/detalle.php?ser=<?= htmlspecialchars($slug) ?>" class="btn"><?= __('learn_more') ?></a>
+                    <?php else: ?>
+                        <a href="/galeria.php" class="btn"><?= __('gallery') ?></a>
+                    <?php endif; ?>
                 </div>
             </div>
             
@@ -360,7 +365,7 @@ require 'config/i18n.php';
     </main>
 
     <script src="/JS/header.js"></script>
-    <script src="/JS/test-page.js"></script>
+    <script src="/JS/test.js"></script>
     <script src="/JS/language.js"></script>
 </body>
 </html>
