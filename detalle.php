@@ -90,39 +90,42 @@ try {
             
             <!-- Menú de perfil (visible solo cuando autenticado) -->
             <div class="profile-icon" id="profileIcon" style="display: none;">
-                <img src="/Img/default-avatar.png" alt="Foto de perfil" id="profileImage">
+                <img src="/Img/default-avatar.png" alt="<?= __('profile_picture') ?>" id="profileImage">
             </div>
             
             <!-- Menú desplegable unificado -->
             <div class="dropdown-menu" id="dropdownMenu">
                 <!-- Header para usuarios autenticados -->
                 <div class="dropdown-header" id="userHeader" style="display: none;">
-                    <img src="/Img/default-avatar.png" alt="Foto de perfil" id="dropdownProfileImage">
-                    <span class="dropdown-user-name" id="dropdownUserName">Usuario</span>
+                    <img src="/Img/default-avatar.png" alt="<?= __('profile_picture') ?>" id="dropdownProfileImage">
+                    <span class="dropdown-user-name" id="dropdownUserName"><?= __('user') ?></span>
                 </div>
                 
                 <!-- Opciones para usuarios no autenticados -->
                 <div class="guest-options" id="guestOptions">
                     <a href="/iniciar.php" class="dropdown-item">
-                        <i class="fi fi-rr-sign-in"></i> Iniciar sesión
+                        <i class="fi fi-rr-sign-in"></i> <?= __('login') ?>
                     </a>
                 </div>
                 
                 <!-- Opciones para usuarios autenticados -->
                 <div class="user-options" id="userOptions" style="display: none;">
                     <a href="/user-panel.php" class="dropdown-item">
-                        <i class="fi fi-rr-user"></i> Mi perfil
+                        <i class="fi fi-rr-user"></i> <?= __('my_profile') ?>
                     </a>
                     <div class="divider"></div>
                     <a href="#" class="dropdown-item" onclick="logout()">
-                        <i class="fi fi-rr-sign-out"></i> Cerrar sesión
+                        <i class="fi fi-rr-sign-out"></i> <?= __('logout') ?>
                     </a>
                 </div>
                 
-                <!-- Opción de idioma (siempre visible) -->
+                <!-- Opción de idioma mejorada -->
                 <div class="divider"></div>
-                <a href="#" class="dropdown-item" id="languageOption" onclick="toggleLanguage()">
-                    <i class="fi fi-rr-globe"></i> Cambiar idioma
+                <a href="#" class="dropdown-item language-toggle" id="languageOption" 
+                   title="<?= __('switch_to') ?> <?= lang_name(alt_lang()) ?>">
+                    <i class="fi fi-rr-globe"></i>
+                    <span class="lang-text"><?= lang_name(alt_lang()) ?></span>
+                    <span class="lang-flag"><?= current_lang() === 'es' ? '🇺🇸' : '🇪🇸' ?></span>
                 </a>
             </div>
         </div>

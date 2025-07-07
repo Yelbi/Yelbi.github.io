@@ -63,10 +63,13 @@
                     </a>
                 </div>
                 
-                <!-- Opción de idioma (siempre visible) -->
+                <!-- Opción de idioma mejorada -->
                 <div class="divider"></div>
-                <a href="#" class="dropdown-item" id="languageOption" onclick="toggleLanguage()">
-                    <i class="fi fi-rr-globe"></i> <?= __('change_language') ?>
+                <a href="#" class="dropdown-item language-toggle" id="languageOption" 
+                   title="<?= __('switch_to') ?> <?= lang_name(alt_lang()) ?>">
+                    <i class="fi fi-rr-globe"></i>
+                    <span class="lang-text"><?= lang_name(alt_lang()) ?></span>
+                    <span class="lang-flag"><?= current_lang() === 'es' ? '🇺🇸' : '🇪🇸' ?></span>
                 </a>
             </div>
         </div>

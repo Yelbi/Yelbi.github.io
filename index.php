@@ -129,7 +129,6 @@
 
         <script src="/JS/header.js"></script>
         <script src="/JS/index.js"></script>
-        <script src="/JS/survey.js"></script>
         <script src="/JS/backspace.js"></script>
         <script type="module" src="/JS/backhole.js"></script>
         <script src="/JS/infinity.js"></script>

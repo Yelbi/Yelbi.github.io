@@ -160,6 +160,7 @@
 .dropdown-header span {
     font-weight: 600;
     font-size: 0.95rem;
+    color: black;
 }
 
 .dropdown-item {
