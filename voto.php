@@ -142,8 +142,10 @@
         </div>
     </main>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
     <script src="/JS/header.js"></script>
     <script src="/JS/voto.js"></script>
+    <script src="/JS/backvoto.js"></script>
 </body>
 </html>

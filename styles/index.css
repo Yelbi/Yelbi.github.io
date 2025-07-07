@@ -100,6 +100,10 @@
             position: relative;
         }
 
+        .section2 a {
+            padding: 10px;
+        }
+
         .section2 a-hole-section2 {
     position: absolute;
     top: 0;
@@ -147,6 +151,8 @@
 .section2 .section-content {
     z-index: 10;
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
         /* Sección 3 - Gradiente azul */
