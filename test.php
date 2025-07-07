@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.3.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
     <link rel="stylesheet" href="/styles/header.css">
-    <link rel="stylesheet" href="/styles/survey.css">
+    <link rel="stylesheet" href="/styles/test.css">
     <link rel="shortcut icon" href="/Img/favicon.ico" type="image/x-icon" />
     <title><?= __('site_title') ?></title>
 </head>
@@ -64,7 +64,7 @@
     </header>
 
     <script src="/JS/header.js"></script>
-    <script src="/JS/survey-page.js"></script>
+    <script src="/JS/test-page.js"></script>
     <script src="/JS/language.js"></script>
 </body>
 </html>
