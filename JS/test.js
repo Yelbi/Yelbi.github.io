@@ -96,13 +96,18 @@ class PersonalityTest {
 
         this.updateNavigationButtons();
 
-        // Auto-avance después de seleccionar (excepto en la última pregunta)
-        if (this.currentQuestion < this.totalQuestions - 1) {
-            setTimeout(() => {
-                this.nextQuestion();
-            }, 500);
+// Auto-avance después de seleccionar (excepto en la última pregunta)
+    if (this.currentQuestion < this.totalQuestions - 1) {
+        // Activar desplazamiento de estrellas
+        if (typeof startStarMotion === 'function') {
+            startStarMotion(1); // Dirección hacia adelante
         }
+        
+        setTimeout(() => {
+            this.nextQuestion();
+        }, 500);
     }
+}
 
     showQuestion(index) {
         // Ocultar todas las preguntas

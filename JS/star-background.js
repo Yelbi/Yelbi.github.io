@@ -1,8 +1,8 @@
 // backvoto.js - Fondo animado estelar para voto.php con animación de movimiento al navegar
 (function() {
     const config = {
-        starCount: 2500,
-        twinkleFactor: 0.8, // reducido para brillo tenue
+        starCount: 3000,
+        twinkleFactor: 1, // reducido para brillo tenue
         fixedSize: 1.2,
         galaxyCenter: { x: 0, y: 0 },
         motionDuration: 1200,
