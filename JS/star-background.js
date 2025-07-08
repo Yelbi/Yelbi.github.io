@@ -1,183 +1,191 @@
-// star-background.js
-class StarBackground {
-    constructor() {
-        this.canvas = null;
-        this.ctx = null;
-        this.stars = [];
-        this.animationId = null;
-        this.isMoving = false;
-        this.moveDirection = 0;
-        this.moveDuration = 0;
-        this.moveStartTime = 0;
-        this.maxMoveDuration = 500; // 0.5 segundos de movimiento
-        
-        this.init();
-    }
-    
-    init() {
-        this.createCanvas();
-        this.resizeCanvas();
-        this.createStars();
-        this.animate();
-        
-        // Event listeners
-        window.addEventListener('resize', this.resizeCanvas.bind(this));
-        document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
-    }
-    
-    createCanvas() {
-        this.canvas = document.createElement('canvas');
-        this.canvas.className = 'star-background';
-        this.canvas.style.cssText = `
+// backvoto.js - Fondo animado estelar para voto.php con animación de movimiento al navegar
+(function() {
+    const config = {
+        starCount: 2000,
+        twinkleFactor: 0.3,
+        fixedSize: 1.5,
+        galaxyCenter: { x: 0, y: 0 },
+        motionDuration: 1000, // milisegundos
+        motionDistance: 100, // px de desplazamiento
+    };
+
+    let canvas, ctx, stars = [], animId;
+    let motionOffset = 0;
+    let motionDirection = 0;
+    let motionStartTime = null;
+
+    function createCanvas() {
+        const nebulaDiv = document.createElement('div');
+        nebulaDiv.className = 'nebula-background';
+        nebulaDiv.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            background: radial-gradient(
+                circle at center,
+                rgba(5, 5, 20, 0.9) 0%,
+                rgba(1, 1, 10, 0.9) 40%,
+                rgba(0, 0, 0, 1) 70%
+            );
             pointer-events: none;
         `;
-        document.body.appendChild(this.canvas);
-        this.ctx = this.canvas.getContext('2d');
+
+        canvas = document.createElement('canvas');
+        canvas.id = 'spaceCanvas';
+        canvas.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            display: block;
+            pointer-events: none;
+        `;
+
+        ctx = canvas.getContext('2d');
+
+        document.body.insertBefore(nebulaDiv, document.body.firstChild);
+        document.body.insertBefore(canvas, document.body.firstChild);
     }
-    
-    resizeCanvas() {
+
+    function resizeCanvas() {
         const dpr = window.devicePixelRatio || 1;
-        this.canvas.width = window.innerWidth * dpr;
-        this.canvas.height = window.innerHeight * dpr;
-        this.canvas.style.width = window.innerWidth + 'px';
-        this.canvas.style.height = window.innerHeight + 'px';
-        this.ctx.scale(dpr, dpr);
-        
-        // Regenerar estrellas al cambiar tamaño
-        this.createStars();
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + "px";
+        canvas.style.height = h + "px";
+
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+        config.galaxyCenter = { x: w / 2, y: h / 2 };
     }
-    
-    createStars() {
-        this.stars = [];
-        const starCount = Math.floor((window.innerWidth * window.innerHeight) / 500);
-        
-        for (let i = 0; i < starCount; i++) {
-            this.stars.push({
-                x: Math.random() * window.innerWidth,
-                y: Math.random() * window.innerHeight,
-                size: Math.random() * 2 + 0.5,
-                opacity: Math.random() * 0.7 + 0.3,
-                blinkSpeed: Math.random() * 0.01 + 0.005,
-                blinkOffset: Math.random() * Math.PI * 2
+
+    function createStars(count) {
+        stars = [];
+        const maxOrbit = Math.hypot(window.innerWidth, window.innerHeight);
+
+        for (let i = 0; i < count; i++) {
+            const depth = Math.random();
+            const orbit = Math.random() * maxOrbit;
+
+            stars.push({
+                angle: Math.random() * 2 * Math.PI,
+                orbit,
+                depth,
+                color: `rgba(255,255,255,${Math.random() * 0.7 + 0.3})`,
+                twinkleRate: Math.random() * 0.015 + 0.005,
+                twinkleOffset: Math.random() * 2 * Math.PI,
             });
         }
     }
-    
-    triggerMove(direction) {
-        this.isMoving = true;
-        this.moveDirection = direction;
-        this.moveDuration = 0;
-        this.moveStartTime = Date.now();
-    }
-    
-    updateStars(timestamp) {
-        const now = Date.now();
-        const timeDelta = now - this.moveStartTime;
-        
-        // Actualizar movimiento si está activo
-        if (this.isMoving) {
-            this.moveDuration = timeDelta;
-            
-            // Calcular progreso de movimiento (0 a 1)
-            const progress = Math.min(1, this.moveDuration / this.maxMoveDuration);
-            
-            // Aplicar movimiento con efecto de aceleración/desaceleración
-            const moveAmount = 50 * Math.sin(progress * Math.PI) * this.moveDirection;
-            
-            // Mover estrellas
-            this.stars.forEach(star => {
-                star.x += moveAmount;
-                
-                // Reposicionar estrellas que salen de la pantalla
-                if (star.x < -20) star.x = window.innerWidth + 20;
-                if (star.x > window.innerWidth + 20) star.x = -20;
-            });
-            
-            // Finalizar movimiento
-            if (progress >= 1) {
-                this.isMoving = false;
+
+    function animate(ts = 0) {
+        if (!canvas || !ctx) return;
+
+        const now = ts;
+        const { x: cx, y: cy } = config.galaxyCenter;
+        const { twinkleFactor, fixedSize } = config;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        if (motionStartTime !== null) {
+            const elapsed = now - motionStartTime;
+            const t = Math.min(elapsed / config.motionDuration, 1);
+            const ease = 1 - Math.pow(1 - t, 3);
+            motionOffset = config.motionDistance * ease * motionDirection;
+            if (t >= 1) {
+                motionStartTime = null;
+                motionOffset = 0;
             }
         }
-        
-        // Actualizar parpadeo
-        this.stars.forEach(star => {
-            star.currentOpacity = star.opacity * (0.5 + 0.5 * Math.sin(now * star.blinkSpeed + star.blinkOffset));
-        });
-    }
-    
-    drawStars() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Fondo degradado espacial
-        const gradient = this.ctx.createLinearGradient(0, 0, 0, window.innerHeight);
-        gradient.addColorStop(0, '#020714');
-        gradient.addColorStop(1, '#0a1a3a');
-        this.ctx.fillStyle = gradient;
-        this.ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-        
-        // Dibujar estrellas
-        this.stars.forEach(star => {
-            this.ctx.beginPath();
-            this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-            this.ctx.fillStyle = `rgba(255, 255, 255, ${star.currentOpacity})`;
-            this.ctx.fill();
-        });
-    }
-    
-    animate(timestamp) {
-        this.updateStars(timestamp);
-        this.drawStars();
-        this.animationId = requestAnimationFrame(this.animate.bind(this));
-    }
-    
-    handleVisibilityChange() {
-        if (document.hidden) {
-            cancelAnimationFrame(this.animationId);
-            this.animationId = null;
-        } else if (!this.animationId) {
-            this.animate();
-        }
-    }
-    
-    destroy() {
-        cancelAnimationFrame(this.animationId);
-        if (this.canvas && this.canvas.parentNode) {
-            this.canvas.parentNode.removeChild(this.canvas);
-        }
-        window.removeEventListener('resize', this.resizeCanvas);
-        document.removeEventListener('visibilitychange', this.handleVisibilityChange);
-    }
-}
 
-// Inicializar e integrar con el test
-document.addEventListener('DOMContentLoaded', () => {
-    // Crear fondo estelar
-    const starBackground = new StarBackground();
-    
-    // Integrar con los botones de navegación
-    if (document.getElementById('personalityTest')) {
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => {
-                starBackground.triggerMove(1); // Movimiento hacia la derecha
-            });
+        ctx.globalCompositeOperation = "source-over";
+        ctx.fillStyle = "rgba(0,0,5,0.08)";
+        ctx.fillRect(0, 0, w, h);
+
+        for (const s of stars) {
+            const dp = 0.4 + s.depth * 0.6;
+            const x = cx + Math.cos(s.angle) * s.orbit * dp + motionOffset;
+            const y = cy + Math.sin(s.angle) * s.orbit * dp;
+
+            const tw = Math.sin(now * 0.001 * s.twinkleRate + s.twinkleOffset) * twinkleFactor * 0.5 + 0.5;
+            const curSize = fixedSize * tw;
+
+            if (x > -50 && x < w + 50 && y > -50 && y < h + 50) {
+                ctx.fillStyle = s.color;
+                ctx.beginPath();
+                ctx.arc(x, y, curSize, 0, 2 * Math.PI);
+                ctx.fill();
+
+                if (curSize > 1.5) {
+                    ctx.globalAlpha = 0.15 * tw;
+                    ctx.beginPath();
+                    ctx.arc(x, y, curSize * 1.8, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            }
         }
-        
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => {
-                starBackground.triggerMove(-1); // Movimiento hacia la izquierda
-            });
+
+        animId = requestAnimationFrame(animate);
+    }
+
+    function startMotion(direction) {
+        motionDirection = direction;
+        motionStartTime = performance.now();
+    }
+
+    function handleResize() {
+        cancelAnimationFrame(animId);
+        resizeCanvas();
+        createStars(config.starCount);
+        animate();
+    }
+
+    function handleVisibilityChange() {
+        if (document.hidden) {
+            cancelAnimationFrame(animId);
+        } else {
+            animate();
         }
     }
-    
-    // Exponer para control si es necesario
-    window.starBackground = starBackground;
-});
+
+    function init() {
+        createCanvas();
+        resizeCanvas();
+        createStars(config.starCount);
+        animate();
+
+        window.addEventListener('resize', handleResize);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    function destroy() {
+        if (animId) {
+            cancelAnimationFrame(animId);
+        }
+        window.removeEventListener('resize', handleResize);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+
+        const nebulaEl = document.querySelector('.nebula-background');
+        const canvasEl = document.getElementById('spaceCanvas');
+
+        if (nebulaEl) nebulaEl.remove();
+        if (canvasEl) canvasEl.remove();
+    }
+
+    // Exponer funciones globalmente
+    window.startStarMotion = startMotion; // Llamar con -1 (prev) o 1 (next)
+    window.destroyStarBackground = destroy;
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();

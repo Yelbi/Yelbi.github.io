@@ -287,11 +287,11 @@ require 'config/i18n.php';
     
     <!-- 2. Agregar botones de navegación -->
     <div class="navigation">
-        <button type="button" id="prevBtn" class="btn btn-secondary" disabled>
+        <button type="button" id="prevBtn" onclick="startStarMotion(-1)" class="btn btn-secondary" disabled>
             <i class="fi fi-rr-arrow-left"></i> <?= __('previous') ?>
         </button>
-        
-        <button type="button" id="nextBtn" class="btn btn-primary">
+
+        <button type="button" id="nextBtn" onclick="startStarMotion(1)" class="btn btn-primary">
             <?= __('next') ?> <i class="fi fi-rr-arrow-right"></i>
         </button>
         
