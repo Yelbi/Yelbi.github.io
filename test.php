@@ -448,5 +448,6 @@ require 'config/i18n.php';
     <script src="/JS/header.js"></script>
     <script src="/JS/test.js"></script>
     <script src="/JS/language.js"></script>
+    <script src="/JS/star-background.js"></script>
 </body>
 </html>

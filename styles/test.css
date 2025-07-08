@@ -61,7 +61,7 @@ body {
 /* Contenedor de preguntas */
 .questions-container {
     position: relative;
-    min-height: 300px;
+    min-height: 330px;
     margin-bottom: 1rem;
 }
 
