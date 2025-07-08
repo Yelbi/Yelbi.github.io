@@ -18,8 +18,8 @@ body {
 .test-container {
     max-width: 700px;
     margin: 2rem auto;
-    padding: 2rem;
-    background: #00000000;
+    padding: 1rem;
+    background: #1c2e3d57;
     backdrop-filter: blur(15px);
     border-radius: 16px;
 }
@@ -27,7 +27,7 @@ body {
 .test-container h1 {
     text-align: center;
     font-size: 2.2rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     color: #ffffff;
     font-weight: 600;
     text-shadow: 0 0 10px rgba(248, 250, 252, 0.3);
@@ -88,7 +88,7 @@ body {
 
 .question h3 {
     font-size: 1.25rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     color: #ffffff;
     font-weight: 600;
     line-height: 1.4;
@@ -116,7 +116,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    margin-top: 1.5rem;
+    margin-top: 1rem;
 }
 
 .option {
@@ -150,7 +150,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 1.5rem;
+    padding-top: 1rem;
     border-top: 1px solid rgba(148, 163, 184, 0.1);
     gap: 1rem;
 }
@@ -224,7 +224,7 @@ body {
 
 .test-result h2 {
     font-size: 2rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     color: #f8fafc;
     font-weight: 600;
     text-shadow: 0 0 10px rgba(248, 250, 252, 0.3);
@@ -235,13 +235,13 @@ body {
     backdrop-filter: blur(10px);
     border: 1px solid rgba(148, 163, 184, 0.1);
     border-radius: 16px;
-    padding: 2rem;
-    margin: 2rem 0;
+    padding: 1rem;
+    margin: 1rem 0;
     text-align: center;
 }
 
 .god-image {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .god-image img {
@@ -263,7 +263,7 @@ body {
 .god-info p {
     font-size: 1rem;
     color: #cbd5e1;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     max-width: 500px;
     margin-left: auto;
     margin-right: auto;
