@@ -1,7 +1,7 @@
 // backvoto.js - Fondo animado estelar con reciclaje optimizado
 (function() {
     const config = {
-        starCount: 3000,
+        starCount: 1500,
         twinkleFactor: 1,
         fixedSize: 1.2,
         motionDuration: 1200,
