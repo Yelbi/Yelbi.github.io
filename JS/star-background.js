@@ -1,10 +1,9 @@
-// backvoto.js - Fondo animado estelar para voto.php con animación de movimiento al navegar
+// backvoto.js - Fondo animado estelar con reciclaje optimizado
 (function() {
     const config = {
         starCount: 3000,
-        twinkleFactor: 1, // reducido para brillo tenue
+        twinkleFactor: 1,
         fixedSize: 1.2,
-        galaxyCenter: { x: 0, y: 0 },
         motionDuration: 1200,
         motionDistance: 250,
     };
@@ -14,6 +13,7 @@
     let motionDirection = 0;
     let motionStartTime = null;
     let persistentOffset = 0;
+    let cx, cy;
 
     function createCanvas() {
         const nebulaDiv = document.createElement('div');
@@ -63,20 +63,25 @@
 
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.scale(dpr, dpr);
-        config.galaxyCenter = { x: w / 2, y: h / 2 };
+        
+        cx = w / 2;
+        cy = h / 2;
     }
 
     function createStars(count) {
         stars = [];
-        const maxOrbit = Math.hypot(window.innerWidth, window.innerHeight);
+        const w = window.innerWidth;
+        const h = window.innerHeight;
 
         for (let i = 0; i < count; i++) {
-            const depth = Math.random();
-            const orbit = Math.random() * maxOrbit;
+            // Crear estrellas dentro del área visible inicial
+            const x = Math.random() * w;
+            const y = Math.random() * h;
+            const depth = 0.4 + Math.random() * 0.6;
 
             stars.push({
-                angle: Math.random() * 2 * Math.PI,
-                orbit,
+                worldX: (x - cx) / depth,
+                worldY: (y - cy) / depth,
                 depth,
                 color: `rgba(255, 255, ${200 + Math.floor(Math.random() * 55)}, ${Math.random() * 0.3 + 0.2})`,
                 twinkleRate: Math.random() * 0.02 + 0.01,
@@ -89,10 +94,9 @@
         if (!canvas || !ctx) return;
 
         const now = ts;
-        const { x: cx, y: cy } = config.galaxyCenter;
-        const { twinkleFactor, fixedSize } = config;
         const w = window.innerWidth;
         const h = window.innerHeight;
+        const { twinkleFactor, fixedSize } = config;
 
         if (motionStartTime !== null) {
             const elapsed = now - motionStartTime;
@@ -106,33 +110,46 @@
             }
         }
 
+        const totalOffset = persistentOffset + motionOffset;
+
         ctx.globalCompositeOperation = "source-over";
         ctx.fillStyle = "rgba(0,0,10,0.1)";
         ctx.fillRect(0, 0, w, h);
 
-        const totalOffset = persistentOffset + motionOffset;
-
         for (const s of stars) {
-            const dp = 0.4 + s.depth * 0.6;
-            const x = cx + Math.cos(s.angle) * s.orbit * dp + totalOffset * dp;
-            const y = cy + Math.sin(s.angle) * s.orbit * dp;
+            // Calcular posición en pantalla con efecto de paralaje
+            const screenX = cx + s.worldX * s.depth + totalOffset * s.depth;
+            const screenY = cy + s.worldY * s.depth;
 
+            // Reciclar estrellas que salen de la pantalla (solo laterales)
+            if (screenX < -50 || screenX > w + 50) {
+                if (screenX < -50) {
+                    // Mover al lado derecho
+                    s.worldX = (w + 50 - cx - totalOffset * s.depth) / s.depth;
+                } else {
+                    // Mover al lado izquierdo
+                    s.worldX = (-50 - cx - totalOffset * s.depth) / s.depth;
+                }
+                // Mantener la misma posición Y
+                continue;
+            }
+
+            // Dibujar estrella
             const tw = Math.sin(now * 0.001 * s.twinkleRate + s.twinkleOffset) * twinkleFactor * 0.5 + 0.5;
             const curSize = fixedSize * tw;
 
-            if (x > -50 && x < w + 50 && y > -50 && y < h + 50) {
-                ctx.fillStyle = s.color;
-                ctx.beginPath();
-                ctx.arc(x, y, curSize, 0, 2 * Math.PI);
-                ctx.fill();
+            ctx.fillStyle = s.color;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, curSize, 0, 2 * Math.PI);
+            ctx.fill();
 
-                if (curSize > 1.2) {
-                    ctx.globalAlpha = 0.15 * tw;
-                    ctx.beginPath();
-                    ctx.arc(x, y, curSize * 2, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.globalAlpha = 1;
-                }
+            // Añadir halo a estrellas grandes
+            if (curSize > 1.2) {
+                ctx.globalAlpha = 0.15 * tw;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, curSize * 2, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.globalAlpha = 1;
             }
         }
 
@@ -147,7 +164,6 @@
     function handleResize() {
         cancelAnimationFrame(animId);
         resizeCanvas();
-        createStars(config.starCount);
         animate();
     }
 
