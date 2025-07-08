@@ -1,18 +1,19 @@
 // backvoto.js - Fondo animado estelar para voto.php con animación de movimiento al navegar
 (function() {
     const config = {
-        starCount: 2000,
-        twinkleFactor: 0.3,
-        fixedSize: 1.5,
+        starCount: 2500,
+        twinkleFactor: 0.8, // reducido para brillo tenue
+        fixedSize: 1.2,
         galaxyCenter: { x: 0, y: 0 },
-        motionDuration: 1000, // milisegundos
-        motionDistance: 100, // px de desplazamiento
+        motionDuration: 1200,
+        motionDistance: 250,
     };
 
     let canvas, ctx, stars = [], animId;
     let motionOffset = 0;
     let motionDirection = 0;
     let motionStartTime = null;
+    let persistentOffset = 0;
 
     function createCanvas() {
         const nebulaDiv = document.createElement('div');
@@ -26,9 +27,9 @@
             z-index: -2;
             background: radial-gradient(
                 circle at center,
-                rgba(5, 5, 20, 0.9) 0%,
-                rgba(1, 1, 10, 0.9) 40%,
-                rgba(0, 0, 0, 1) 70%
+                rgba(10, 10, 40, 0.95) 0%,
+                rgba(5, 5, 20, 0.9) 40%,
+                rgba(0, 0, 5, 1) 70%
             );
             pointer-events: none;
         `;
@@ -77,8 +78,8 @@
                 angle: Math.random() * 2 * Math.PI,
                 orbit,
                 depth,
-                color: `rgba(255,255,255,${Math.random() * 0.7 + 0.3})`,
-                twinkleRate: Math.random() * 0.015 + 0.005,
+                color: `rgba(255, 255, ${200 + Math.floor(Math.random() * 55)}, ${Math.random() * 0.3 + 0.2})`,
+                twinkleRate: Math.random() * 0.02 + 0.01,
                 twinkleOffset: Math.random() * 2 * Math.PI,
             });
         }
@@ -96,21 +97,24 @@
         if (motionStartTime !== null) {
             const elapsed = now - motionStartTime;
             const t = Math.min(elapsed / config.motionDuration, 1);
-            const ease = 1 - Math.pow(1 - t, 3);
+            const ease = 0.5 - 0.5 * Math.cos(Math.PI * t);
             motionOffset = config.motionDistance * ease * motionDirection;
             if (t >= 1) {
                 motionStartTime = null;
+                persistentOffset += config.motionDistance * motionDirection;
                 motionOffset = 0;
             }
         }
 
         ctx.globalCompositeOperation = "source-over";
-        ctx.fillStyle = "rgba(0,0,5,0.08)";
+        ctx.fillStyle = "rgba(0,0,10,0.1)";
         ctx.fillRect(0, 0, w, h);
+
+        const totalOffset = persistentOffset + motionOffset;
 
         for (const s of stars) {
             const dp = 0.4 + s.depth * 0.6;
-            const x = cx + Math.cos(s.angle) * s.orbit * dp + motionOffset;
+            const x = cx + Math.cos(s.angle) * s.orbit * dp + totalOffset * dp;
             const y = cy + Math.sin(s.angle) * s.orbit * dp;
 
             const tw = Math.sin(now * 0.001 * s.twinkleRate + s.twinkleOffset) * twinkleFactor * 0.5 + 0.5;
@@ -122,10 +126,10 @@
                 ctx.arc(x, y, curSize, 0, 2 * Math.PI);
                 ctx.fill();
 
-                if (curSize > 1.5) {
+                if (curSize > 1.2) {
                     ctx.globalAlpha = 0.15 * tw;
                     ctx.beginPath();
-                    ctx.arc(x, y, curSize * 1.8, 0, 2 * Math.PI);
+                    ctx.arc(x, y, curSize * 2, 0, 2 * Math.PI);
                     ctx.fill();
                     ctx.globalAlpha = 1;
                 }
@@ -179,8 +183,7 @@
         if (canvasEl) canvasEl.remove();
     }
 
-    // Exponer funciones globalmente
-    window.startStarMotion = startMotion; // Llamar con -1 (prev) o 1 (next)
+    window.startStarMotion = startMotion;
     window.destroyStarBackground = destroy;
 
     if (document.readyState === 'loading') {
