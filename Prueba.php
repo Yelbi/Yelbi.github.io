@@ -1,42 +1,72 @@
-Zeus
-Odín
-Ra
-Balder
-Bragi
-Freya
-Heimdall
-Idunn
-Njörðr
-Frigg
-Loki
-Freyr
-Thor
-Skaði
-Hel
-Tyr
-Hestia
-Artemisa
-Hera
-Cronos
-Eros
-Heracles
-Afrodita
-Apolo
-Deméter
-Hefesto
-Hermes
-Ares
-Poseidón
-Atenea
-Ammit
-Anubis
-Bastet
-Hathor
-Horus
-Isis
-Ma'at
-Neftis
-Osiris
-Ptah
-Seth
-Thot
+Rey Bael
+Duque Agares
+Príncipe Vassago
+Marqués Samigina
+Presidente Marbas
+Duque Valefor
+Marqués Amon
+Duque Barbatos
+Rey Paimon
+Presidente Buer
+Duque Gusion
+Príncipe Sitri
+Rey Beleth
+Marqués Leraje
+Duque Eligos
+Duque Zepar
+Conde/Presidente Botis
+Duque Bathin
+Duque Sallos
+Rey Purson
+Conde/Presidente Marax
+Conde/Príncipe Ipos
+Duque Aim
+Marqués Naberius
+Conde/Presidente Glasya-Labolas
+Duque Bune
+Marqués/Conde Ronove
+Duque Berith
+Duque Astaroth
+Marqués Forneus
+Presidente Foras
+Rey Asmodeo
+Príncipe/Presidente Gaap
+Conde Furfur
+Marqués Marchosias
+Príncipe Stolas
+Marqués Phenex
+Conde Malthus
+Presidente Malphas
+Conde Raum
+Duque Focalor
+Duque Vepar
+Marqués Sabnock
+Marqués Shax
+Rey/Conde Vine
+Conde Bifrons
+Duque Uvall
+Presidente Haagenti
+Duque Crocell
+Caballero Furcas
+Rey Balam
+Duque Alloces
+Presidente Caim
+Duque/Conde Murmur
+Príncipe Orobas
+Duque Gremory
+Presidente Ose
+Presidente Amy
+Marqués Orias
+Duque Vapula
+Rey/Presidente Zagan
+Presidente Volac
+Marqués Andras
+Duque Haures
+Marqués Andrealphus
+Marqués Cimejes
+Duque Amdusias
+Rey Belial
+Marqués Decarabia
+Príncipe Seere
+Duque Dantalion
+Conde Andromalius
