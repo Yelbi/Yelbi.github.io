@@ -25,6 +25,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit();
 }
 
+// Helper function to extract user ID from JWT token
+function getUserIdFromToken($token) {
+    if (!$token) {
+        return null;
+    }
+    try {
+        $decoded = \Firebase\JWT\JWT::decode($token, new \Firebase\JWT\Key(JWT_SECRET, JWT_ALGORITHM));
+        $decodedArray = (array) $decoded;
+        return $decodedArray['sub'] ?? null;
+    } catch (Exception $e) {
+        return null;
+    }
+}
+
 // Clave secreta para JWT
 define('JWT_SECRET', '123456789Grandiel$');
 define('JWT_ALGORITHM', 'HS256');
@@ -53,20 +67,123 @@ switch ($method) {
                 verifyEmail($user, $input);
                 break;
             case 'logout':
-                logout();
-                break;
-            case 'submit-complaint':
-                submitComplaint($input);
-                break;
-            case 'delete-complaint':
-                deleteComplaint($input);
-                break;
-            case 'update-profile-image':
-                updateProfileImage();
-                break;
-            case 'submit-vote':
-                submitVote($input);
-                break;
+    case 'get-favorites':
+        $token = null;
+        $headers = getallheaders();
+        if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
+            $token = $matches[1];
+        }
+        $userId = getUserIdFromToken($token);
+        if (!$userId) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No autorizado']);
+            exit;
+        }
+        
+        $language = $_GET['lang'] ?? 'es';
+        $favorites = getUserFavorites($userId, $language);
+        echo json_encode(['favorites' => $favorites]);
+        break;
+
+    case 'get-favorite-ids':
+    $token = null;
+    $headers = getallheaders();
+    if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
+        $token = $matches[1];
+    }
+    $userId = getUserIdFromToken($token);
+    if (!$userId) {
+        http_response_code(401);
+        echo json_encode(['error' => 'No autorizado']);
+        exit;
+    }
+    
+    $favoriteIds = getUserFavoriteIds($userId);
+    echo json_encode(['favorite_ids' => $favoriteIds]);
+    break;
+    
+    case 'add-favorite':
+        $token = null;
+        $headers = getallheaders();
+        if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
+            $token = $matches[1];
+        }
+        $userId = getUserIdFromToken($token);
+        if (!$userId) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No autorizado']);
+            exit;
+        }
+        
+        $data = json_decode(file_get_contents('php://input'), true);
+        $serId = $data['ser_id'] ?? null;
+        if (!$serId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'ID del ser requerido']);
+            exit;
+        }
+        
+        if (addToFavorites($userId, $serId)) {
+            echo json_encode(['success' => true, 'message' => 'Añadido a favoritos']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Error al añadir a favoritos']);
+        }
+        break;
+    
+    case 'remove-favorite':
+        $token = null;
+        $headers = getallheaders();
+        if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
+            $token = $matches[1];
+        }
+        $userId = getUserIdFromToken($token);
+        if (!$userId) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No autorizado']);
+            exit;
+        }
+        
+        $data = json_decode(file_get_contents('php://input'), true);
+        $serId = $data['ser_id'] ?? null;
+        if (!$serId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'ID del ser requerido']);
+            exit;
+        }
+        
+        if (removeFromFavorites($userId, $serId)) {
+            echo json_encode(['success' => true, 'message' => 'Removido de favoritos']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Error al remover de favoritos']);
+        }
+        break;
+    
+    case 'check-favorite':
+        $token = null;
+        $headers = getallheaders();
+        if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
+            $token = $matches[1];
+        }
+        $userId = getUserIdFromToken($token);
+        if (!$userId) {
+            http_response_code(401);
+            echo json_encode(['error' => 'No autorizado']);
+            exit;
+        }
+        
+        $serId = $_GET['ser_id'] ?? null;
+        if (!$serId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'ID del ser requerido']);
+            exit;
+        }
+        
+        $isFav = isFavorite($userId, $serId);
+        echo json_encode(['is_favorite' => $isFav]);
+        break;
+        
             case 'request-password-reset':
                 try {
                     $data = json_decode(file_get_contents('php://input'), true);
@@ -938,5 +1055,86 @@ function getVoteResults() {
     } catch (Exception $e) {
         error_log('Error en getVoteResults: ' . $e->getMessage());
         jsonResponse(['error' => $e->getMessage()], 500);
+    }
+}
+
+// Función para obtener favoritos del usuario
+function getUserFavorites($userId, $language = 'es') {
+    global $pdo;
+    
+    try {
+        $stmt = $pdo->prepare("
+            SELECT s.id, s.slug, s.imagen, st.nombre, st.tipo, st.region, uf.created_at
+            FROM user_favorites uf
+            JOIN seres s ON uf.ser_id = s.id
+            JOIN seres_translations st ON s.id = st.ser_id
+            WHERE uf.user_id = ? AND st.language_code = ?
+            ORDER BY uf.created_at DESC
+        ");
+        $stmt->execute([$userId, $language]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Error getting favorites: " . $e->getMessage());
+        return [];
+    }
+}
+
+// Función para agregar a favoritos
+function addToFavorites($userId, $serId) {
+    global $pdo;
+    
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO user_favorites (user_id, ser_id) 
+            VALUES (?, ?)
+            ON DUPLICATE KEY UPDATE created_at = CURRENT_TIMESTAMP
+        ");
+        $stmt->execute([$userId, $serId]);
+        return true;
+    } catch (PDOException $e) {
+        error_log("Error adding to favorites: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Función para remover de favoritos
+function removeFromFavorites($userId, $serId) {
+    global $pdo;
+    
+    try {
+        $stmt = $pdo->prepare("DELETE FROM user_favorites WHERE user_id = ? AND ser_id = ?");
+        $stmt->execute([$userId, $serId]);
+        return true;
+    } catch (PDOException $e) {
+        error_log("Error removing from favorites: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Función para verificar si un ser está en favoritos
+function isFavorite($userId, $serId) {
+    global $pdo;
+    
+    try {
+        $stmt = $pdo->prepare("SELECT 1 FROM user_favorites WHERE user_id = ? AND ser_id = ?");
+        $stmt->execute([$userId, $serId]);
+        return $stmt->fetchColumn() !== false;
+    } catch (PDOException $e) {
+        error_log("Error checking favorite: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Función para obtener IDs de favoritos del usuario
+function getUserFavoriteIds($userId) {
+    global $pdo;
+    
+    try {
+        $stmt = $pdo->prepare("SELECT ser_id FROM user_favorites WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    } catch (PDOException $e) {
+        error_log("Error getting favorite IDs: " . $e->getMessage());
+        return [];
     }
 }

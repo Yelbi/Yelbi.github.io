@@ -154,6 +154,18 @@
     </div>
     
     <script src="/JS/user-panel.js"></script>
+    <script src="/JS/favorites.js"></script>
+    <script>
+        // Renderizar favoritos cuando se cargue la página
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Esperar a que se inicialice el user-panel
+            setTimeout(async () => {
+                if (window.favoritesManager && window.favoritesManager.isAuthenticated) {
+                    await renderFavorites();
+                }
+            }, 1000);
+        });
+    </script>
     <script src="/JS/header.js"></script>
     <script src="/JS/language.js"></script>
 </body>
