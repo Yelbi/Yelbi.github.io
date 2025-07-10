@@ -41,9 +41,17 @@ class FavoritesManager {
         });
     }
 
-getSerIdFromCard(card) {
-    return card.getAttribute('data-ser-id');
-}
+    getSerIdFromCard(card) {
+        // Extraer el ID del ser desde el href o data attribute
+        const href = card.getAttribute('href');
+        if (href) {
+            const match = href.match(/ser=([^&]+)/);
+            if (match) {
+                return match[1]; // slug del ser
+            }
+        }
+        return null;
+    }
 
     addFavoriteButton(card, serSlug) {
         // Verificar si ya existe el botón
