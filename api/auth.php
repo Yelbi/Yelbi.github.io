@@ -18,6 +18,7 @@ header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, GET, PUT, DELETE, OPTIONS");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+header('Content-Type: application/json; charset=UTF-8');
 
 // Manejar preflight requests
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
@@ -32,9 +33,10 @@ function getUserIdFromToken($token) {
     }
     try {
         $decoded = \Firebase\JWT\JWT::decode($token, new \Firebase\JWT\Key(JWT_SECRET, JWT_ALGORITHM));
-        $decodedArray = (array) $decoded;
-        return $decodedArray['sub'] ?? null;
+        return $decoded->sub ?? null;
     } catch (Exception $e) {
+        // Registrar el error pero no mostrar detalles
+        error_log('JWT Error: ' . $e->getMessage());
         return null;
     }
 }
@@ -67,122 +69,91 @@ switch ($method) {
                 verifyEmail($user, $input);
                 break;
             case 'logout':
-    case 'get-favorites':
-        $token = null;
-        $headers = getallheaders();
-        if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
-            $token = $matches[1];
-        }
-        $userId = getUserIdFromToken($token);
-        if (!$userId) {
-            http_response_code(401);
-            echo json_encode(['error' => 'No autorizado']);
-            exit;
-        }
-        
-        $language = $_GET['lang'] ?? 'es';
-        $favorites = getUserFavorites($userId, $language);
-        echo json_encode(['favorites' => $favorites]);
-        break;
-
-    case 'get-favorite-ids':
-    $token = null;
-    $headers = getallheaders();
-    if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
-        $token = $matches[1];
-    }
-    $userId = getUserIdFromToken($token);
-    if (!$userId) {
-        http_response_code(401);
-        echo json_encode(['error' => 'No autorizado']);
-        exit;
-    }
-    
-    $favoriteIds = getUserFavoriteIds($userId);
-    echo json_encode(['favorite_ids' => $favoriteIds]);
-    break;
-    
-    case 'add-favorite':
-        $token = null;
-        $headers = getallheaders();
-        if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
-            $token = $matches[1];
-        }
-        $userId = getUserIdFromToken($token);
-        if (!$userId) {
-            http_response_code(401);
-            echo json_encode(['error' => 'No autorizado']);
-            exit;
-        }
-        
-        $data = json_decode(file_get_contents('php://input'), true);
-        $serId = $data['ser_id'] ?? null;
-        if (!$serId) {
-            http_response_code(400);
-            echo json_encode(['error' => 'ID del ser requerido']);
-            exit;
-        }
-        
-        if (addToFavorites($userId, $serId)) {
-            echo json_encode(['success' => true, 'message' => 'Añadido a favoritos']);
-        } else {
-            http_response_code(500);
-            echo json_encode(['error' => 'Error al añadir a favoritos']);
-        }
-        break;
-    
-    case 'remove-favorite':
-        $token = null;
-        $headers = getallheaders();
-        if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
-            $token = $matches[1];
-        }
-        $userId = getUserIdFromToken($token);
-        if (!$userId) {
-            http_response_code(401);
-            echo json_encode(['error' => 'No autorizado']);
-            exit;
-        }
-        
-        $data = json_decode(file_get_contents('php://input'), true);
-        $serId = $data['ser_id'] ?? null;
-        if (!$serId) {
-            http_response_code(400);
-            echo json_encode(['error' => 'ID del ser requerido']);
-            exit;
-        }
-        
-        if (removeFromFavorites($userId, $serId)) {
-            echo json_encode(['success' => true, 'message' => 'Removido de favoritos']);
-        } else {
-            http_response_code(500);
-            echo json_encode(['error' => 'Error al remover de favoritos']);
-        }
-        break;
-    
-    case 'check-favorite':
-        $token = null;
-        $headers = getallheaders();
-        if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
-            $token = $matches[1];
-        }
-        $userId = getUserIdFromToken($token);
-        if (!$userId) {
-            http_response_code(401);
-            echo json_encode(['error' => 'No autorizado']);
-            exit;
-        }
-        
-        $serId = $_GET['ser_id'] ?? null;
-        if (!$serId) {
-            http_response_code(400);
-            echo json_encode(['error' => 'ID del ser requerido']);
-            exit;
-        }
-        
-        $isFav = isFavorite($userId, $serId);
-        echo json_encode(['is_favorite' => $isFav]);
-        break;
+                logout();
+                break;
+                
+            case 'add-favorite':
+                $token = null;
+                $headers = getallheaders();
+                if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
+                    $token = $matches[1];
+                }
+                $userId = getUserIdFromToken($token);
+                if (!$userId) {
+                    http_response_code(401);
+                    echo json_encode(['error' => 'No autorizado']);
+                    exit;
+                }
+                
+                $data = json_decode(file_get_contents('php://input'), true);
+                $serId = $data['ser_id'] ?? null;
+                if (!$serId) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'ID del ser requerido']);
+                    exit;
+                }
+                
+                if (addToFavorites($userId, $serId)) {
+                    echo json_encode(['success' => true, 'message' => 'Añadido a favoritos']);
+                } else {
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Error al añadir a favoritos']);
+                }
+                break;
+            
+            case 'remove-favorite':
+                $token = null;
+                $headers = getallheaders();
+                if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
+                    $token = $matches[1];
+                }
+                $userId = getUserIdFromToken($token);
+                if (!$userId) {
+                    http_response_code(401);
+                    echo json_encode(['error' => 'No autorizado']);
+                    exit;
+                }
+                
+                $data = json_decode(file_get_contents('php://input'), true);
+                $serId = $data['ser_id'] ?? null;
+                if (!$serId) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'ID del ser requerido']);
+                    exit;
+                }
+                
+                if (removeFromFavorites($userId, $serId)) {
+                    echo json_encode(['success' => true, 'message' => 'Removido de favoritos']);
+                } else {
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Error al remover de favoritos']);
+                }
+                break;
+            
+            case 'check-favorite':
+                $token = null;
+                $headers = getallheaders();
+                if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
+                    $token = $matches[1];
+                }
+                $userId = getUserIdFromToken($token);
+                if (!$userId) {
+                    http_response_code(401);
+                    echo json_encode(['error' => 'No autorizado']);
+                    exit;
+                }
+                
+                $data = json_decode(file_get_contents('php://input'), true);
+                $serId = $data['ser_id'] ?? null;
+                if (!$serId) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'ID del ser requerido']);
+                    exit;
+                }
+                
+                $isFav = isFavorite($userId, $serId);
+                echo json_encode(['is_favorite' => $isFav]);
+                break;
         
             case 'request-password-reset':
                 try {
@@ -251,6 +222,42 @@ switch ($method) {
             case 'get-vote-results':
                 getVoteResults();
                 break;
+            
+            case 'get-favorites':
+                $token = null;
+                $headers = getallheaders();
+                if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
+                    $token = $matches[1];
+                }
+                $userId = getUserIdFromToken($token);
+                if (!$userId) {
+                    http_response_code(401);
+                    echo json_encode(['error' => 'No autorizado']);
+                    exit;
+                }
+                
+                $language = $_GET['lang'] ?? 'es';
+                $favorites = getUserFavorites($userId, $language);
+                echo json_encode(['favorites' => $favorites]);
+                break;
+            
+            case 'get-favorite-ids':
+                $token = null;
+                $headers = getallheaders();
+                if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
+                    $token = $matches[1];
+                }
+                $userId = getUserIdFromToken($token);
+                if (!$userId) {
+                    http_response_code(401);
+                    echo json_encode(['error' => 'No autorizado']);
+                    exit;
+                }
+                
+                $favoriteIds = getUserFavoriteIds($userId);
+                echo json_encode(['favorite_ids' => $favoriteIds]);
+                break;
+                
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
         }

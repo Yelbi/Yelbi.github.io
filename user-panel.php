@@ -142,14 +142,14 @@
             </div>
 
             <!-- Sección de Favoritos -->
-<div class="section favorites-section">
-    <div class="section-header">
-        <div class="section-icon">
-            <i class="fi fi-rr-heart"></i>
-        </div>
-        <h2 class="section-title"><?= __('my_favorites') ?></h2>
-    </div>
-</div>
+            <div class="section favorites-section">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fi fi-rr-heart"></i>
+                    </div>
+                    <h2 class="section-title"><?= __('my_favorites') ?></h2>
+                </div>
+            </div>
         </div>
     </div>
     
