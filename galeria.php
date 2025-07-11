@@ -186,7 +186,7 @@ try {
          data-tipo="<?= htmlspecialchars($s['tipo']) ?>" 
          data-region="<?= htmlspecialchars($s['region']) ?>"
          data-nombre="<?= strtolower(htmlspecialchars($s['nombre'])) ?>"
-         data-ser-id="<?= $s['id'] ?>"> <!-- Nuevo atributo para el ID -->
+         data-ser-id="<?= $s['id'] ?>">
         <img src="<?= htmlspecialchars($s['imagen']) ?>" 
              alt="<?= htmlspecialchars($s['nombre']) ?>" 
              loading="lazy"
@@ -230,7 +230,6 @@ const translations = {
 <script src="/JS/galeria.js"></script>
 <script src="/JS/header.js"></script>
 <script src="/JS/language.js"></script>
-<script src="/JS/favorites.js"></script>
 
 </body>
 </html>
