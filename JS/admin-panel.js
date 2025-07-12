@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadProfile();
     await loadAdminMessages();
     await loadVotingResults();
+    await loadPendingImages();
 });
 
 async function loadProfile() {
@@ -640,7 +641,8 @@ async function loadPendingImages() {
 
         const result = await apiRequest('get-pending-images', {}, 'GET');
         
-        if (result.images && result.images.length === 0) {
+        // Verificar si hay imágenes
+        if (!result.images || result.images.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-icon">🖼️</div>
@@ -653,13 +655,18 @@ async function loadPendingImages() {
 
         let html = `<div class="image-grid">`;
         result.images.forEach(image => {
+            // Asegurarse de que todos los campos existen
+            const serName = image.ser_name || 'Desconocido';
+            const userEmail = image.email || 'Usuario desconocido';
+            const date = image.created_at ? new Date(image.created_at).toLocaleDateString() : 'Fecha desconocida';
+            
             html += `
                 <div class="image-card" data-id="${image.id}">
-                    <img src="${image.image_url}" alt="Imagen pendiente">
+                    <img src="${image.image_url}" alt="Imagen pendiente" onerror="this.src='/Img/image-placeholder.png'">
                     <div class="image-info">
-                        <p><strong>Ser:</strong> ${image.ser_name}</p>
-                        <p><strong>Usuario:</strong> ${image.email}</p>
-                        <p><strong>Fecha:</strong> ${new Date(image.created_at).toLocaleDateString()}</p>
+                        <p><strong>Ser:</strong> ${serName}</p>
+                        <p><strong>Usuario:</strong> ${userEmail}</p>
+                        <p><strong>Fecha:</strong> ${date}</p>
                     </div>
                     <div class="image-actions">
                         <button class="btn-approve" onclick="approveImage(${image.id})">Aprobar</button>
@@ -673,14 +680,18 @@ async function loadPendingImages() {
         container.innerHTML = html;
 
     } catch (error) {
-        container.innerHTML = `
-            <div class="error-state">
-                <div class="error-icon">⚠️</div>
-                <h3>Error al cargar imágenes</h3>
-                <p>${error.message}</p>
-                <button class="btn-retry" onclick="loadPendingImages()">Reintentar</button>
-            </div>
-        `;
+        const container = document.getElementById('pendingImagesContainer');
+        if (container) {
+            container.innerHTML = `
+                <div class="error-state">
+                    <div class="error-icon">⚠️</div>
+                    <h3>Error al cargar imágenes</h3>
+                    <p>${error.message}</p>
+                    <button class="btn-retry" onclick="loadPendingImages()">Reintentar</button>
+                </div>
+            `;
+        }
+        console.error('Error loading pending images:', error);
     }
 }
 
@@ -708,7 +719,6 @@ async function rejectImage(imageId) {
 // Hacer funciones accesibles globalmente
 window.approveImage = approveImage;
 window.rejectImage = rejectImage;
-window.loadPendingImages = loadPendingImages;
 window.toggleMessageDetail = toggleMessageDetail;
 window.deleteMessage = deleteMessage;
 window.loadAdminMessages = loadAdminMessages;

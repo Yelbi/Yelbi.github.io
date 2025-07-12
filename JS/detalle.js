@@ -1,6 +1,7 @@
 // detalle.js
 // Script para detalle.php
 document.addEventListener('DOMContentLoaded', function() {
+  checkAuthStatus();
   const modal = document.getElementById('imageModal');
   const modalImg = document.getElementById('modalImage');
   const galleryItems = document.querySelectorAll('.masonry-item img');
@@ -141,6 +142,33 @@ document.addEventListener('DOMContentLoaded', function() {
     gtag('event', 'page_view', { page_title: document.title, page_location: location.href });
   }
 });
+
+function checkAuthStatus() {
+    const token = localStorage.getItem('jwt_token');
+    const uploadSection = document.getElementById('uploadSection');
+    const loginPrompt = document.getElementById('loginPrompt');
+    
+    if (token) {
+        // Verificar token válido
+        fetch('https://seres.blog/api/auth.php?action=verify-session', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.valid) {
+                if (uploadSection) uploadSection.style.display = 'block';
+                if (loginPrompt) loginPrompt.style.display = 'none';
+            } else {
+                localStorage.removeItem('jwt_token');
+                if (uploadSection) uploadSection.style.display = 'none';
+                if (loginPrompt) loginPrompt.style.display = 'block';
+            }
+        });
+    } else {
+        if (uploadSection) uploadSection.style.display = 'none';
+        if (loginPrompt) loginPrompt.style.display = 'block';
+    }
+}
 
 // Función para configurar el modal de imágenes
 function setupImageModal() {
@@ -308,10 +336,8 @@ async function apiRequest(action, data) {
     const token = localStorage.getItem('jwt_token');
     
     if (!token) {
-        // Redirigir a login con redirección de retorno
-        const redirectUrl = encodeURIComponent(window.location.href);
-        window.location.href = `/iniciar.php?redirect=${redirectUrl}`;
-        return new Promise(() => {}); // Evitar ejecución adicional
+        showLoginPrompt();
+        throw new Error('Usuario no autenticado');
     }
     
     try {
@@ -324,6 +350,13 @@ async function apiRequest(action, data) {
             body: JSON.stringify(data)
         });
         
+        if (response.status === 401) {
+            // Token inválido o expirado
+            localStorage.removeItem('jwt_token');
+            showLoginPrompt();
+            throw new Error('La sesión ha expirado');
+        }
+        
         const result = await response.json();
         
         if (!response.ok) {
@@ -334,5 +367,19 @@ async function apiRequest(action, data) {
     } catch (error) {
         console.error('API Error:', error);
         throw error;
+    }
+}
+
+function showLoginPrompt() {
+    const uploadSection = document.getElementById('uploadSection');
+    const loginPrompt = document.getElementById('loginPrompt');
+    
+    if (uploadSection) uploadSection.style.display = 'none';
+    if (loginPrompt) loginPrompt.style.display = 'block';
+    
+    // Mostrar notificación
+    const statusDiv = document.getElementById('uploadStatus');
+    if (statusDiv) {
+        statusDiv.innerHTML = `<div class="error">Debes iniciar sesión para enviar imágenes</div>`;
     }
 }

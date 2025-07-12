@@ -136,7 +136,7 @@
         </div>
     </div>
     
-    <script src="/JS/admin-panel.js"></script>
+    <script type="module" src="/JS/admin-panel.js"></script>
     <script src="/JS/header.js"></script>
 </body>
 </html>

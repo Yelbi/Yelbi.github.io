@@ -651,7 +651,7 @@ function getComplaints() {
             jsonResponse(['error' => 'No autorizado'], 403);
         }
         
-        // Obtener quejas con imagen de perfil
+        // CONSULTA CORREGIDA:
         $stmt = $db->query("
             SELECT c.*, u.email AS user_email, 
                    COALESCE(u.profile_image, 'Img/default-avatar.png') AS user_profile_image
@@ -994,13 +994,18 @@ function getPendingImages() {
             jsonResponse(['error' => 'No autorizado'], 403);
         }
         
+        // Consulta corregida para incluir más datos
         $stmt = $db->query("
-            SELECT gs.*, u.email, s.slug, st.nombre as ser_name
+            SELECT gs.id, gs.image_url, gs.created_at, 
+                   u.email, 
+                   s.id AS ser_id,
+                   st.nombre AS ser_name
             FROM gallery_submissions gs
             JOIN users u ON gs.user_id = u.id
             JOIN seres s ON gs.ser_id = s.id
             JOIN seres_translations st ON s.id = st.ser_id
             WHERE gs.status = 'pending'
+            AND st.language_code = 'es'  -- Asegurar idioma
         ");
         $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
         

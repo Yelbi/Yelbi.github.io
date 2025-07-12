@@ -1,10 +1,9 @@
 <?php
-session_start();
 require 'config/connection.php';
 require 'config/i18n.php';
 
 $slug = $_GET['ser'] ?? '';
-$lang = $current_lang; // Idioma actual desde i18n.php
+$lang = $current_lang;
 
 if (empty($slug)) {
     header('Location: /galeria.php');
@@ -240,25 +239,24 @@ try {
     <?php endif; ?>
     
     <!-- Formulario para subir nuevas imágenes -->
-    <?php if (isset($_SESSION['user_id'])): ?>
-    <div class="upload-section">
+    <!-- Modificación clave: eliminamos la verificación de sesión PHP -->
+    <div class="upload-section" id="uploadSection" style="display: none;">
         <h3><?= __('upload_new_image') ?></h3>
         <form id="galleryUploadForm">
             <input type="hidden" name="ser_id" value="<?= $ser['id'] ?>">
             <div class="form-group">
                 <label for="imageUrl">URL de la imagen:</label>
                 <input type="url" id="imageUrl" name="image_url" required 
-                    placeholder="https://ejemplo.com/imagen.jpg">
+                       placeholder="https://ejemplo.com/imagen.jpg">
             </div>
             <button type="submit" class="btn-upload"><?= __('submit_for_approval') ?></button>
         </form>
         <div id="uploadStatus"></div>
     </div>
-    <?php else: ?>
-    <div class="upload-login-prompt">
+    
+    <div class="upload-login-prompt" id="loginPrompt" style="display: none;">
         <p><?= __('login_to_upload') ?> <a href="/iniciar.php"><?= __('login') ?></a></p>
     </div>
-    <?php endif; ?>
 </section>
     <?php endif; ?>
 
