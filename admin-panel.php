@@ -120,6 +120,16 @@
         </div>
     </div>
 </div>
+
+<div class="pending-images-section">
+    <h3><i class="fi fi-rr-picture"></i> Imágenes pendientes de aprobación</h3>
+    <div id="pendingImagesContainer">
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <span>Cargando imágenes pendientes...</span>
+        </div>
+    </div>
+</div>
                 
                 <button class="btn" onclick="logout()"><?= __('logout') ?></button>
             </div>

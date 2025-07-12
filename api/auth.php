@@ -106,6 +106,15 @@ switch ($method) {
                     echo json_encode(['error' => $e->getMessage()]);
                 }
                 break;
+            case 'submit-gallery-image':
+                submitGalleryImage($input);
+                break;
+            case 'approve-image':
+                approveImage($input);
+                break;
+            case 'reject-image':
+                rejectImage($input);
+                break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
         }
@@ -133,6 +142,12 @@ switch ($method) {
                 break;
             case 'get-vote-results':
                 getVoteResults();
+                break;
+            case 'get-pending-images':
+                getPendingImages();
+                break;
+            case 'get-approved-images':
+                getApprovedImages($input);
                 break;
             default:
                 jsonResponse(['error' => 'Acción no válida'], 400);
@@ -941,3 +956,143 @@ function getVoteResults() {
     }
 }
 
+function submitGalleryImage($input) {
+    global $db;
+    
+    try {
+        $authData = authenticateJWT();
+        $userId = $authData['sub'];
+        
+        if (!isset($input['ser_id'], $input['image_url'])) {
+            jsonResponse(['error' => 'Datos incompletos'], 400);
+        }
+        
+        $serId = (int)$input['ser_id'];
+        $imageUrl = Security::sanitizeInput($input['image_url']);
+        
+        // Insertar en la base de datos
+        $stmt = $db->prepare("INSERT INTO gallery_submissions (ser_id, user_id, image_url) VALUES (?, ?, ?)");
+        $stmt->execute([$serId, $userId, $imageUrl]);
+        
+        jsonResponse(['success' => true, 'message' => 'Imagen enviada para aprobación']);
+        
+    } catch (Exception $e) {
+        jsonResponse(['error' => $e->getMessage()], 500);
+    }
+}
+
+// Obtener imágenes pendientes (para admin)
+function getPendingImages() {
+    global $db, $user;
+    
+    try {
+        $authData = authenticateJWT();
+        
+        // Verificar si es administrador
+        $userData = $user->getById($authData['sub']);
+        if (!$userData || $userData['role'] !== 'admin') {
+            jsonResponse(['error' => 'No autorizado'], 403);
+        }
+        
+        $stmt = $db->query("
+            SELECT gs.*, u.email, s.slug, st.nombre as ser_name
+            FROM gallery_submissions gs
+            JOIN users u ON gs.user_id = u.id
+            JOIN seres s ON gs.ser_id = s.id
+            JOIN seres_translations st ON s.id = st.ser_id
+            WHERE gs.status = 'pending'
+        ");
+        $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        jsonResponse(['success' => true, 'images' => $images]);
+        
+    } catch (Exception $e) {
+        jsonResponse(['error' => $e->getMessage()], 500);
+    }
+}
+
+// Obtener imágenes aprobadas (para mostrar en detalle)
+function getApprovedImages($input) {
+    global $db;
+    
+    try {
+        if (!isset($input['ser_id'])) {
+            jsonResponse(['error' => 'ID de ser requerido'], 400);
+        }
+        
+        $serId = (int)$input['ser_id'];
+        
+        $stmt = $db->prepare("
+            SELECT image_url 
+            FROM gallery_submissions 
+            WHERE ser_id = ? AND status = 'approved'
+        ");
+        $stmt->execute([$serId]);
+        $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        jsonResponse(['success' => true, 'images' => $images]);
+        
+    } catch (Exception $e) {
+        jsonResponse(['error' => $e->getMessage()], 500);
+    }
+}
+
+// Aprobar imagen (admin)
+function approveImage($input) {
+    global $db, $user;
+    
+    try {
+        $authData = authenticateJWT();
+        
+        // Verificar si es administrador
+        $userData = $user->getById($authData['sub']);
+        if (!$userData || $userData['role'] !== 'admin') {
+            jsonResponse(['error' => 'No autorizado'], 403);
+        }
+        
+        if (!isset($input['id'])) {
+            jsonResponse(['error' => 'ID de imagen requerido'], 400);
+        }
+        
+        $imageId = (int)$input['id'];
+        
+        // Actualizar estado
+        $stmt = $db->prepare("UPDATE gallery_submissions SET status = 'approved' WHERE id = ?");
+        $stmt->execute([$imageId]);
+        
+        jsonResponse(['success' => true, 'message' => 'Imagen aprobada']);
+        
+    } catch (Exception $e) {
+        jsonResponse(['error' => $e->getMessage()], 500);
+    }
+}
+
+// Rechazar imagen (admin)
+function rejectImage($input) {
+    global $db, $user;
+    
+    try {
+        $authData = authenticateJWT();
+        
+        // Verificar si es administrador
+        $userData = $user->getById($authData['sub']);
+        if (!$userData || $userData['role'] !== 'admin') {
+            jsonResponse(['error' => 'No autorizado'], 403);
+        }
+        
+        if (!isset($input['id'])) {
+            jsonResponse(['error' => 'ID de imagen requerido'], 400);
+        }
+        
+        $imageId = (int)$input['id'];
+        
+        // Actualizar estado
+        $stmt = $db->prepare("UPDATE gallery_submissions SET status = 'rejected' WHERE id = ?");
+        $stmt->execute([$imageId]);
+        
+        jsonResponse(['success' => true, 'message' => 'Imagen rechazada']);
+        
+    } catch (Exception $e) {
+        jsonResponse(['error' => $e->getMessage()], 500);
+    }
+}

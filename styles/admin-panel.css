@@ -561,3 +561,73 @@ body {
     font-size: 14px;
     color: #666;
 }
+
+.pending-images-section {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 1rem;
+}
+
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.image-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 0.8rem;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.image-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.image-info {
+    padding: 1rem;
+    font-size: 0.9rem;
+}
+
+.image-info p {
+    margin-bottom: 0.5rem;
+}
+
+.image-actions {
+    display: flex;
+    padding: 0 1rem 1rem;
+    gap: 0.8rem;
+}
+
+.btn-approve, .btn-reject {
+    flex: 1;
+    padding: 0.6rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-approve {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-approve:hover {
+    background: #45a049;
+}
+
+.btn-reject {
+    background: #f44336;
+    color: white;
+}
+
+.btn-reject:hover {
+    background: #d32f2f;
+}

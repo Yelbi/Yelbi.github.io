@@ -273,3 +273,66 @@ if ('ontouchstart' in window) {
     }
   }, { passive: true });
 }
+
+const galleryUploadForm = document.getElementById('galleryUploadForm');
+if (galleryUploadForm) {
+    galleryUploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = {
+            ser_id: galleryUploadForm.ser_id.value,
+            image_url: galleryUploadForm.image_url.value
+        };
+        
+        const statusDiv = document.getElementById('uploadStatus');
+        statusDiv.innerHTML = '<div class="loading-spinner small"></div> Enviando...';
+        
+        try {
+            const result = await apiRequest('submit-gallery-image', formData);
+            statusDiv.innerHTML = `<div class="success">${result.message}</div>`;
+            galleryUploadForm.reset();
+            
+            // Recargar imágenes aprobadas después de 3 segundos
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+            
+        } catch (error) {
+            statusDiv.innerHTML = `<div class="error">${error.message}</div>`;
+        }
+    });
+}
+
+// Función para llamadas API
+async function apiRequest(action, data) {
+    const token = localStorage.getItem('jwt_token');
+    
+    if (!token) {
+        // Redirigir a login con redirección de retorno
+        const redirectUrl = encodeURIComponent(window.location.href);
+        window.location.href = `/iniciar.php?redirect=${redirectUrl}`;
+        return new Promise(() => {}); // Evitar ejecución adicional
+    }
+    
+    try {
+        const response = await fetch(`https://seres.blog/api/auth.php?action=${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.error || 'Error en la solicitud');
+        }
+        
+        return result;
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+    }
+}

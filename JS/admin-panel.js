@@ -625,7 +625,90 @@ function truncateText(text, maxLength) {
     return text.substr(0, maxLength) + '...';
 }
 
+// En DOMContentLoaded
+await loadPendingImages();
+
+async function loadPendingImages() {
+    try {
+        const container = document.getElementById('pendingImagesContainer');
+        container.innerHTML = `
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <span>Cargando imágenes pendientes...</span>
+            </div>
+        `;
+
+        const result = await apiRequest('get-pending-images', {}, 'GET');
+        
+        if (result.images && result.images.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🖼️</div>
+                    <h3>No hay imágenes pendientes</h3>
+                    <p>Todas las imágenes han sido revisadas.</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = `<div class="image-grid">`;
+        result.images.forEach(image => {
+            html += `
+                <div class="image-card" data-id="${image.id}">
+                    <img src="${image.image_url}" alt="Imagen pendiente">
+                    <div class="image-info">
+                        <p><strong>Ser:</strong> ${image.ser_name}</p>
+                        <p><strong>Usuario:</strong> ${image.email}</p>
+                        <p><strong>Fecha:</strong> ${new Date(image.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div class="image-actions">
+                        <button class="btn-approve" onclick="approveImage(${image.id})">Aprobar</button>
+                        <button class="btn-reject" onclick="rejectImage(${image.id})">Rechazar</button>
+                    </div>
+                </div>
+            `;
+        });
+        html += `</div>`;
+
+        container.innerHTML = html;
+
+    } catch (error) {
+        container.innerHTML = `
+            <div class="error-state">
+                <div class="error-icon">⚠️</div>
+                <h3>Error al cargar imágenes</h3>
+                <p>${error.message}</p>
+                <button class="btn-retry" onclick="loadPendingImages()">Reintentar</button>
+            </div>
+        `;
+    }
+}
+
+async function approveImage(imageId) {
+    try {
+        await apiRequest('approve-image', { id: imageId });
+        showAlert('profileAlert', 'Imagen aprobada correctamente', 'success');
+        loadPendingImages();
+    } catch (error) {
+        showAlert('profileAlert', error.message, 'error');
+    }
+}
+
+async function rejectImage(imageId) {
+    try {
+        await apiRequest('reject-image', { id: imageId });
+        showAlert('profileAlert', 'Imagen rechazada', 'success');
+        loadPendingImages();
+    } catch (error) {
+        showAlert('profileAlert', error.message, 'error');
+    }
+}
+
+
 // Hacer funciones accesibles globalmente
+window.approveImage = approveImage;
+window.rejectImage = rejectImage;
+window.loadPendingImages = loadPendingImages;
 window.toggleMessageDetail = toggleMessageDetail;
 window.deleteMessage = deleteMessage;
 window.loadAdminMessages = loadAdminMessages;

@@ -1,4 +1,5 @@
 <?php
+session_start();
 require 'config/connection.php';
 require 'config/i18n.php';
 
@@ -43,6 +44,19 @@ try {
     
 } catch (PDOException $e) {
     die("Error: " . $e->getMessage());
+}
+
+$approvedImages = [];
+try {
+    $stmt = $pdo->prepare("
+        SELECT image_url 
+        FROM gallery_submissions 
+        WHERE ser_id = ? AND status = 'approved'
+    ");
+    $stmt->execute([$ser['id']]);
+    $approvedImages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Manejar error silenciosamente
 }
 ?>
 <!DOCTYPE html>
@@ -152,7 +166,6 @@ try {
             <div class="hero-portrait">
                 <img src="<?= htmlspecialchars($detalle['ser_img']) ?>" alt="<?= __('portrait_of') ?> <?= htmlspecialchars($ser['nombre']) ?>" class="portrait-image">
             </div>
-            <?php endif; ?>
         </div>
     </section>
 
@@ -212,8 +225,41 @@ try {
                      onclick="openModal(this)">
             </div>
             <?php endforeach; ?>
+        <?php foreach ($approvedImages as $img): ?>
+        <div class="masonry-item">
+            <img src="<?= htmlspecialchars($img['image_url']) ?>" 
+                 alt="<?= htmlspecialchars($ser['nombre']) ?>" 
+                 loading="lazy" 
+                 onclick="openModal(this)">
+            <div class="image-source">Contribuido por usuarios</div>
         </div>
-    </section>
+            <?php endforeach; ?>
+        </div>
+    <?php else: ?>
+        <p><?= __('no_images') ?></p>
+    <?php endif; ?>
+    
+    <!-- Formulario para subir nuevas imágenes -->
+    <?php if (isset($_SESSION['user_id'])): ?>
+    <div class="upload-section">
+        <h3><?= __('upload_new_image') ?></h3>
+        <form id="galleryUploadForm">
+            <input type="hidden" name="ser_id" value="<?= $ser['id'] ?>">
+            <div class="form-group">
+                <label for="imageUrl">URL de la imagen:</label>
+                <input type="url" id="imageUrl" name="image_url" required 
+                    placeholder="https://ejemplo.com/imagen.jpg">
+            </div>
+            <button type="submit" class="btn-upload"><?= __('submit_for_approval') ?></button>
+        </form>
+        <div id="uploadStatus"></div>
+    </div>
+    <?php else: ?>
+    <div class="upload-login-prompt">
+        <p><?= __('login_to_upload') ?> <a href="/iniciar.php"><?= __('login') ?></a></p>
+    </div>
+    <?php endif; ?>
+</section>
     <?php endif; ?>
 
 <section class="navigation-section">
