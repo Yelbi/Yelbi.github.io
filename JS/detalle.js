@@ -65,12 +65,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }, { passive: true });
 
-  // Smooth scroll for internal links
+  // Smooth scroll for internal links - FIXED
   document.querySelectorAll('a[href^="#"]').forEach(link => {
     link.addEventListener('click', e => {
       e.preventDefault();
-      const target = document.querySelector(link.getAttribute('href'));
-      if (target) target.scrollIntoView({ behavior: 'smooth' });
+      const href = link.getAttribute('href');
+      // Check if href is not just '#' and target exists
+      if (href && href !== '#') {
+        const target = document.querySelector(href);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
     });
   });
 
@@ -170,7 +176,23 @@ function checkAuthStatus() {
     }
 }
 
-// Función para configurar el modal de imágenes
+// Default translations fallback - FIXED
+const DEFAULT_TRANSLATIONS = {
+    enlarge_image: 'Ampliar imagen',
+    enlarged_image: 'Imagen ampliada'
+};
+
+// Function to get translation with fallback
+function getTranslation(key) {
+    // Try to get from global TRANSLATIONS object if it exists
+    if (typeof TRANSLATIONS !== 'undefined' && TRANSLATIONS[key]) {
+        return TRANSLATIONS[key];
+    }
+    // Fallback to default translations
+    return DEFAULT_TRANSLATIONS[key] || key;
+}
+
+// Función para configurar el modal de imágenes - FIXED
 function setupImageModal() {
   // Seleccionar todas las imágenes que deben ser clickeables
   const clickableImages = document.querySelectorAll(
@@ -191,7 +213,7 @@ function setupImageModal() {
     // Añadir accessibility
     img.setAttribute('tabindex', '0');
     img.setAttribute('role', 'button');
-    img.setAttribute('aria-label', `${TRANSLATIONS.enlarge_image}: ${img.alt || 'Imagen'}`);
+    img.setAttribute('aria-label', `${getTranslation('enlarge_image')}: ${img.alt || 'Imagen'}`);
     
     // Keyboard support
     img.addEventListener('keydown', function(e) {
@@ -213,7 +235,7 @@ function openModal(img) {
 
   // Configurar la imagen del modal
   modalImg.src = img.src;
-  modalImg.alt = img.alt || TRANSLATIONS.enlarged_image;
+  modalImg.alt = img.alt || getTranslation('enlarged_image');
   
   // Mostrar el modal
   modal.style.display = 'block';
