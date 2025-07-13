@@ -163,7 +163,7 @@ try {
             </div>
             <?php if ($detalle && !empty($detalle['ser_img'])): ?>
             <div class="hero-portrait">
-                <img src="<?= htmlspecialchars($detalle['ser_img']) ?>" alt="<?= __('portrait_of') ?> <?= htmlspecialchars($ser['nombre']) ?>" class="portrait-image">
+                <img src="<?= htmlspecialchars($detalle['ser_img']) ?>" class="portrait-image">
             </div>
         </div>
     </section>
@@ -212,9 +212,36 @@ try {
     <?php endif; ?>
 
     <!-- Galería de imágenes estilo Pinterest -->
-    <?php if (!empty($imagenes)): ?>
-    <section class="gallery-section">
+<section class="gallery-section">
+    <div class="gallery-header">
         <h2 class="section-title"><?= __('image_gallery') ?></h2>
+        
+        <div class="upload-section" id="uploadSection" style="display: none;">
+            <div class="upload-card">
+                <h3><?= __('upload_new_image') ?></h3>
+                <form id="galleryUploadForm" class="upload-form">
+                    <input type="hidden" name="ser_id" value="<?= $ser['id'] ?>">
+                    <div class="form-group">
+                        <input type="url" id="imageUrl" name="image_url" required 
+                               placeholder="https://ejemplo.com/imagen.jpg" class="url-input">
+                        <button type="submit" class="btn-upload">
+                            <i class="fi fi-rr-cloud-upload"></i>
+                            <?= __('submit_for_approval') ?>
+                        </button>
+                    </div>
+                </form>
+                <div id="uploadStatus"></div>
+            </div>
+        </div>
+        
+        <div class="upload-login-prompt" id="loginPrompt" style="display: none;">
+            <div class="login-card">
+                <p><?= __('login_to_upload') ?> <a href="/iniciar.php"><?= __('login') ?></a></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="gallery-container">
         <div class="masonry-gallery">
             <?php foreach ($imagenes as $img): ?>
             <div class="masonry-item">
@@ -224,41 +251,62 @@ try {
                      onclick="openModal(this)">
             </div>
             <?php endforeach; ?>
-        <?php foreach ($approvedImages as $img): ?>
-        <div class="masonry-item">
-            <img src="<?= htmlspecialchars($img['image_url']) ?>" 
-                 alt="<?= htmlspecialchars($ser['nombre']) ?>" 
-                 loading="lazy" 
-                 onclick="openModal(this)">
-            <div class="image-source">Contribuido por usuarios</div>
-        </div>
+            
+            <?php foreach ($approvedImages as $img): ?>
+            <div class="masonry-item user-contributed">
+                <img src="<?= htmlspecialchars($img['image_url']) ?>" 
+                     alt="<?= htmlspecialchars($ser['nombre']) ?>" 
+                     loading="lazy" 
+                     onclick="openModal(this)">
+                <div class="image-source">
+                    <i class="fi fi-rr-user"></i>
+                    <?= __('contributed_by_users') ?>
+                </div>
+            </div>
             <?php endforeach; ?>
         </div>
-    <?php else: ?>
-        <p><?= __('no_images') ?></p>
-    <?php endif; ?>
-    
-    <!-- Formulario para subir nuevas imágenes -->
-    <!-- Modificación clave: eliminamos la verificación de sesión PHP -->
-    <div class="upload-section" id="uploadSection" style="display: none;">
-        <h3><?= __('upload_new_image') ?></h3>
-        <form id="galleryUploadForm">
-            <input type="hidden" name="ser_id" value="<?= $ser['id'] ?>">
-            <div class="form-group">
-                <label for="imageUrl">URL de la imagen:</label>
-                <input type="url" id="imageUrl" name="image_url" required 
-                       placeholder="https://ejemplo.com/imagen.jpg">
-            </div>
-            <button type="submit" class="btn-upload"><?= __('submit_for_approval') ?></button>
-        </form>
-        <div id="uploadStatus"></div>
-    </div>
-    
-    <div class="upload-login-prompt" id="loginPrompt" style="display: none;">
-        <p><?= __('login_to_upload') ?> <a href="/iniciar.php"><?= __('login') ?></a></p>
     </div>
 </section>
-    <?php endif; ?>
+<?php else: ?>
+<section class="gallery-section">
+    <div class="gallery-header">
+        <h2 class="section-title"><?= __('image_gallery') ?></h2>
+        
+        <!-- Formulario para subir nuevas imágenes - TAMBIÉN AQUÍ CUANDO NO HAY IMÁGENES -->
+        <div class="upload-section" id="uploadSection" style="display: none;">
+            <div class="upload-card">
+                <h3><?= __('upload_new_image') ?></h3>
+                <form id="galleryUploadForm" class="upload-form">
+                    <input type="hidden" name="ser_id" value="<?= $ser['id'] ?>">
+                    <div class="form-group">
+                        <input type="url" id="imageUrl" name="image_url" required 
+                               placeholder="https://ejemplo.com/imagen.jpg" class="url-input">
+                        <button type="submit" class="btn-upload">
+                            <i class="fi fi-rr-cloud-upload"></i>
+                            <?= __('submit_for_approval') ?>
+                        </button>
+                    </div>
+                </form>
+                <div id="uploadStatus"></div>
+            </div>
+        </div>
+        
+        <div class="upload-login-prompt" id="loginPrompt" style="display: none;">
+            <div class="login-card">
+                <p><?= __('login_to_upload') ?> <a href="/iniciar.php"><?= __('login') ?></a></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="no-images">
+        <div class="no-images-content">
+            <i class="fi fi-rr-picture"></i>
+            <p><?= __('no_images') ?></p>
+            <p class="no-images-subtitle">¡Sé el primero en contribuir con imágenes!</p>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
 
 <section class="navigation-section">
     <div class="nav-buttons">

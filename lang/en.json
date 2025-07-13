@@ -166,5 +166,10 @@
     "skadi_desc": "Norse goddess of winter and hunting. You are independent, strong, and find peace in the solitude of nature.",
     "thoth_desc": "Egyptian god of wisdom, writing, and magic. You are intellectual, methodical, and keep knowledge to guide others.",
     "bastet_desc": "Egyptian goddess of home, cats, and protection. You are agile, cunning, and protect with gentleness but determination.",
-    "hel_desc": "Norse goddess of the underworld. You are serene, accepting the cycles of life and death with wisdom."
+    "hel_desc": "Norse goddess of the underworld. You are serene, accepting the cycles of life and death with wisdom.",
+
+    "submit_for_approval": "Submit for approval",
+    "upload_new_image": "Upload new image",
+    "login_to_upload": "Log in to upload images",
+    "contributed_by_users": "Contributed by users"
 }

@@ -166,5 +166,10 @@
     "skadi_desc": "Diosa nórdica del invierno y la caza. Eres independiente, fuerte y te sientes en paz en la soledad de la naturaleza.",
     "thoth_desc": "Dios egipcio de la sabiduría, la escritura y la magia. Eres intelectual, metódico y guardas conocimiento para guiar a otros.",
     "bastet_desc": "Diosa egipcia del hogar, los gatos y la protección. Eres ágil, astuto y proteges con suavidad pero determinación.",
-    "hel_desc": "Diosa nórdica del inframundo. Eres sereno, aceptas los ciclos de la vida y la muerte con sabiduría."
+    "hel_desc": "Diosa nórdica del inframundo. Eres sereno, aceptas los ciclos de la vida y la muerte con sabiduría.",
+
+    "submit_for_approval": "Enviar para aprobación",
+    "upload_new_image": "Subir nueva imagen",
+    "login_to_upload": "Inicia sesión para subir imágenes",
+    "contributed_by_users": "Contribuido por usuarios"
 }
