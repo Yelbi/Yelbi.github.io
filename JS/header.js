@@ -273,6 +273,9 @@ window.toggleLanguage = function() {
     // Guardar preferencia
     localStorage.setItem('preferred_language', newLang);
     
+    // Actualizar cookie en el servidor
+    document.cookie = `lang=${newLang}; path=/; max-age=${86400 * 30}; secure; samesite=Lax`;
+    
     // Recargar página con nuevo idioma
     const url = new URL(window.location);
     url.searchParams.set('lang', newLang);

@@ -1,6 +1,16 @@
 // detalle.js
 // Script para detalle.php
 document.addEventListener('DOMContentLoaded', function() {
+    // Sincronizar localStorage con parámetro GET
+    const preferredLang = localStorage.getItem('preferred_language');
+    if (preferredLang && !new URLSearchParams(window.location.search).has('lang')) {
+        const url = new URL(window.location);
+        url.searchParams.set('local_storage_lang', preferredLang);
+        history.replaceState(null, '', url.toString());
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
   checkAuthStatus();
   const modal = document.getElementById('imageModal');
   const modalImg = document.getElementById('modalImage');

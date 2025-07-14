@@ -36,9 +36,6 @@ class I18n {
         }
     }
     
-    /**
-     * Detecta el idioma basado en prioridades
-     */
 private function detectLanguage() {
     // 1. Parámetro URL (máxima prioridad)
     if (isset($_GET['lang']) && $this->isValidLanguage($_GET['lang'])) {
@@ -52,21 +49,25 @@ private function detectLanguage() {
         return $_COOKIE['lang'];
     }
 
-    // 3. Detección por cabecera HTTP del navegador
+    // 3. Preferencia en localStorage (vía JavaScript)
+    if (isset($_GET['local_storage_lang']) && $this->isValidLanguage($_GET['local_storage_lang'])) {
+        $lang = $_GET['local_storage_lang'];
+        $this->setLanguageCookie($lang);
+        return $lang;
+    }
+
+    // 4. Detección por cabecera HTTP del navegador
     $browserLang = $this->detectBrowserLanguage();
     if ($browserLang) {
-        // ADD THIS: Persist browser-detected language in cookie
         $this->setLanguageCookie($browserLang);
         return $browserLang;
     }
 
-    // 4. Idioma por defecto
+    // 5. Idioma por defecto
     return $this->defaultLang;
 }
     
-    /**
-     * Detecta el idioma del navegador de manera más robusta
-     */
+
     private function detectBrowserLanguage() {
         if (!isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
             return null;
