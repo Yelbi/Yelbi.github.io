@@ -1041,8 +1041,19 @@ body {
 
 /* FIX: Prevenir problemas en dispositivos de bajo rendimiento */
 @media (max-width: 768px) {
-  .card.loading img {
-    animation-duration: 2s; /* Más lento en móviles */
+  body {
+    background-attachment: scroll !important;
+  }
+  .filter-panel,
+  .card {
+    backdrop-filter: none !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    box-shadow: none !important;
+    border-radius: 8px !important;
+  }
+  .card:hover {
+    transform: none !important;
+    box-shadow: none !important;
   }
 }
 

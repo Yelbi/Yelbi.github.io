@@ -81,8 +81,8 @@ class ResponsiveGallery {
       lazyLoadMargin: isMobile ? '50px' : '150px',
       enableAnimations: !prefersReducedMotion && !isLowPerformance,
       enableHoverEffects: this.deviceInfo.supportsHover,
-      preloadCount: this.deviceInfo.isSlowConnection ? 3 : 6,
-      batchSize: isLowPerformance ? 8 : 16,
+      preloadCount: this.deviceInfo.isSlowConnection ? 2 : 4,
+      batchSize: this.deviceInfo.isLowPerformance || this.deviceInfo.isMobile ? 4 : 16,
       imageTimeout: 4000
     };
   }
@@ -159,43 +159,42 @@ class ResponsiveGallery {
            (!hasRegion || cardData.region === region);
   }
 
-  showCardOptimized(card, index) {
-    if (this.timers.has(card)) {
-      clearTimeout(this.timers.get(card));
-      this.timers.delete(card);
-    }
-    
+showCardOptimized(card, index) {
+  if (!card.classList.contains('filtering-show')) {
     card.style.display = 'block';
     card.classList.remove('filtering-hide');
     card.classList.add('filtering-show');
-
-    if (this.config.enableAnimations && index < 20) { // Limitar animaciones
-      const delay = Math.min(index * this.config.animationDelay, 200);
-      setTimeout(() => {
-        card.style.opacity = '1';
-        card.style.transform = 'translateY(0)';
-      }, delay);
-    } else {
-      card.style.opacity = '1';
-      card.style.transform = 'none';
-    }
   }
 
-  hideCardOptimized(card) {
+  if (this.config.enableAnimations && index < 20) {
+    const delay = Math.min(index * this.config.animationDelay, 200);
+    setTimeout(() => {
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }, delay);
+  } else {
+    card.style.opacity = '1';
+    card.style.transform = 'none';
+  }
+}
+
+hideCardOptimized(card) {
+  if (!card.classList.contains('filtering-hide')) {
     card.classList.remove('filtering-show');
     card.classList.add('filtering-hide');
-    
-    if (this.timers.has(card)) {
-      clearTimeout(this.timers.get(card));
-    }
-    
-    this.timers.set(card, setTimeout(() => {
-      if (card.classList.contains('filtering-hide')) {
-        card.style.display = 'none';
-      }
-      this.timers.delete(card);
-    }, this.config.enableAnimations ? 200 : 0));
   }
+
+  if (this.timers.has(card)) {
+    clearTimeout(this.timers.get(card));
+  }
+
+  this.timers.set(card, setTimeout(() => {
+    if (card.classList.contains('filtering-hide')) {
+      card.style.display = 'none';
+    }
+    this.timers.delete(card);
+  }, this.config.enableAnimations ? 200 : 0));
+}
 
   updateResultsDisplay(count) {
     this.state.visibleCount = count;

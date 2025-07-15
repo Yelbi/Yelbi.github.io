@@ -121,12 +121,13 @@ try {
                 
                 <!-- Opción de idioma mejorada -->
                 <div class="divider"></div>
-                <a href="#" class="dropdown-item language-toggle" id="languageOption" 
-                   title="<?= __('switch_to') ?> <?= lang_name(alt_lang()) ?>">
-                    <i class="fi fi-rr-globe"></i>
-                    <span class="lang-text"><?= lang_name(alt_lang()) ?></span>
-                    <span class="lang-flag"><?= current_lang() === 'es' ? '🇺🇸' : '🇪🇸' ?></span>
-                </a>
+<a href="javascript:void(0);" class="dropdown-item language-toggle" 
+   title="<?= __('switch_to') ?> <?= lang_name(alt_lang()) ?>"
+   onclick="toggleLanguage()">
+    <i class="fi fi-rr-globe"></i>
+    <span class="lang-text"><?= lang_name(alt_lang()) ?></span>
+    <span class="lang-flag"><?= current_lang() === 'es' ? '🇺🇸' : '🇪🇸' ?></span>
+</a>
             </div>
         </div>
     </header>
