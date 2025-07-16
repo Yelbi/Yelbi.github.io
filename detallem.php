@@ -140,11 +140,9 @@ try {
                 <h1 class="mito-title"><?= htmlspecialchars($mito['nombre']) ?></h1>
                 <div class="basic-info">
                     <div class="info-item">
-                        <span class="label"><?= __('country') ?>:</span>
                         <span class="value pais"><?= htmlspecialchars($mito['pais']) ?></span>
                     </div>
                     <div class="info-item">
-                        <span class="label"><?= __('region') ?>:</span>
                         <span class="value region"><?= htmlspecialchars($mito['region']) ?></span>
                     </div>
                 </div>
