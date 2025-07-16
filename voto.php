@@ -69,21 +69,21 @@
         </div>
     </header>
 
-    <main class="main-content">
-        <div class="page-header">
-            <h1 class="page-title">Vota por tu favorita</h1>
-            <p class="page-subtitle">El mas votado saldra proximamente</p>
+<main class="main-content">
+    <div class="page-header">
+        <h1 class="page-title"><?= __('vote_title') ?></h1>
+        <p class="page-subtitle"><?= __('vote_subtitle') ?></p>
+    </div>
+
+    <div id="app">
+        <!-- Loading State -->
+        <div v-if="isLoading" class="loading-section">
+            <div class="loading-spinner"></div>
+            <p class="loading-text"><?= __('vote_loading') ?></p>
         </div>
 
-        <div id="app">
-            <!-- Loading State -->
-            <div v-if="isLoading" class="loading-section">
-                <div class="loading-spinner"></div>
-                <p class="loading-text">Cargando estado de votación...</p>
-            </div>
-
-            <!-- Main Voting Interface -->
-            <div v-else class="voting-interface">
+        <!-- Main Voting Interface -->
+        <div v-else class="voting-interface">
                 <!-- Cards Grid -->
                 <div class="cards-grid" :class="{ 'disabled': hasVoted }">
                     <card 
@@ -102,50 +102,45 @@
                 </div>
 
                 <!-- Vote Success Message -->
-                <div v-if="hasVoted" class="success-section">
-                    <div class="success-card">
-                        <i class="fi fi-rr-check-circle success-icon"></i>
-                        <h3 class="success-title">¡Gracias por votar!</h3>
-                        <p class="success-message">Tu voto ha sido registrado exitosamente.</p>
-                    </div>
-                </div>
-
-                <!-- Vote Controls -->
-                <div v-else class="vote-controls">
-                    <button 
-                        class="vote-btn" 
-                        :disabled="!canVote || isSubmitting" 
-                        @click="submitVote"
-                        :class="{ 
-                            'loading': isSubmitting,
-                            'disabled': !canVote 
-                        }"
-                    >
-                        <span v-if="!isSubmitting">
-                            {{ selectedOption !== null ? 'Enviar mi voto' : 'Selecciona una opción' }}
-                        </span>
-                        <span v-else class="loading-content">
-                            <i class="fi fi-rr-spinner animate-spin"></i> 
-                            Enviando...
-                        </span>
-                    </button>
-                    
-                    <div class="vote-info">
-                        <i class="fi fi-rr-info"></i>
-                        Solo puedes votar una vez. Tu selección es permanente.
-                    </div>
+            <div v-if="hasVoted" class="success-section">
+                <div class="success-card">
+                    <i class="fi fi-rr-check-circle success-icon"></i>
+                    <h3 class="success-title"><?= __('vote_thanks') ?></h3>
+                    <p class="success-message"><?= __('vote_success') ?></p>
                 </div>
             </div>
 
-            <!-- Alert Container -->
-            <div id="voteAlert" class="alert-container"></div>
+                <!-- Vote Controls -->
+            <div v-else class="vote-controls">
+                <button class="vote-btn" 
+                        :disabled="!canVote || isSubmitting" 
+                        @click="submitVote"
+                        :class="{ 'loading': isSubmitting, 'disabled': !canVote }">
+                    <span v-if="!isSubmitting">
+                        {{ selectedOption !== null ? "<?= __('vote_submit') ?>" : "<?= __('vote_select') ?>" }}
+                    </span>
+                    <span v-else class="loading-content">
+                        <i class="fi fi-rr-spinner animate-spin"></i> 
+                        <?= __('vote_sending') ?>
+                    </span>
+                </button>
+                
+                <div class="vote-info">
+                    <i class="fi fi-rr-info"></i>
+                    <?= __('vote_warning') ?>
+                </div>
+            </div>
         </div>
-    </main>
+        <!-- Alert Container -->
+        <div id="voteAlert" class="alert-container"></div>
+    </div>
+</main>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
     <script src="/JS/header.js"></script>
     <script src="/JS/voto.js"></script>
     <script src="/JS/backvoto.js"></script>
+    <script src="/JS/language.js"></script>
 </body>
 </html>

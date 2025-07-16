@@ -171,5 +171,18 @@
     "submit_for_approval": "Submit for approval",
     "upload_new_image": "Upload new image",
     "login_to_upload": "Log in to upload images",
-    "contributed_by_users": "Contributed by users"
+    "contributed_by_users": "Contributed by users",
+    "vote_title": "Vote for your favorite",
+    "vote_subtitle": "The most voted will be released soon",
+    "vote_loading": "Loading voting status...",
+    "vote_thanks": "Thank you for voting!",
+    "vote_success": "Your vote has been successfully registered",
+    "vote_submit": "Submit my vote",
+    "vote_select": "Select an option",
+    "vote_sending": "Sending...",
+    "vote_warning": "You can only vote once. Your selection is permanent",
+    "vote_already_voted": "You have already voted",
+    "vote_select_option": "Please select an option",
+    "vote_login_required": "You must log in to vote",
+    "vote_thank_you": "Thank you for voting! Your selection has been registered"
 }
