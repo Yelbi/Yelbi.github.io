@@ -75,7 +75,7 @@ try {
         <nav class="nav-menu" id="navMenu">
             <a href="/index.php" class="nav-link"><?= __('home') ?></a>
             <a href="/galeria.php" class="nav-link"><?= __('gallery') ?></a>
-            <a href="/mitos.php" class="nav-link"><?= __('mythologies') ?></a>
+            <a href="/mitos.php" class="nav-link"><?= __('myths') ?></a>
         </nav>
         <div class="menu-toggle" id="menuToggle">
             <i class="fi fi-rr-menu-burger"></i>
@@ -121,13 +121,12 @@ try {
                 
                 <!-- Opción de idioma mejorada -->
                 <div class="divider"></div>
-<a href="javascript:void(0);" class="dropdown-item language-toggle" 
-   title="<?= __('switch_to') ?> <?= lang_name(alt_lang()) ?>"
-   onclick="toggleLanguage()">
-    <i class="fi fi-rr-globe"></i>
-    <span class="lang-text"><?= lang_name(alt_lang()) ?></span>
-    <span class="lang-flag"><?= current_lang() === 'es' ? '🇺🇸' : '🇪🇸' ?></span>
-</a>
+                <a href="#" class="dropdown-item language-toggle" id="languageOption" 
+                   title="<?= __('switch_to') ?> <?= lang_name(alt_lang()) ?>">
+                    <i class="fi fi-rr-globe"></i>
+                    <span class="lang-text"><?= lang_name(alt_lang()) ?></span>
+                    <span class="lang-flag"><?= current_lang() === 'es' ? '🇺🇸' : '🇪🇸' ?></span>
+                </a>
             </div>
         </div>
     </header>
@@ -214,13 +213,27 @@ try {
     <div class="nav-buttons">
         <a href="/mitos.php" class="btn-back"><?= __('back_to_gallery') ?></a>
         <?php
-        // CONSULTAS MODIFICADAS PARA ORDEN ALFABÉTICO
-        $prev = $pdo->prepare("SELECT slug, nombre FROM mitos WHERE nombre < ? ORDER BY nombre DESC LIMIT 1");
-        $prev->execute([$mito['nombre']]);
+        // CONSULTAS MODIFICADAS PARA ORDEN ALFABÉTICO (en el idioma actual)
+        $prev = $pdo->prepare("
+            SELECT s.slug, st.nombre 
+            FROM mitos s
+            JOIN mitos_translations st ON s.id = st.mito_id
+            WHERE st.language_code = ? AND st.nombre < ? 
+            ORDER BY st.nombre DESC 
+            LIMIT 1
+        ");
+        $prev->execute([$lang, $mito['nombre']]);
         $prevItem = $prev->fetch();
-
-        $next = $pdo->prepare("SELECT slug, nombre FROM mitos WHERE nombre > ? ORDER BY nombre ASC LIMIT 1");
-        $next->execute([$mito['nombre']]);
+        
+        $next = $pdo->prepare("
+            SELECT s.slug, st.nombre 
+            FROM mitos s
+            JOIN mitos_translations st ON s.id = st.mito_id
+            WHERE st.language_code = ? AND st.nombre > ? 
+            ORDER BY st.nombre ASC 
+            LIMIT 1
+        ");
+        $next->execute([$lang, $mito['nombre']]);
         $nextItem = $next->fetch();
         ?>
         <div class="nav-arrows">

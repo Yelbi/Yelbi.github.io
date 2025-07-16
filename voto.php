@@ -21,7 +21,7 @@
         <nav class="nav-menu" id="navMenu">
             <a href="/index.php" class="nav-link"><?= __('home') ?></a>
             <a href="/galeria.php" class="nav-link"><?= __('gallery') ?></a>
-            <a href="/mitos.php" class="nav-link"><?= __('mythologies') ?></a>
+            <a href="/mitos.php" class="nav-link"><?= __('myths') ?></a>
         </nav>
         <div class="menu-toggle" id="menuToggle">
             <i class="fi fi-rr-menu-burger"></i>

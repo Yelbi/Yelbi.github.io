@@ -88,7 +88,7 @@ try {
         <nav class="nav-menu" id="navMenu">
             <a href="/index.php" class="nav-link"><?= __('home') ?></a>
             <a href="/galeria.php" class="nav-link"><?= __('gallery') ?></a>
-            <a href="/mitos.php" class="nav-link"><?= __('mythologies') ?></a>
+            <a href="/mitos.php" class="nav-link"><?= __('myths') ?></a>
         </nav>
         <div class="menu-toggle" id="menuToggle">
             <i class="fi fi-rr-menu-burger"></i>
@@ -134,13 +134,12 @@ try {
                 
                 <!-- Opción de idioma mejorada -->
                 <div class="divider"></div>
-<a href="javascript:void(0);" class="dropdown-item language-toggle" 
-   title="<?= __('switch_to') ?> <?= lang_name(alt_lang()) ?>"
-   onclick="toggleLanguage()">
-    <i class="fi fi-rr-globe"></i>
-    <span class="lang-text"><?= lang_name(alt_lang()) ?></span>
-    <span class="lang-flag"><?= current_lang() === 'es' ? '🇺🇸' : '🇪🇸' ?></span>
-</a>
+                <a href="#" class="dropdown-item language-toggle" id="languageOption" 
+                   title="<?= __('switch_to') ?> <?= lang_name(alt_lang()) ?>">
+                    <i class="fi fi-rr-globe"></i>
+                    <span class="lang-text"><?= lang_name(alt_lang()) ?></span>
+                    <span class="lang-flag"><?= current_lang() === 'es' ? '🇺🇸' : '🇪🇸' ?></span>
+                </a>
             </div>
         </div>
     </header>

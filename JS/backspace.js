@@ -5,7 +5,7 @@ let animationId;
 
 // Parámetros fijos
 const params = {
-    starCount: 800, // Reducido para mejor rendimiento
+    starCount: 800,
     speed: 1,
     twinkle: 0.06,
     size: 0.8

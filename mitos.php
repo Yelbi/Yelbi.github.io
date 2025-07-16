@@ -45,7 +45,7 @@ try {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= __('mythologies') ?> - <?= __('site_title') ?></title>
+  <title><?= __('Myths') ?> - <?= __('site_title') ?></title>
   <link rel="stylesheet" href="/styles/mitos.css">
   <link rel="stylesheet" href="/styles/header.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -64,7 +64,7 @@ try {
         <nav class="nav-menu" id="navMenu">
             <a href="/index.php" class="nav-link"><?= __('home') ?></a>
             <a href="/galeria.php" class="nav-link"><?= __('gallery') ?></a>
-            <a href="/mitos.php" class="nav-link"><?= __('mythologies') ?></a>
+            <a href="/mitos.php" class="nav-link"><?= __('myths') ?></a>
         </nav>
         <div class="menu-toggle" id="menuToggle">
             <i class="fi fi-rr-menu-burger"></i>
@@ -183,7 +183,7 @@ try {
 
     <!-- Contador de resultados -->
     <div class="results-counter">
-      <span id="resultsCount"><?= count($mitos) ?></span> <?= __('mythologies_found') ?>
+      <span id="resultsCount"><?= count($mitos) ?></span> <?= __('Myths_found') ?>
     </div>
   </section>
 
