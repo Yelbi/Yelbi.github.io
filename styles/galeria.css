@@ -60,6 +60,18 @@ body {
   transition: all var(--transition-slow);
 }
 
+.filter-panel.collapsed {
+  padding: clamp(1rem, 2vw, 1.2rem) clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.filter-panel.collapsed .filter-content {
+  opacity: 0;
+  max-height: 0;
+  margin-top: 0;
+  padding-top: 0;
+  transform: translateY(-10px);
+}
+
 .filter-container {
   display: flex;
   flex-direction: column;
@@ -175,18 +187,6 @@ body {
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.filter-panel.collapsed .filter-content {
-  opacity: 0;
-  max-height: 0;
-  margin-top: 0;
-  padding-top: 0;
-  transform: translateY(-10px);
-}
-
-.filter-panel.collapsed {
-  padding: clamp(1rem, 2vw, 1.2rem) clamp(1rem, 2.5vw, 1.5rem);
-}
-
 .filter-groups {
   display: flex;
   gap: clamp(1rem, 3vw, 2rem);
@@ -298,7 +298,7 @@ body {
   position: relative;
   border-radius: var(--border-radius-medium);
   overflow: hidden;
-  transition: all var(--transition-slow);
+  transition: transform 0.3s ease, opacity 0.3s ease;
   box-shadow: var(--shadow-card);
   background: var(--bg-glass-light);
   backdrop-filter: blur(10px);
@@ -313,20 +313,6 @@ body {
   transform: translateY(clamp(-8px, -2vw, -15px)) scale(1.02);
   box-shadow: var(--shadow-hover);
   border-color: rgba(255, 255, 255, 0.4);
-}
-
-.card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  transition: opacity 0.3s ease !important;
-  opacity: 0;
-}
-
-.card img.loaded,
-.card img[style*="opacity: 1"] {
-  opacity: 1;
 }
 
 .card:hover img {
@@ -354,6 +340,20 @@ body {
 
 .card:hover::before {
   opacity: 1;
+}
+
+.card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+
+.card img.loaded {
+  opacity: 1;
+  transform: none;
 }
 
 .card-info {
@@ -478,17 +478,6 @@ body {
   color: var(--color-text-subtle);
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .card:nth-child(even) {
   animation-delay: 0.1s;
 }
@@ -514,6 +503,62 @@ body {
   animation: pulse 2s infinite;
 }
 
+.card.loading img {
+  opacity: 0.3;
+  transform: scale(1);
+  animation: pulseLoading 1.5s ease-in-out infinite;
+}
+
+.card:not(.loading) {
+  transform: none;
+  animation: none;
+}
+
+.card:not(.loading)::after {
+  display: none;
+}
+
+.card.image-loaded {
+  animation: none;
+  transform: none;
+}
+
+.card.image-loaded img {
+  opacity: 1;
+  animation: none;
+  transform: none;
+}
+
+.card.image-loaded::after {
+  display: none;
+}
+
+.card img[src*="data:image/svg+xml"] {
+  opacity: 0.5;
+  animation: none;
+  transform: none;
+}
+
+.card:focus-within,
+.filter-select:focus,
+.search-input:focus,
+.btn-toggle:focus,
+.btn-clear:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes pulse {
   0%, 100% { 
     opacity: 1; 
@@ -523,11 +568,6 @@ body {
     opacity: 0.7; 
     transform: scale(0.98);
   }
-}
-
-@keyframes spin {
-  0% { transform: translate(-50%, -50%) rotate(0deg); }
-  100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 @keyframes pulseLoading {
@@ -541,60 +581,9 @@ body {
   }
 }
 
-.card.loading img {
-  opacity: 0.3;
-  transform: scale(1);
-  animation: pulseLoading 1.5s ease-in-out infinite;
-}
-
-.card img.loaded {
-  opacity: 1 !important;
-  transform: scale(1) !important;
-  animation: none !important;
-  transition: opacity 0.3s ease;
-}
-
-.card:not(.loading) {
-  transform: none !important;
-  animation: none !important;
-}
-
-.card:not(.loading)::after {
-  display: none !important;
-}
-
-.card img[src*="data:image/svg+xml"] {
-  opacity: 0.5 !important;
-  animation: none !important;
-  transform: none !important;
-}
-
-.card.image-loaded {
-  animation: none !important;
-  transform: none !important;
-}
-
-.card.image-loaded img {
-  opacity: 1 !important;
-  animation: none !important;
-  transform: none !important;
-}
-
-.card.image-loaded::after {
-  display: none !important;
-}
-
-.card:focus-within {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-.filter-select:focus,
-.search-input:focus,
-.btn-toggle:focus,
-.btn-clear:focus {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 @media (min-width: 1440px) {
@@ -970,105 +959,4 @@ body {
   .btn-clear:active {
     transform: scale(0.95);
   }
-}
-
-/* FIX: Asegurar que las transiciones se detengan cuando la imagen está cargada */
-.card.loading img {
-  opacity: 0.3;
-  transform: scale(1);
-  animation: pulseLoading 1.5s ease-in-out infinite;
-}
-
-.card img.loaded {
-  opacity: 1 !important;
-  transform: scale(1) !important;
-  animation: none !important;
-  transition: opacity 0.3s ease;
-}
-
-/* FIX: Mejorar la animación de loading para evitar escalado excesivo */
-@keyframes pulseLoading {
-  0%, 100% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.02); /* Reducido de valores mayores */
-  }
-}
-
-/* FIX: Asegurar que las tarjetas no queden en estado intermedio */
-.card {
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.card:not(.loading) {
-  transform: none !important;
-  animation: none !important;
-}
-
-/* FIX: Estado específico para imágenes completamente cargadas */
-.card img.loaded {
-  opacity: 1;
-  transform: none;
-}
-
-@keyframes spin {
-  0% { transform: translate(-50%, -50%) rotate(0deg); }
-  100% { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-/* FIX: Remover el indicador de carga cuando la imagen está lista */
-.card:not(.loading)::after {
-  display: none !important;
-}
-
-/* FIX: Asegurar que las imágenes con error también detengan la animación */
-.card img[src*="data:image/svg+xml"] {
-  opacity: 0.5 !important;
-  animation: none !important;
-  transform: none !important;
-}
-
-/* FIX: Media query para dispositivos con prefers-reduced-motion */
-@media (prefers-reduced-motion: reduce) {
-  .card.loading img {
-    animation: none;
-    opacity: 0.5;
-  }
-}
-
-/* FIX: Prevenir problemas en dispositivos de bajo rendimiento */
-@media (max-width: 768px) {
-  body {
-    background-attachment: scroll !important;
-  }
-  .filter-panel,
-  .card {
-    backdrop-filter: none !important;
-    background: rgba(0, 0, 0, 0.6) !important;
-    box-shadow: none !important;
-    border-radius: 8px !important;
-  }
-  .card:hover {
-    transform: none !important;
-    box-shadow: none !important;
-  }
-}
-
-/* FIX: Fallback para navegadores que no soportan :not() */
-.card.image-loaded {
-  animation: none !important;
-  transform: none !important;
-}
-
-.card.image-loaded img {
-  opacity: 1 !important;
-  animation: none !important;
-  transform: none !important;
-}
-
-.card.image-loaded::after {
-  display: none !important;
 }
